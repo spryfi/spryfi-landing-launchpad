@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
@@ -8,7 +7,7 @@ export const PlansSection = () => {
     {
       name: "SpryFi Basic",
       price: "$99.95/mo",
-      speed: "100 Mbps",
+      speed: "100+ Mbps",
       description: "Stream shows, browse freely",
       subtitle: "Works great for 1–2 people",
       features: ["No contracts, no credit checks"],
