@@ -136,3 +136,10 @@
 .animate-bounce-in {
   animation: bounce-in 0.8s ease-out 1s both;
 }
+
+/* Radial gradient utility for cinematic lighting */
+@layer utilities {
+  .bg-gradient-radial {
+    background-image: radial-gradient(circle, var(--tw-gradient-stops));
+  }
+}
