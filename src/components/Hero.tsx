@@ -1,13 +1,65 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowDown } from 'lucide-react';
 
+const backgroundScenes = [
+  {
+    url: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?auto=format&fit=crop&w=1920&q=80",
+    alt: "Family streaming in a country home"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=1920&q=80", 
+    alt: "Remote work setup"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80",
+    alt: "Online gaming setup"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=1920&q=80",
+    alt: "Video call from mobile setup"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&q=80",
+    alt: "Nighttime work with glowing laptop"
+  }
+];
+
 export const Hero = () => {
+  const [currentScene, setCurrentScene] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentScene((prev) => (prev + 1) % backgroundScenes.length);
+    }, 6000); // Change scene every 6 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Deep black to navy radial gradient background */}
-      <div className="absolute inset-0 bg-gradient-radial from-slate-800 via-slate-900 to-black"></div>
+      {/* Rotating background scenes */}
+      <div className="absolute inset-0">
+        {backgroundScenes.map((scene, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-2000 ${
+              index === currentScene ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{
+              backgroundImage: `url(${scene.url})`,
+              filter: 'blur(1px) brightness(0.7)',
+            }}
+          >
+            {/* Dark overlay for readability */}
+            <div className="absolute inset-0 bg-black/50"></div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Deep gradient overlay for cinematic effect */}
+      <div className="absolute inset-0 bg-gradient-radial from-transparent via-black/30 to-black/70"></div>
       
       {/* Spotlight effect from above */}
       <div className="absolute inset-0 flex items-center justify-center">
