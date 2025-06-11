@@ -61,53 +61,7 @@ export const Hero = () => {
       {/* Deep gradient overlay for cinematic effect */}
       <div className="absolute inset-0 bg-gradient-radial from-transparent via-black/30 to-black/70"></div>
       
-      {/* Spotlight effect from above */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-[800px] h-[600px] bg-gradient-radial from-white/20 via-white/5 to-transparent rounded-full blur-3xl"></div>
-      </div>
-      
-      {/* WiFi ripple rings animation */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full border border-blue-400/10 animate-ping" style={{width: '300px', height: '300px', animationDuration: '3s'}}></div>
-          <div className="absolute inset-0 rounded-full border border-blue-400/15 animate-ping" style={{width: '400px', height: '400px', animationDuration: '4s', animationDelay: '1s'}}></div>
-          <div className="absolute inset-0 rounded-full border border-blue-400/10 animate-ping" style={{width: '500px', height: '500px', animationDuration: '5s', animationDelay: '2s'}}></div>
-        </div>
-      </div>
-      
       <div className="max-w-6xl mx-auto text-center relative z-10 px-6">
-        <div className="mb-16 relative">
-          {/* SpryFi Router with cinematic lighting */}
-          <div className="relative inline-block">
-            {/* Stage ground shadow */}
-            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-96 h-24 bg-gradient-radial from-blue-300/20 via-white/10 to-transparent rounded-full blur-2xl"></div>
-            
-            {/* Router image with premium lighting effects */}
-            <div className="relative">
-              <img 
-                src="/lovable-uploads/66a94db7-943d-4da3-bfd2-3fd4f6f673a9.png" 
-                alt="SpryFi Router" 
-                className="w-full max-w-md md:max-w-lg mx-auto h-auto object-contain"
-                style={{
-                  filter: 'drop-shadow(0 30px 60px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 40px rgba(255, 255, 255, 0.1))',
-                }}
-              />
-              
-              {/* Edge highlights for premium product feel */}
-              <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/5 rounded-lg"></div>
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent rounded-lg"></div>
-              
-              {/* Green LED indicator with pulse */}
-              <div className="absolute top-4 right-8 w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50">
-                <div className="absolute inset-0 bg-green-300 rounded-full animate-ping"></div>
-              </div>
-              
-              {/* Additional stage lighting reflection */}
-              <div className="absolute -inset-4 bg-gradient-radial from-white/5 via-transparent to-transparent blur-xl"></div>
-            </div>
-          </div>
-        </div>
-        
         <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight animate-fade-in">
           The Internet You Actually Need.
         </h1>
