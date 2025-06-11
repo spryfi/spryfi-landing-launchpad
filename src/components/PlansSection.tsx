@@ -8,6 +8,7 @@ export const PlansSection = () => {
     {
       name: "SpryFi Basic",
       price: "$99.95/mo",
+      speed: "100 Mbps",
       description: "Stream shows, browse freely",
       subtitle: "Works great for 1–2 people",
       features: ["No contracts, no credit checks"],
@@ -17,6 +18,7 @@ export const PlansSection = () => {
     {
       name: "SpryFi Premium",
       price: "$139.95/mo", 
+      speed: "Up to 250 Mbps",
       description: "Perfect for families & remote work",
       subtitle: "No throttling, no limits",
       features: ["Great for streaming, Zoom, and gaming"],
@@ -26,6 +28,7 @@ export const PlansSection = () => {
     {
       name: "SpryFi Max",
       price: "$169.95/mo",
+      speed: "Up to 500 Mbps",
       description: "For big households or home offices", 
       subtitle: "Handles everything at once",
       features: ["Built for ultra-heavy use"],
@@ -75,6 +78,13 @@ export const PlansSection = () => {
                 }`}>
                   {plan.name}
                 </h3>
+                
+                <div className={`text-lg font-semibold mb-4 ${
+                  plan.style === 'basic' ? 'text-blue-600' :
+                  plan.style === 'premium' ? 'text-blue-700' : 'text-blue-400'
+                }`}>
+                  {plan.speed}
+                </div>
                 
                 <div className={`text-5xl font-bold mb-6 ${
                   plan.style === 'basic' ? 'text-gray-900' :
