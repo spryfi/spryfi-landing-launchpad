@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -169,7 +170,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     <div 
       className="rounded-xl shadow-xl max-w-md mx-auto relative"
       style={{
-        background: 'linear-gradient(to bottom, #0047ab 0%, #ffffff 35%)',
+        background: 'linear-gradient(to bottom, #0047ab 0%, #0047ab 50%, #ffffff 100%)',
         padding: '48px 32px',
         boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
       }}
