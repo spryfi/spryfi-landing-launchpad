@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
+import { MapPin, Loader2 } from 'lucide-react';
 
 interface AddressStepProps {
   state: CheckoutState;
@@ -167,41 +168,60 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="p-8">
+    <div className="bg-white rounded-xl shadow-xl max-w-md mx-auto p-8 relative">
       <div className="text-center mb-8">
-        <div className="text-6xl mb-4">🏠</div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          Where do you need internet service?
+        <div className="text-3xl mb-4">📍</div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Let's see if SpryFi works at your address.
         </h2>
-        <p className="text-gray-600">
-          Enter your address to check availability
+        <p className="text-gray-600 mb-1">
+          Type it in below — no contracts, no hassle.
+        </p>
+        <p className="text-sm text-gray-500">
+          We'll only use your address to check coverage — no spam, no pressure.
         </p>
       </div>
 
       <div className="space-y-6">
-        <div>
+        <div className="relative">
+          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
             ref={inputRef}
             type="text"
             placeholder="Enter your address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="w-full text-lg p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500"
+            className="w-full text-lg p-4 pl-12 border-2 border-gray-200 rounded-lg focus:border-blue-500 shadow-sm"
           />
         </div>
 
         <Button
           onClick={handleSubmit}
           disabled={!address || loading}
-          className="w-full py-4 text-lg font-semibold rounded-lg"
+          className="w-full py-4 text-lg font-bold rounded-full transition-all duration-300 hover:shadow-lg"
           style={{
-            background: address ? '#0047AB' : '#ccc',
+            background: address ? (loading ? '#0047AB' : 'linear-gradient(to right, #0047AB, #007FFF)') : '#ccc',
             color: 'white'
           }}
         >
-          {loading ? 'Checking...' : 'Check Availability'}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Checking...
+            </div>
+          ) : (
+            'Check Availability'
+          )}
         </Button>
       </div>
+
+      {/* Branding bar at bottom */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl"
+        style={{
+          background: 'linear-gradient(to right, #0047AB, #007FFF)',
+        }}
+      />
     </div>
   );
 };
