@@ -65,6 +65,28 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const latitude = place.geometry.location.lat();
       const longitude = place.geometry.location.lng();
 
+      console.log('Checking coverage for:', { address: place.formatted_address, place_id: place.place_id });
+
+      // Call the coverage API
+      const coverageResponse = await supabase.functions.invoke('fwa-check', {
+        body: {
+          address: place.formatted_address,
+          place_id: place.place_id,
+          latitude,
+          longitude
+        }
+      });
+
+      if (coverageResponse.error) {
+        console.error('Coverage API error:', coverageResponse.error);
+        alert('Error checking coverage. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      const { qualified, network_type, raw_data } = coverageResponse.data;
+      console.log('Coverage result:', { qualified, network_type });
+
       // First, insert or get anchor_address
       const { data: anchorData, error: anchorError } = await supabase
         .from('anchor_address')
@@ -76,7 +98,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           latitude,
           longitude,
           google_place_id: place.place_id,
-          first_lead_id: null // Will be updated when we create the lead
+          qualified_cband: qualified,
+          raw_verizon_data: raw_data,
+          qualification_source: 'verizon_api',
+          status: qualified ? 'active' : 'inactive',
+          qualified_at: qualified ? new Date().toISOString() : null
         }, {
           onConflict: 'address_line1,city,state,zip_code',
           ignoreDuplicates: false
@@ -99,6 +125,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           city,
           state,
           zip_code: zipCode,
+          qualified,
+          qualification_result: qualified ? 'qualified' : 'not_qualified',
+          qualification_checked_at: new Date().toISOString(),
           status: 'new'
         })
         .select()
@@ -111,10 +140,15 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         return;
       }
 
-      // Check qualification (simplified - you can expand this logic)
-      const isQualified = anchorData.is_cb_valid || anchorData.qualified_cband || Math.random() > 0.3; // Mock qualification
+      // Update the lead with anchor_address_id
+      await supabase
+        .from('leads_fresh')
+        .update({ 
+          // Note: anchor_address_id field may need to be added to leads_fresh table
+        })
+        .eq('id', leadData.id);
 
-      if (!isQualified) {
+      if (!qualified) {
         // Add to drip marketing
         await supabase
           .from('drip_marketing')
@@ -122,7 +156,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             email: '', // Will be filled when we get contact info
             name: '',
             address: place.formatted_address,
-            status: 'active'
+            status: 'active',
+            lead_id: leadData.id
           });
 
         updateState({
@@ -278,7 +313,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           {loading ? (
             <div className="flex items-center justify-center gap-2">
               <Loader2 className="w-5 h-5 animate-spin" />
-              Checking...
+              Checking Coverage...
             </div>
           ) : (
             'Check Availability'
@@ -296,4 +331,3 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     </div>
   );
 };
-

@@ -43,6 +43,7 @@ export const Hero = () => {
   useEffect(() => {
     if (!window.google) {
       const script = document.createElement('script');
+      // Replace 'YOUR_GOOGLE_PLACES_API_KEY' with your actual API key
       script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_PLACES_API_KEY&libraries=places`;
       script.async = true;
       document.head.appendChild(script);
