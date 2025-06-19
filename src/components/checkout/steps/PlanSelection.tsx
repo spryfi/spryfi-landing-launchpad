@@ -76,13 +76,12 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
     setLoading(true);
 
     try {
-      // Update leads_fresh with selected plan
+      // Update leads_fresh with selected plan (using existing columns)
       await supabase
         .from('leads_fresh')
         .update({
-          plan_selected: planId,
-          step: 'plan_selected',
-          total_amount: 0 // Plans are $0 today, billed at activation
+          usage_type: planId, // Using existing usage_type field to store plan selection
+          status: 'plan_selected'
         })
         .eq('id', state.leadId);
 

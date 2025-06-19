@@ -42,8 +42,7 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
         .from('leads_fresh')
         .update({
           email,
-          phone,
-          step: 'qualified'
+          phone
         })
         .eq('id', state.leadId);
 
@@ -54,7 +53,7 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
           email,
           name: `${email.split('@')[0]}` // Simple name extraction
         })
-        .eq('lead_id', state.leadId);
+        .eq('address', state.address?.formattedAddress);
 
       updateState({
         step: 'qualification-success',

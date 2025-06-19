@@ -42,33 +42,15 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ state, updateState, 
     setLoading(true);
 
     try {
-      // Create customer order
-      const { data: orderData, error: orderError } = await supabase
-        .from('customer_orders')
-        .insert({
-          customer_name: formData.fullName,
-          plan_name: state.planSelected,
-          total_amount: state.totalAmount,
-          status: 'processing',
-          payment_status: 'paid',
-          fulfillment_status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
       // Update leads_fresh to mark as converted
       await supabase
         .from('leads_fresh')
         .update({
-          step: 'checkout_complete',
-          status: 'converted',
-          checkout_started_at: new Date().toISOString()
+          status: 'converted'
         })
         .eq('id', state.leadId);
 
-      // Create customer subscription
+      // Create customer subscription using existing table structure
       await supabase
         .from('customer_subscriptions')
         .insert({

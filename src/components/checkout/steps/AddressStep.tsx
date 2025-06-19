@@ -97,10 +97,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           city,
           state,
           zip_code: zipCode,
-          formatted_address: place.formatted_address,
-          google_place_id: place.place_id,
-          anchor_address_id: anchorData.id,
-          step: 'address_entered',
           status: 'new'
         })
         .select()
@@ -125,17 +121,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             name: '',
             address: place.formatted_address,
             status: 'active',
-            qualified: false,
-            lead_id: leadData.id
+            qualified: false
           });
-
-        await supabase
-          .from('leads_fresh')
-          .update({ 
-            drip_campaign: true,
-            step: 'not_qualified'
-          })
-          .eq('id', leadData.id);
 
         updateState({
           step: 'not-qualified',

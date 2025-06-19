@@ -18,13 +18,11 @@ export const RouterOffer: React.FC<RouterOfferProps> = ({ state, updateState }) 
     try {
       const newTotal = addRouter ? 25 : 0;
 
-      // Update leads_fresh with router selection
+      // Update leads_fresh with router selection (using existing columns)
       await supabase
         .from('leads_fresh')
         .update({
-          router_added: addRouter,
-          total_amount: newTotal,
-          step: 'router_offered'
+          status: 'router_offered'
         })
         .eq('id', state.leadId);
 
