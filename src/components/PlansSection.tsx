@@ -1,8 +1,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
+import { CheckoutModal } from './checkout/CheckoutModal';
+import { useCheckoutModal } from '@/hooks/useCheckoutModal';
 
 export const PlansSection = () => {
+  const { isOpen, openModal, closeModal } = useCheckoutModal();
+
   const plans = [
     {
       name: "SpryFi Basic",
@@ -44,111 +48,116 @@ export const PlansSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-gray-50 px-6">
-      <div className="max-w-6xl mx-auto">
-        <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-4">
-          Pick the Plan That's Right for You.
-        </h2>
-        <p className="text-xl text-gray-600 text-center mb-16 max-w-2xl mx-auto">
-          Simple, honest pricing. No hidden fees, no surprises.
-        </p>
-        
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
-          {plans.map((plan, index) => (
-            <div 
-              key={index} 
-              className={`relative rounded-3xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl group ${
-                plan.style === 'basic' 
-                  ? 'bg-white border border-gray-200 shadow-lg hover:shadow-gray-200/50' 
-                  : plan.style === 'premium'
-                  ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 shadow-xl transform scale-105 hover:shadow-blue-200/50' 
-                  : 'bg-gray-900 text-white shadow-xl hover:shadow-gray-800/50'
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
-                  MOST POPULAR
-                </div>
-              )}
-              
-              <div className="text-center">
-                <h3 className={`text-2xl font-bold mb-2 ${
-                  plan.style === 'max' ? 'text-white' : 'text-gray-900'
-                }`}>
-                  {plan.name}
-                </h3>
+    <>
+      <section className="py-20 bg-gray-50 px-6">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-4">
+            Pick the Plan That's Right for You.
+          </h2>
+          <p className="text-xl text-gray-600 text-center mb-16 max-w-2xl mx-auto">
+            Simple, honest pricing. No hidden fees, no surprises.
+          </p>
+          
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            {plans.map((plan, index) => (
+              <div 
+                key={index} 
+                className={`relative rounded-3xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl group ${
+                  plan.style === 'basic' 
+                    ? 'bg-white border border-gray-200 shadow-lg hover:shadow-gray-200/50' 
+                    : plan.style === 'premium'
+                    ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 shadow-xl transform scale-105 hover:shadow-blue-200/50' 
+                    : 'bg-gray-900 text-white shadow-xl hover:shadow-gray-800/50'
+                }`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+                    MOST POPULAR
+                  </div>
+                )}
                 
-                <div className={`text-lg font-semibold mb-4 ${
-                  plan.style === 'basic' ? 'text-blue-600' :
-                  plan.style === 'premium' ? 'text-blue-700' : 'text-blue-400'
-                }`}>
-                  {plan.speed}
+                <div className="text-center">
+                  <h3 className={`text-2xl font-bold mb-2 ${
+                    plan.style === 'max' ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    {plan.name}
+                  </h3>
+                  
+                  <div className={`text-lg font-semibold mb-4 ${
+                    plan.style === 'basic' ? 'text-blue-600' :
+                    plan.style === 'premium' ? 'text-blue-700' : 'text-blue-400'
+                  }`}>
+                    {plan.speed}
+                  </div>
+                  
+                  <div className={`text-5xl font-bold mb-6 ${
+                    plan.style === 'basic' ? 'text-gray-900' :
+                    plan.style === 'premium' ? 'text-blue-700' : 'text-white'
+                  }`}>
+                    {plan.price}
+                  </div>
+                  
+                  <div className={`text-lg font-medium mb-3 ${
+                    plan.style === 'max' ? 'text-gray-100' : 'text-gray-700'
+                  }`}>
+                    {plan.description}
+                  </div>
+                  
+                  <div className={`text-base mb-6 ${
+                    plan.style === 'max' ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    {plan.subtitle}
+                  </div>
+                  
+                  <div className="mb-8 space-y-3">
+                    {plan.features.map((feature, featureIndex) => (
+                      <div key={featureIndex} className="flex items-center justify-center">
+                        <Check className={`w-5 h-5 mr-3 flex-shrink-0 ${
+                          plan.style === 'max' ? 'text-green-400' : 'text-green-500'
+                        }`} />
+                        <span className={`text-sm ${
+                          plan.style === 'max' ? 'text-gray-200' : 'text-gray-600'
+                        }`}>
+                          {feature}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <Button 
+                    onClick={openModal}
+                    className={`w-full py-4 text-lg font-semibold rounded-2xl transition-all duration-300 transform group-hover:scale-105 ${
+                      plan.style === 'basic' 
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/25' 
+                        : plan.style === 'premium'
+                        ? 'bg-blue-700 text-white hover:bg-blue-800 hover:shadow-lg hover:shadow-blue-600/25' 
+                        : 'bg-white text-gray-900 hover:bg-gray-100 hover:shadow-lg'
+                    }`}
+                  >
+                    Choose {plan.name.split(' ')[1]}
+                  </Button>
                 </div>
-                
-                <div className={`text-5xl font-bold mb-6 ${
-                  plan.style === 'basic' ? 'text-gray-900' :
-                  plan.style === 'premium' ? 'text-blue-700' : 'text-white'
-                }`}>
-                  {plan.price}
-                </div>
-                
-                <div className={`text-lg font-medium mb-3 ${
-                  plan.style === 'max' ? 'text-gray-100' : 'text-gray-700'
-                }`}>
-                  {plan.description}
-                </div>
-                
-                <div className={`text-base mb-6 ${
-                  plan.style === 'max' ? 'text-gray-300' : 'text-gray-600'
-                }`}>
-                  {plan.subtitle}
-                </div>
-                
-                <div className="mb-8 space-y-3">
-                  {plan.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center justify-center">
-                      <Check className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                        plan.style === 'max' ? 'text-green-400' : 'text-green-500'
-                      }`} />
-                      <span className={`text-sm ${
-                        plan.style === 'max' ? 'text-gray-200' : 'text-gray-600'
-                      }`}>
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                
-                <Button 
-                  className={`w-full py-4 text-lg font-semibold rounded-2xl transition-all duration-300 transform group-hover:scale-105 ${
-                    plan.style === 'basic' 
-                      ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/25' 
-                      : plan.style === 'premium'
-                      ? 'bg-blue-700 text-white hover:bg-blue-800 hover:shadow-lg hover:shadow-blue-600/25' 
-                      : 'bg-white text-gray-900 hover:bg-gray-100 hover:shadow-lg'
-                  }`}
-                >
-                  Choose {plan.name.split(' ')[1]}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-            All Plans Include:
-          </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {included.map((item, index) => (
-              <div key={index} className="flex items-center justify-center md:justify-start">
-                <Check className="w-6 h-6 text-green-500 mr-4 flex-shrink-0" />
-                <span className="text-gray-700 font-medium">{item}</span>
               </div>
             ))}
           </div>
+          
+          <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100">
+            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+              All Plans Include:
+            </h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {included.map((item, index) => (
+                <div key={index} className="flex items-center justify-center md:justify-start">
+                  <Check className="w-6 h-6 text-green-500 mr-4 flex-shrink-0" />
+                  <span className="text-gray-700 font-medium">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <CheckoutModal isOpen={isOpen} onClose={closeModal} />
+    </>
   );
 };
