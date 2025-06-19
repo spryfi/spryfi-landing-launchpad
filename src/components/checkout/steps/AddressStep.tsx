@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -168,11 +169,37 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
   return (
     <div 
-      className="rounded-xl shadow-xl max-w-md mx-auto relative"
+      className="rounded-xl max-w-md mx-auto relative transition-all duration-300"
       style={{
         background: 'linear-gradient(to bottom, #0047ab 0%, #0047ab 50%, #ffffff 100%)',
         padding: '48px 32px',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+        borderRadius: '18px',
+        boxShadow: `
+          inset 0 1px 4px rgba(255, 255, 255, 0.2),
+          inset 0 -1px 3px rgba(0, 0, 0, 0.05),
+          0 4px 12px rgba(0, 0, 0, 0.15),
+          0 16px 32px rgba(0, 0, 0, 0.08)
+        `,
+        transform: 'translateZ(0)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = `
+          inset 0 1px 4px rgba(255, 255, 255, 0.2),
+          inset 0 -1px 3px rgba(0, 0, 0, 0.05),
+          0 8px 24px rgba(0, 0, 0, 0.2),
+          0 24px 48px rgba(0, 0, 0, 0.1)
+        `;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = `
+          inset 0 1px 4px rgba(255, 255, 255, 0.2),
+          inset 0 -1px 3px rgba(0, 0, 0, 0.05),
+          0 4px 12px rgba(0, 0, 0, 0.15),
+          0 16px 32px rgba(0, 0, 0, 0.08)
+        `;
       }}
     >
       <div className="text-center mb-8">
@@ -269,3 +296,4 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     </div>
   );
 };
+
