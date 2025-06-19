@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -121,8 +120,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             email: '', // Will be filled when we get contact info
             name: '',
             address: place.formatted_address,
-            status: 'active',
-            qualified: false
+            status: 'active'
           });
 
         updateState({
@@ -169,20 +167,22 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
   return (
     <div 
-      className="bg-white rounded-xl shadow-xl max-w-md mx-auto p-8 relative"
+      className="rounded-xl shadow-xl max-w-md mx-auto relative"
       style={{
-        background: 'linear-gradient(to bottom, #f7faff, #ffffff)',
+        background: 'linear-gradient(to bottom, #0047ab 0%, #ffffff 35%)',
+        padding: '48px 32px',
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
       }}
     >
       <div className="text-center mb-8">
         <div className="text-3xl mb-4">📍</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold mb-2" style={{ color: 'white' }}>
           Let's see if SpryFi works at your address.
         </h2>
-        <p className="text-gray-600 mb-1">
+        <p className="mb-1" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
           Type it in below — no contracts, no hassle.
         </p>
-        <p className="text-sm text-gray-500">
+        <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>
           We'll only use your address to check coverage — no spam, no pressure.
         </p>
       </div>
@@ -196,16 +196,19 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             placeholder="Enter your address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="w-full text-lg p-4 pl-12 rounded-lg transition-all duration-200 focus:outline-none"
+            className="w-full rounded-lg transition-all duration-200 focus:outline-none"
             style={{
+              height: '42px',
+              padding: '10px 16px 10px 48px',
+              fontSize: '15px',
+              borderRadius: '6px',
               background: 'linear-gradient(to right, #eaf4ff, #dbeeff)',
               border: '1px solid #aad4ff',
-              fontSize: '16px',
               boxShadow: '0 1px 6px rgba(0, 112, 243, 0.08)',
             }}
             onFocus={(e) => {
               e.target.style.borderColor = '#0070f3';
-              e.target.style.boxShadow = '0 0 0 3px rgba(0,112,243,0.15)';
+              e.target.style.boxShadow = '0 0 0 3px rgba(0, 112, 243, 0.2)';
             }}
             onBlur={(e) => {
               e.target.style.borderColor = '#aad4ff';
@@ -213,6 +216,17 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             }}
           />
         </div>
+
+        {/* Cobalt divider bar above the button */}
+        <div 
+          className="w-full"
+          style={{
+            height: '3px',
+            background: 'linear-gradient(to right, #0047ab, #0070f3)',
+            borderRadius: '1.5px',
+            margin: '24px 0 12px',
+          }}
+        />
 
         <Button
           onClick={handleSubmit}
@@ -242,16 +256,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             'Check Availability'
           )}
         </Button>
-
-        {/* Cobalt gradient bar below the button */}
-        <div 
-          className="w-full rounded-sm"
-          style={{
-            height: '4px',
-            background: 'linear-gradient(to right, #0047ab, #0070f3)',
-            marginTop: '20px'
-          }}
-        />
       </div>
 
       {/* Branding bar at bottom */}
