@@ -34,91 +34,95 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
   useEffect(() => {
     const initializeAutocomplete = () => {
-      if (!window.google?.maps?.places) {
-        console.log('Google Maps API not ready yet, retrying...');
-        setTimeout(initializeAutocomplete, 500);
-        return;
-      }
-
       console.log('Initializing Google Places Autocomplete...');
       
       const autocompleteEl = document.getElementById('spryfi-autocomplete') as any;
       const nextButton = document.getElementById('next-button') as HTMLButtonElement;
       
       if (!autocompleteEl || !nextButton) {
+        console.log('Elements not found, retrying...');
         setTimeout(initializeAutocomplete, 100);
         return;
       }
 
-      autocompleteEl.addEventListener('gmpx-placechange', async (event: any) => {
-        const place = event.target.value;
-        console.log('Selected address:', place);
-
-        if (!place) {
-          setNextButtonEnabled(false);
+      // Wait for Google Maps to be fully loaded
+      const checkGoogleMaps = () => {
+        if (!window.google?.maps?.places) {
+          console.log('Google Maps API not ready yet, retrying...');
+          setTimeout(checkGoogleMaps, 500);
           return;
         }
 
-        // Use Google's PlacesService to get full details
-        const map = document.createElement("div");
-        const placesService = new window.google.maps.places.PlacesService(map);
+        console.log('Google Maps API ready, setting up event listener...');
 
-        placesService.findPlaceFromQuery({
-          query: place,
-          fields: ['place_id', 'formatted_address', 'geometry', 'address_components']
-        }, async (results: any[], status: any) => {
-          if (status !== window.google.maps.places.PlacesServiceStatus.OK || !results[0]) {
-            console.warn('Place details not found');
+        autocompleteEl.addEventListener('gmpx-placechange', async (event: any) => {
+          const place = event.target.value;
+          console.log('Selected address:', place);
+
+          if (!place) {
             setNextButtonEnabled(false);
             return;
           }
 
-          const result = results[0];
-          console.log('Place details:', result);
-          
-          setSelectedAddress(result.formatted_address);
-          setSelectedPlace(result);
+          // Use Google's PlacesService to get full details
+          const map = document.createElement("div");
+          const placesService = new window.google.maps.places.PlacesService(map);
 
-          const payload = {
-            address: result.formatted_address,
-            place_id: result.place_id,
-            latitude: result.geometry?.location?.lat(),
-            longitude: result.geometry?.location?.lng(),
-          };
+          placesService.findPlaceFromQuery({
+            query: place,
+            fields: ['place_id', 'formatted_address', 'geometry', 'address_components']
+          }, async (results: any[], status: any) => {
+            if (status !== window.google.maps.places.PlacesServiceStatus.OK || !results[0]) {
+              console.warn('Place details not found');
+              setNextButtonEnabled(false);
+              return;
+            }
 
-          try {
-            // Send to fwa-check API
-            const response = await supabase.functions.invoke('fwa-check', {
-              body: payload
-            });
-
-            console.log('FWA check response:', response);
+            const result = results[0];
+            console.log('Place details:', result);
             
-            // Enable the NEXT button after API call
-            setNextButtonEnabled(true);
-            nextButton.disabled = false;
-            nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            
-          } catch (error) {
-            console.error('Error checking address:', error);
-            setNextButtonEnabled(false);
-          }
+            setSelectedAddress(result.formatted_address);
+            setSelectedPlace(result);
+
+            const payload = {
+              address: result.formatted_address,
+              place_id: result.place_id,
+              latitude: result.geometry?.location?.lat(),
+              longitude: result.geometry?.location?.lng(),
+            };
+
+            try {
+              // Send to fwa-check API
+              const response = await supabase.functions.invoke('fwa-check', {
+                body: payload
+              });
+
+              console.log('FWA check response:', response);
+              
+              // Enable the NEXT button after API call
+              setNextButtonEnabled(true);
+              nextButton.disabled = false;
+              nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+              
+            } catch (error) {
+              console.error('Error checking address:', error);
+              setNextButtonEnabled(false);
+            }
+          });
         });
-      });
 
-      console.log('Google Places Autocomplete initialized successfully');
+        console.log('Google Places Autocomplete initialized successfully');
+      };
+
+      checkGoogleMaps();
     };
 
-    if (document.readyState === 'complete') {
-      initializeAutocomplete();
-    } else {
-      window.addEventListener('load', initializeAutocomplete);
-      return () => window.removeEventListener('load', initializeAutocomplete);
-    }
+    // Initialize after a short delay to ensure DOM is ready
+    setTimeout(initializeAutocomplete, 100);
   }, []);
 
   const handleNext = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent form refresh
+    e.preventDefault();
     setCurrentStep('contact');
   };
 
@@ -192,7 +196,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   const handleCheckAddress = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent form refresh
+    e.preventDefault();
     
     if (!contactInfo.firstName || !contactInfo.lastName || !contactInfo.email) {
       alert('Please fill in all fields');
@@ -264,7 +268,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           },
           contact: {
             email: contactInfo.email,
-            phone: '' // Will be collected in next step
+            phone: ''
           },
           qualified: true
         });
@@ -299,7 +303,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   const handleContinue = () => {
-    // This will be handled by the parent component since we've already updated the state
     console.log('Continuing to next step...');
   };
 
@@ -318,21 +321,20 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       </div>
 
       <div className="space-y-6">
-        <div className="relative">
+        <div className="w-full px-0 py-0 relative z-10 bg-white">
           <gmpx-placeautocomplete
             id="spryfi-autocomplete"
+            placeholder="Start typing your address"
             style={{ 
-              display: 'block', 
-              width: '100%',
+              width: '100%', 
+              display: 'block',
               minHeight: '48px',
               fontSize: '16px',
               lineHeight: '1.5'
             }}
-            placeholder="Start typing your address..."
             theme="filled"
-            class="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm outline-none focus:border-[#0047AB] text-gray-900 bg-white"
+            class="rounded-lg border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-[#0047AB] outline-none"
           />
-          <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
         </div>
 
         <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
