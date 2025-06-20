@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -318,14 +317,20 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </p>
       </div>
 
-      <form onSubmit={handleNext} className="space-y-6">
+      <div className="space-y-6">
         <div className="relative">
           <gmpx-placeautocomplete
             id="spryfi-autocomplete"
-            style={{ width: '100%' }}
+            style={{ 
+              display: 'block', 
+              width: '100%',
+              minHeight: '48px',
+              fontSize: '16px',
+              lineHeight: '1.5'
+            }}
             placeholder="Start typing your address..."
             theme="filled"
-            class="w-full px-4 py-3 pr-10 border rounded-lg shadow-sm outline-none focus:border-[#0047AB] text-gray-900"
+            class="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm outline-none focus:border-[#0047AB] text-gray-900 bg-white"
           />
           <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
         </div>
@@ -337,7 +342,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
         <button
           id="next-button"
-          type="submit"
+          type="button"
+          onClick={handleNext}
           disabled={!nextButtonEnabled}
           className="w-full py-3 text-white font-semibold rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
@@ -351,7 +357,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         <p className="text-xs text-gray-400 text-center leading-relaxed">
           We only use your address to check coverage. No spam, no pressure.
         </p>
-      </form>
+      </div>
 
       <div 
         className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl"
