@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
-import { MapPin, Loader2, Shield } from 'lucide-react';
+import { MapPin, Loader2, Shield, CheckCircle } from 'lucide-react';
 
 interface AddressStepProps {
   state: CheckoutState;
@@ -17,10 +18,20 @@ declare global {
 }
 
 export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) => {
+  const [currentStep, setCurrentStep] = useState<'address' | 'contact' | 'result'>('address');
   const [loading, setLoading] = useState(false);
-  const [address, setAddress] = useState('');
+  const [selectedAddress, setSelectedAddress] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
-  const [buttonEnabled, setButtonEnabled] = useState(false);
+  const [nextButtonEnabled, setNextButtonEnabled] = useState(false);
+  const [contactInfo, setContactInfo] = useState({
+    firstName: '',
+    lastName: '',
+    email: ''
+  });
+  const [qualificationResult, setQualificationResult] = useState<{
+    qualified: boolean;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     const initializeAutocomplete = () => {
@@ -39,24 +50,24 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       }
 
       autocompleteEl.addEventListener('gmp-placechange', async () => {
-        const selectedPlace = autocompleteEl.value;
-        console.log('Place selected:', selectedPlace);
+        const place = autocompleteEl.value;
+        console.log('Place selected:', place);
         
-        if (!selectedPlace) {
+        if (!place) {
           console.warn('No place selected');
-          setButtonEnabled(false);
+          setNextButtonEnabled(false);
           return;
         }
 
-        setAddress(selectedPlace);
+        setSelectedAddress(place);
 
         const autocompleteService = new window.google.maps.places.AutocompleteService();
         const placesService = new window.google.maps.places.PlacesService(document.createElement('div'));
 
-        autocompleteService.getPlacePredictions({ input: selectedPlace }, (predictions: any) => {
+        autocompleteService.getPlacePredictions({ input: place }, (predictions: any) => {
           if (!predictions?.length) {
             console.warn('No predictions found');
-            setButtonEnabled(false);
+            setNextButtonEnabled(false);
             return;
           }
 
@@ -65,16 +76,16 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           placesService.getDetails({ 
             placeId, 
             fields: ['place_id', 'formatted_address', 'geometry', 'address_components'] 
-          }, async (place: any) => {
-            if (!place?.place_id) {
+          }, async (placeDetails: any) => {
+            if (!placeDetails?.place_id) {
               console.warn('Invalid place details');
-              setButtonEnabled(false);
+              setNextButtonEnabled(false);
               return;
             }
 
-            console.log('Place details received:', place);
-            setSelectedPlace(place);
-            setButtonEnabled(true);
+            console.log('Place details received:', placeDetails);
+            setSelectedPlace(placeDetails);
+            setNextButtonEnabled(true);
           });
         });
       });
@@ -82,7 +93,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       console.log('Google Places Autocomplete initialized successfully');
     };
 
-    // Wait for the window to load completely
     if (document.readyState === 'complete') {
       initializeAutocomplete();
     } else {
@@ -91,10 +101,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   }, []);
 
-  const runVerizonCheck = async (place: any) => {
-    console.log('Running Verizon API check...');
+  const handleNext = () => {
+    setCurrentStep('contact');
+  };
+
+  const saveLeadToDatabase = async () => {
+    console.log('Saving lead to database...');
     
-    const addressComponents = place.address_components;
+    const addressComponents = selectedPlace.address_components;
     const streetNumber = addressComponents?.find((c: any) => c.types.includes('street_number'))?.long_name || '';
     const route = addressComponents?.find((c: any) => c.types.includes('route'))?.long_name || '';
     const city = addressComponents?.find((c: any) => c.types.includes('locality'))?.long_name || '';
@@ -102,21 +116,39 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     const zipCode = addressComponents?.find((c: any) => c.types.includes('postal_code'))?.long_name || '';
 
     const addressLine1 = `${streetNumber} ${route}`.trim();
-    const latitude = place.geometry?.location?.lat();
-    const longitude = place.geometry?.location?.lng();
 
+    const { data: leadData, error: leadError } = await supabase
+      .from('leads_fresh')
+      .insert({
+        first_name: contactInfo.firstName,
+        last_name: contactInfo.lastName,
+        email: contactInfo.email,
+        address_line1: addressLine1,
+        city,
+        state,
+        zip_code: zipCode,
+        status: 'contact_info',
+        qualification_checked_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (leadError) {
+      throw new Error('Error saving lead: ' + leadError.message);
+    }
+
+    return leadData;
+  };
+
+  const runVerizonCheck = async () => {
+    console.log('Running Verizon API check...');
+    
     const verizonResponse = await supabase.functions.invoke('fwa-check', {
       body: {
-        address: place.formatted_address,
-        place_id: place.place_id,
-        latitude,
-        longitude,
-        address_components: {
-          address_line1: addressLine1,
-          city,
-          state,
-          zip_code: zipCode
-        }
+        address: selectedPlace.formatted_address,
+        place_id: selectedPlace.place_id,
+        latitude: selectedPlace.geometry?.location?.lat(),
+        longitude: selectedPlace.geometry?.location?.lng()
       }
     });
 
@@ -124,95 +156,30 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       throw new Error('Verizon API error: ' + verizonResponse.error.message);
     }
 
-    return {
-      qualified: verizonResponse.data.qualified,
-      network_type: verizonResponse.data.network_type,
-      raw_data: verizonResponse.data.raw_data,
-      addressLine1,
-      city,
-      state,
-      zipCode,
-      latitude,
-      longitude
-    };
+    return verizonResponse.data;
   };
 
-  const runWebbotCheck = async (place: any) => {
+  const runWebbotCheck = async () => {
     console.log('Running webbot fallback check...');
     
-    // This would call a webbot-check edge function
-    // For now, we'll simulate it with a random result
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
+    // Simulate webbot check with random result
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     const mockResult = {
-      qualified: Math.random() > 0.7, // 30% qualification rate for fallback
-      network_type: 'fallback_check',
-      raw_data: {
-        source: 'webbot',
-        checked_at: new Date().toISOString()
-      }
+      qualified: Math.random() > 0.7,
+      network_type: 'fallback_check'
     };
 
     console.log('Webbot check result:', mockResult);
     return mockResult;
   };
 
-  const createAnchorAddress = async (addressInfo: any, qualified: boolean, rawData: any) => {
-    console.log('Creating/updating anchor_address...');
-    const { data: anchorData, error: anchorError } = await supabase
-      .from('anchor_address')
-      .upsert({
-        address_line1: addressInfo.addressLine1,
-        city: addressInfo.city,
-        state: addressInfo.state,
-        zip_code: addressInfo.zipCode,
-        latitude: addressInfo.latitude,
-        longitude: addressInfo.longitude,
-        google_place_id: selectedPlace.place_id,
-        qualified_cband: qualified,
-        raw_verizon_data: rawData,
-        qualification_source: 'dual_api_check',
-        status: qualified ? 'active' : 'inactive',
-        qualified_at: qualified ? new Date().toISOString() : null
-      }, {
-        onConflict: 'address_line1,city,state,zip_code',
-        ignoreDuplicates: false
-      })
-      .select()
-      .single();
-
-    if (anchorError) {
-      throw new Error('Error creating anchor address: ' + anchorError.message);
+  const handleCheckAddress = async () => {
+    if (!contactInfo.firstName || !contactInfo.lastName || !contactInfo.email) {
+      alert('Please fill in all fields');
+      return;
     }
 
-    return anchorData;
-  };
-
-  const createLead = async (addressInfo: any, qualified: boolean) => {
-    console.log('Creating leads_fresh record...');
-    const { data: leadData, error: leadError } = await supabase
-      .from('leads_fresh')
-      .insert({
-        address_line1: addressInfo.addressLine1,
-        city: addressInfo.city,
-        state: addressInfo.state,
-        zip_code: addressInfo.zipCode,
-        qualified,
-        qualification_result: qualified ? 'qualified' : 'not_qualified',
-        qualification_checked_at: new Date().toISOString(),
-        status: 'new'
-      })
-      .select()
-      .single();
-
-    if (leadError) {
-      throw new Error('Error creating lead: ' + leadError.message);
-    }
-
-    return leadData;
-  };
-
-  const handleQualificationFlow = async () => {
     if (!selectedPlace) {
       alert('Please select a valid address first');
       return;
@@ -221,94 +188,64 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     setLoading(true);
     
     try {
-      console.log('Starting qualification flow...');
+      // Save lead to database first
+      const leadData = await saveLeadToDatabase();
       
       // Step 1: Try Verizon API first
-      let qualificationResult;
-      let addressInfo;
+      let qualified = false;
       
       try {
-        const verizonResult = await runVerizonCheck(selectedPlace);
-        addressInfo = verizonResult;
+        const verizonResult = await runVerizonCheck();
         
         if (verizonResult.qualified) {
-          console.log('✅ Verizon qualified - proceeding');
-          qualificationResult = {
-            qualified: true,
-            network_type: verizonResult.network_type,
-            raw_data: verizonResult.raw_data,
-            source: 'verizon'
-          };
+          console.log('✅ Verizon qualified');
+          qualified = true;
         } else {
           console.log('❌ Verizon not qualified - trying webbot fallback');
           
           // Step 2: Run webbot fallback
-          const webbotResult = await runWebbotCheck(selectedPlace);
-          
-          qualificationResult = {
-            qualified: webbotResult.qualified,
-            network_type: webbotResult.network_type,
-            raw_data: {
-              verizon: verizonResult.raw_data,
-              webbot: webbotResult.raw_data
-            },
-            source: webbotResult.qualified ? 'webbot_fallback' : 'both_failed'
-          };
+          const webbotResult = await runWebbotCheck();
+          qualified = webbotResult.qualified;
         }
       } catch (verizonError) {
         console.error('Verizon API failed, trying webbot:', verizonError);
         
         // If Verizon fails completely, still try webbot
-        const webbotResult = await runWebbotCheck(selectedPlace);
-        
-        // We still need address info, so parse it from the place
-        const addressComponents = selectedPlace.address_components;
-        const streetNumber = addressComponents?.find((c: any) => c.types.includes('street_number'))?.long_name || '';
-        const route = addressComponents?.find((c: any) => c.types.includes('route'))?.long_name || '';
-        const city = addressComponents?.find((c: any) => c.types.includes('locality'))?.long_name || '';
-        const state = addressComponents?.find((c: any) => c.types.includes('administrative_area_level_1'))?.short_name || '';
-        const zipCode = addressComponents?.find((c: any) => c.types.includes('postal_code'))?.long_name || '';
-
-        addressInfo = {
-          addressLine1: `${streetNumber} ${route}`.trim(),
-          city,
-          state,
-          zipCode,
-          latitude: selectedPlace.geometry?.location?.lat(),
-          longitude: selectedPlace.geometry?.location?.lng()
-        };
-        
-        qualificationResult = {
-          qualified: webbotResult.qualified,
-          network_type: webbotResult.network_type,
-          raw_data: {
-            verizon_error: verizonError.message,
-            webbot: webbotResult.raw_data
-          },
-          source: 'webbot_only'
-        };
+        const webbotResult = await runWebbotCheck();
+        qualified = webbotResult.qualified;
       }
 
-      // Create anchor address and lead
-      const anchorData = await createAnchorAddress(addressInfo, qualificationResult.qualified, qualificationResult.raw_data);
-      const leadData = await createLead(addressInfo, qualificationResult.qualified);
+      // Update lead with qualification result
+      await supabase
+        .from('leads_fresh')
+        .update({
+          qualified,
+          qualification_result: qualified ? 'qualified' : 'not_qualified'
+        })
+        .eq('id', leadData.id);
 
-      // Handle result
-      if (qualificationResult.qualified) {
-        console.log('🎉 Address qualified! Advancing to contact step');
+      if (qualified) {
+        console.log('🎉 Address qualified!');
+        setQualificationResult({
+          qualified: true,
+          message: 'Great news! SpryFi is available at your address.'
+        });
+        
+        // Update checkout state for continuing to next step
         updateState({
           step: 'contact',
-          anchorAddressId: anchorData.id,
           leadId: leadData.id,
           address: {
-            addressLine1: addressInfo.addressLine1,
-            city: addressInfo.city,
-            state: addressInfo.state,
-            zipCode: addressInfo.zipCode,
-            latitude: addressInfo.latitude,
-            longitude: addressInfo.longitude,
-            googlePlaceId: selectedPlace.place_id,
-            formattedAddress: selectedPlace.formatted_address
+            addressLine1: leadData.address_line1,
+            city: leadData.city,
+            state: leadData.state,
+            zipCode: leadData.zip_code,
+            formattedAddress: selectedPlace.formatted_address,
+            googlePlaceId: selectedPlace.place_id
+          },
+          contact: {
+            email: contactInfo.email,
+            phone: '' // Will be collected in next step
           },
           qualified: true
         });
@@ -319,32 +256,21 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         await supabase
           .from('drip_marketing')
           .insert({
-            email: '',
-            name: '',
+            email: contactInfo.email,
+            name: `${contactInfo.firstName} ${contactInfo.lastName}`,
             address: selectedPlace.formatted_address,
             status: 'active',
             lead_id: leadData.id
           });
 
-        updateState({
-          step: 'not-qualified',
-          anchorAddressId: anchorData.id,
-          leadId: leadData.id,
-          address: {
-            addressLine1: addressInfo.addressLine1,
-            city: addressInfo.city,
-            state: addressInfo.state,
-            zipCode: addressInfo.zipCode,
-            latitude: addressInfo.latitude,
-            longitude: addressInfo.longitude,
-            googlePlaceId: selectedPlace.place_id,
-            formattedAddress: selectedPlace.formatted_address
-          },
-          qualified: false
+        setQualificationResult({
+          qualified: false,
+          message: "We're not quite there yet. You've been added to our waitlist and we'll notify you as soon as we expand coverage to your area."
         });
       }
 
-      console.log('Qualification flow completed successfully');
+      setCurrentStep('result');
+      
     } catch (error) {
       console.error('Error in qualification flow:', error);
       alert('Error checking coverage. Please try again.');
@@ -353,9 +279,13 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   };
 
-  return (
+  const handleContinue = () => {
+    // This will be handled by the parent component since we've already updated the state
+    console.log('Continuing to next step...');
+  };
+
+  const renderAddressStep = () => (
     <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md mx-auto relative">
-      {/* Header Section */}
       <div className="text-center mb-8">
         <div className="mb-4">
           <MapPin className="w-8 h-8 text-[#0047AB] mx-auto" />
@@ -368,7 +298,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </p>
       </div>
 
-      {/* Input Section */}
       <div className="space-y-6">
         <div className="relative">
           <gmp-place-autocomplete
@@ -388,51 +317,28 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
         </div>
 
-        {/* Trust Badge */}
         <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
           <Shield className="w-4 h-4 text-[#0047AB]" />
           <span>No contracts • No credit checks • No hassle</span>
         </div>
 
-        {/* CTA Button */}
         <Button
-          onClick={handleQualificationFlow}
-          disabled={!buttonEnabled || loading}
+          onClick={handleNext}
+          disabled={!nextButtonEnabled}
           className="w-full py-3 text-white font-semibold rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
-            backgroundColor: buttonEnabled && !loading ? '#0047AB' : '#9CA3AF',
-            boxShadow: buttonEnabled && !loading ? '0 4px 12px rgba(0, 71, 171, 0.3)' : 'none'
-          }}
-          onMouseEnter={(e) => {
-            if (buttonEnabled && !loading) {
-              e.currentTarget.style.backgroundColor = '#0065D1';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (buttonEnabled && !loading) {
-              e.currentTarget.style.backgroundColor = '#0047AB';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }
+            backgroundColor: nextButtonEnabled ? '#0047AB' : '#9CA3AF',
+            boxShadow: nextButtonEnabled ? '0 4px 12px rgba(0, 71, 171, 0.3)' : 'none'
           }}
         >
-          {loading ? (
-            <div className="flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Checking Coverage...
-            </div>
-          ) : (
-            'CHECK AVAILABILITY'
-          )}
+          NEXT
         </Button>
 
-        {/* Privacy Note */}
         <p className="text-xs text-gray-400 text-center leading-relaxed">
           We only use your address to check coverage. No spam, no pressure.
         </p>
       </div>
 
-      {/* Blue Accent Bar */}
       <div 
         className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl"
         style={{
@@ -441,4 +347,121 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       />
     </div>
   );
+
+  const renderContactStep = () => (
+    <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md mx-auto relative">
+      <div className="text-center mb-8">
+        <div className="mb-4">
+          <MapPin className="w-8 h-8 text-[#0047AB] mx-auto" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+          Tell us about yourself
+        </h2>
+        <p className="text-sm text-gray-500 mt-3 leading-relaxed">
+          We'll use this info to check availability and keep you updated.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <Input
+          type="text"
+          placeholder="First Name"
+          value={contactInfo.firstName}
+          onChange={(e) => setContactInfo(prev => ({ ...prev, firstName: e.target.value }))}
+          className="w-full text-lg p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500"
+        />
+
+        <Input
+          type="text"
+          placeholder="Last Name"
+          value={contactInfo.lastName}
+          onChange={(e) => setContactInfo(prev => ({ ...prev, lastName: e.target.value }))}
+          className="w-full text-lg p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500"
+        />
+
+        <Input
+          type="email"
+          placeholder="Email Address"
+          value={contactInfo.email}
+          onChange={(e) => setContactInfo(prev => ({ ...prev, email: e.target.value }))}
+          className="w-full text-lg p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500"
+        />
+
+        <Button
+          onClick={handleCheckAddress}
+          disabled={loading || !contactInfo.firstName || !contactInfo.lastName || !contactInfo.email}
+          className="w-full py-3 text-white font-semibold rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            backgroundColor: (contactInfo.firstName && contactInfo.lastName && contactInfo.email && !loading) ? '#0047AB' : '#9CA3AF',
+            boxShadow: (contactInfo.firstName && contactInfo.lastName && contactInfo.email && !loading) ? '0 4px 12px rgba(0, 71, 171, 0.3)' : 'none'
+          }}
+        >
+          {loading ? (
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Checking Coverage...
+            </div>
+          ) : (
+            'CHECK MY ADDRESS'
+          )}
+        </Button>
+
+        <p className="text-xs text-gray-400 text-center leading-relaxed">
+          Selected address: {selectedAddress}
+        </p>
+      </div>
+
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl"
+        style={{
+          background: 'linear-gradient(to right, #0047AB, #007FFF)',
+        }}
+      />
+    </div>
+  );
+
+  const renderResultStep = () => (
+    <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md mx-auto relative">
+      {qualificationResult?.qualified ? (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+          <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-green-800 mb-2">🎉 Great news!</h2>
+          <p className="text-green-700 mb-6">{qualificationResult.message}</p>
+          <Button
+            onClick={handleContinue}
+            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold"
+          >
+            Continue
+          </Button>
+        </div>
+      ) : (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <div className="text-6xl mb-4">📡</div>
+          <h2 className="text-2xl font-bold text-red-800 mb-2">We're not quite there yet</h2>
+          <p className="text-red-700 mb-6">{qualificationResult?.message}</p>
+          <p className="text-sm text-gray-600">
+            Thanks for your interest! We're expanding quickly and will let you know as soon as SpryFi becomes available in your area.
+          </p>
+        </div>
+      )}
+
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl"
+        style={{
+          background: 'linear-gradient(to right, #0047AB, #007FFF)',
+        }}
+      />
+    </div>
+  );
+
+  switch (currentStep) {
+    case 'address':
+      return renderAddressStep();
+    case 'contact':
+      return renderContactStep();
+    case 'result':
+      return renderResultStep();
+    default:
+      return renderAddressStep();
+  }
 };
