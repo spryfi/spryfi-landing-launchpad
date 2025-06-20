@@ -36,33 +36,37 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     const initializeAutocomplete = () => {
       console.log('Initializing Google Places Autocomplete...');
       
-      const autocompleteEl = document.getElementById('spryfi-autocomplete') as any;
-      const nextButton = document.getElementById('next-button') as HTMLButtonElement;
-      
-      if (!autocompleteEl || !nextButton) {
-        console.log('Elements not found, retrying...');
-        setTimeout(initializeAutocomplete, 100);
-        return;
-      }
-
-      // Wait for Google Maps to be fully loaded
-      const checkGoogleMaps = () => {
+      // Wait for both Google Maps and the extended component library to load
+      const checkComponents = () => {
         if (!window.google?.maps?.places) {
-          console.log('Google Maps API not ready yet, retrying...');
-          setTimeout(checkGoogleMaps, 500);
+          console.log('Google Maps API not ready, retrying...');
+          setTimeout(checkComponents, 500);
           return;
         }
 
-        console.log('Google Maps API ready, setting up event listener...');
+        const autocompleteEl = document.getElementById('spryfi-autocomplete') as any;
+        const nextButton = document.getElementById('next-button') as HTMLButtonElement;
+        
+        if (!autocompleteEl || !nextButton) {
+          console.log('Elements not found, retrying...');
+          setTimeout(checkComponents, 100);
+          return;
+        }
+
+        console.log('Setting up place change event listener...');
 
         autocompleteEl.addEventListener('gmpx-placechange', async (event: any) => {
           const place = event.target.value;
-          console.log('Selected address:', place);
+          console.log('✅ Selected address:', place);
 
           if (!place) {
             setNextButtonEnabled(false);
+            nextButton.disabled = true;
+            nextButton.classList.add('opacity-50', 'cursor-not-allowed');
             return;
           }
+
+          setSelectedAddress(place);
 
           // Use Google's PlacesService to get full details
           const map = document.createElement("div");
@@ -75,26 +79,25 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             if (status !== window.google.maps.places.PlacesServiceStatus.OK || !results[0]) {
               console.warn('Place details not found');
               setNextButtonEnabled(false);
+              nextButton.disabled = true;
+              nextButton.classList.add('opacity-50', 'cursor-not-allowed');
               return;
             }
 
             const result = results[0];
             console.log('Place details:', result);
             
-            setSelectedAddress(result.formatted_address);
             setSelectedPlace(result);
-
-            const payload = {
-              address: result.formatted_address,
-              place_id: result.place_id,
-              latitude: result.geometry?.location?.lat(),
-              longitude: result.geometry?.location?.lng(),
-            };
 
             try {
               // Send to fwa-check API
               const response = await supabase.functions.invoke('fwa-check', {
-                body: payload
+                body: {
+                  address: result.formatted_address,
+                  place_id: result.place_id,
+                  latitude: result.geometry?.location?.lat(),
+                  longitude: result.geometry?.location?.lng(),
+                }
               });
 
               console.log('FWA check response:', response);
@@ -107,6 +110,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             } catch (error) {
               console.error('Error checking address:', error);
               setNextButtonEnabled(false);
+              nextButton.disabled = true;
+              nextButton.classList.add('opacity-50', 'cursor-not-allowed');
             }
           });
         });
@@ -114,11 +119,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         console.log('Google Places Autocomplete initialized successfully');
       };
 
-      checkGoogleMaps();
+      checkComponents();
     };
 
     // Initialize after a short delay to ensure DOM is ready
-    setTimeout(initializeAutocomplete, 100);
+    setTimeout(initializeAutocomplete, 200);
   }, []);
 
   const handleNext = (e: React.FormEvent) => {
@@ -321,19 +326,16 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       </div>
 
       <div className="space-y-6">
-        <div className="w-full px-0 py-0 relative z-10 bg-white">
+        <div className="w-full z-10 relative bg-white">
           <gmpx-placeautocomplete
             id="spryfi-autocomplete"
             placeholder="Start typing your address"
+            theme="filled"
             style={{ 
               width: '100%', 
-              display: 'block',
-              minHeight: '48px',
-              fontSize: '16px',
-              lineHeight: '1.5'
+              display: 'block'
             }}
-            theme="filled"
-            class="rounded-lg border border-gray-300 px-4 py-3 text-gray-900 shadow-sm focus:border-[#0047AB] outline-none"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:border-[#0047AB] outline-none"
           />
         </div>
 
