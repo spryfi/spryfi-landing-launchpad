@@ -40,22 +40,6 @@ export const Hero = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Load Google Places API
-  useEffect(() => {
-    if (!window.google) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyD6qNfHpq_KXUOHN_PjsUGqEygKIJ4R4t4&libraries=places&callback=initAutocomplete`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-
-      // Set up global callback function
-      window.initAutocomplete = window.initAutocomplete || (() => {
-        console.log('Google Places API loaded');
-      });
-    }
-  }, []);
-
   return (
     <>
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
