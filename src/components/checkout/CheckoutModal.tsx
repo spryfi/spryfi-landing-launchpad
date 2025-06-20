@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { AddressStep } from './steps/AddressStep';
 import { ContactStep } from './steps/ContactStep';
 import { QualificationSuccess } from './steps/QualificationSuccess';
@@ -95,6 +95,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogTitle className="sr-only">Check Internet Availability</DialogTitle>
         <div className="bg-white">
           {renderStep()}
         </div>

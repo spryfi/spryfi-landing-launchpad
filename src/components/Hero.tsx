@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowDown } from 'lucide-react';
@@ -43,10 +44,15 @@ export const Hero = () => {
   useEffect(() => {
     if (!window.google) {
       const script = document.createElement('script');
-      // Replace 'YOUR_GOOGLE_PLACES_API_KEY' with your actual API key
-      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_PLACES_API_KEY&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyD6qNfHpq_KXUOHN_PjsUGqEygKIJ4R4t4&libraries=places&callback=initAutocomplete`;
       script.async = true;
+      script.defer = true;
       document.head.appendChild(script);
+
+      // Set up global callback function
+      window.initAutocomplete = window.initAutocomplete || (() => {
+        console.log('Google Places API loaded');
+      });
     }
   }, []);
 

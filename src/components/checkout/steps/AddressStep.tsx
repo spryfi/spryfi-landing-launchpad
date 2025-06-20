@@ -1,8 +1,6 @@
 
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
 import { MapPin, Loader2 } from 'lucide-react';
@@ -15,6 +13,7 @@ interface AddressStepProps {
 declare global {
   interface Window {
     google: any;
+    initAutocomplete: () => void;
   }
 }
 
@@ -25,18 +24,34 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (window.google && inputRef.current) {
-      autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ['address'],
-        componentRestrictions: { country: 'us' }
-      });
+    // Initialize Google Places Autocomplete
+    const initAutocomplete = () => {
+      if (window.google && inputRef.current && !autocompleteRef.current) {
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+          types: ['address'],
+          componentRestrictions: { country: 'us' },
+          fields: ['place_id', 'formatted_address', 'address_components', 'geometry']
+        });
 
-      autocompleteRef.current.addListener('place_changed', () => {
-        const place = autocompleteRef.current.getPlace();
-        if (place.geometry) {
-          setAddress(place.formatted_address);
-        }
-      });
+        autocompleteRef.current.addListener('place_changed', () => {
+          const place = autocompleteRef.current.getPlace();
+          if (place.geometry && place.formatted_address) {
+            setAddress(place.formatted_address);
+          }
+        });
+      }
+    };
+
+    // Try to initialize immediately if Google is already loaded
+    if (window.google) {
+      initAutocomplete();
+    } else {
+      // Set up global function for script callback
+      window.initAutocomplete = initAutocomplete;
+      
+      // Also try with a slight delay
+      const timer = setTimeout(initAutocomplete, 1000);
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -139,14 +154,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         setLoading(false);
         return;
       }
-
-      // Update the lead with anchor_address_id
-      await supabase
-        .from('leads_fresh')
-        .update({ 
-          // Note: anchor_address_id field may need to be added to leads_fresh table
-        })
-        .eq('id', leadData.id);
 
       if (!qualified) {
         // Add to drip marketing
@@ -255,10 +262,13 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
           <input
             ref={inputRef}
+            id="address-input"
+            name="formatted_address"
             type="text"
             placeholder="Enter your address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
+            autoComplete="off"
             className="w-full rounded-lg transition-all duration-200 focus:outline-none"
             style={{
               height: '42px',
