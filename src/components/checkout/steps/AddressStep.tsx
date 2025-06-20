@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,51 +42,56 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       console.log('Initializing Google Places Autocomplete...');
       
-      const autocompleteEl = document.getElementById('spryfi-autocomplete') as any;
-      if (!autocompleteEl) {
+      const input = document.getElementById('address-input') as HTMLInputElement;
+      const nextButton = document.getElementById('next-button') as HTMLButtonElement;
+      
+      if (!input || !nextButton) {
         setTimeout(initializeAutocomplete, 100);
         return;
       }
 
-      autocompleteEl.addEventListener('gmp-placechange', async () => {
-        const place = autocompleteEl.value;
+      const autocomplete = new window.google.maps.places.Autocomplete(input, {
+        types: ['address'],
+        fields: ['place_id', 'formatted_address', 'geometry', 'address_components'],
+      });
+
+      autocomplete.addListener('place_changed', async () => {
+        const place = autocomplete.getPlace();
         console.log('Place selected:', place);
         
-        if (!place) {
-          console.warn('No place selected');
+        if (!place.place_id || !place.formatted_address) {
+          console.warn('Invalid place selected');
           setNextButtonEnabled(false);
           return;
         }
 
-        setSelectedAddress(place);
+        setSelectedAddress(place.formatted_address);
+        setSelectedPlace(place);
 
-        const autocompleteService = new window.google.maps.places.AutocompleteService();
-        const placesService = new window.google.maps.places.PlacesService(document.createElement('div'));
+        const payload = {
+          address: place.formatted_address,
+          place_id: place.place_id,
+          latitude: place.geometry?.location?.lat(),
+          longitude: place.geometry?.location?.lng(),
+        };
 
-        autocompleteService.getPlacePredictions({ input: place }, (predictions: any) => {
-          if (!predictions?.length) {
-            console.warn('No predictions found');
-            setNextButtonEnabled(false);
-            return;
-          }
-
-          const placeId = predictions[0].place_id;
-
-          placesService.getDetails({ 
-            placeId, 
-            fields: ['place_id', 'formatted_address', 'geometry', 'address_components'] 
-          }, async (placeDetails: any) => {
-            if (!placeDetails?.place_id) {
-              console.warn('Invalid place details');
-              setNextButtonEnabled(false);
-              return;
-            }
-
-            console.log('Place details received:', placeDetails);
-            setSelectedPlace(placeDetails);
-            setNextButtonEnabled(true);
+        try {
+          // Send to fwa-check API
+          const response = await supabase.functions.invoke('fwa-check', {
+            body: payload
           });
-        });
+
+          console.log('FWA check response:', response);
+          
+          // Enable the NEXT button after API call
+          setNextButtonEnabled(true);
+          nextButton.disabled = false;
+          nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+          
+        } catch (error) {
+          console.error('Error checking address:', error);
+          setNextButtonEnabled(false);
+        }
       });
 
       console.log('Google Places Autocomplete initialized successfully');
@@ -300,19 +304,12 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       <div className="space-y-6">
         <div className="relative">
-          <gmp-place-autocomplete
-            id="spryfi-autocomplete"
+          <input
+            id="address-input"
+            type="text"
             placeholder="Start typing your address..."
-            style={{
-              width: '100%',
-              padding: '12px 40px 12px 16px',
-              fontSize: '1rem',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-              outline: 'none',
-              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-              color: '#111827'
-            }}
+            className="w-full px-4 py-3 pr-10 border rounded-lg shadow-sm outline-none focus:border-[#0047AB] text-gray-900"
+            autoComplete="off"
           />
           <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
         </div>
@@ -322,7 +319,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           <span>No contracts • No credit checks • No hassle</span>
         </div>
 
-        <Button
+        <button
+          id="next-button"
           onClick={handleNext}
           disabled={!nextButtonEnabled}
           className="w-full py-3 text-white font-semibold rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -332,7 +330,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           }}
         >
           NEXT
-        </Button>
+        </button>
 
         <p className="text-xs text-gray-400 text-center leading-relaxed">
           We only use your address to check coverage. No spam, no pressure.
