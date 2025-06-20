@@ -37,6 +37,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           const place = autocompleteRef.current.getPlace();
           if (place.geometry && place.formatted_address) {
             setAddress(place.formatted_address);
+            handleAddressSelection(place);
           }
         });
       }
@@ -55,20 +56,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   }, []);
 
-  const handleSubmit = async () => {
-    if (!address || !autocompleteRef.current) return;
-
+  const handleAddressSelection = async (place: any) => {
     setLoading(true);
     
     try {
-      const place = autocompleteRef.current.getPlace();
-      
-      if (!place.geometry) {
-        alert('Please select a valid address from the dropdown');
-        setLoading(false);
-        return;
-      }
-
       const addressComponents = place.address_components;
       const streetNumber = addressComponents.find((c: any) => c.types.includes('street_number'))?.long_name || '';
       const route = addressComponents.find((c: any) => c.types.includes('route'))?.long_name || '';
@@ -209,6 +200,19 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   };
 
+  const handleSubmit = async () => {
+    if (!address || !autocompleteRef.current) return;
+
+    const place = autocompleteRef.current.getPlace();
+    
+    if (!place.geometry) {
+      alert('Please select a valid address from the dropdown');
+      return;
+    }
+
+    await handleAddressSelection(place);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md mx-auto relative">
       {/* Header Section */}
@@ -236,7 +240,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             autoComplete="off"
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0047AB] focus:border-transparent transition-all duration-200"
+            className="w-full rounded-lg px-4 py-3 text-gray-900 border border-gray-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-500 shadow-sm transition placeholder-gray-400"
           />
           <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
         </div>
