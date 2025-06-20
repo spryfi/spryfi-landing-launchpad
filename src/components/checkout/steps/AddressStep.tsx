@@ -13,63 +13,75 @@ interface AddressStepProps {
 declare global {
   interface Window {
     google: any;
-    initAutocomplete: () => void;
+    initAutocomplete?: () => void;
+  }
+  
+  namespace JSX {
+    interface IntrinsicElements {
+      'gmp-place-autocomplete': any;
+    }
   }
 }
 
 export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) => {
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
+  const [selectedPlace, setSelectedPlace] = useState<any>(null);
   const autocompleteRef = useRef<any>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const initAutocomplete = () => {
-      if (window.google && inputRef.current && !autocompleteRef.current) {
-        console.log('Initializing Google Places Autocomplete');
-        
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-          types: ['address'],
-          componentRestrictions: { country: 'us' },
-          fields: ['place_id', 'formatted_address', 'address_components', 'geometry']
-        });
-
-        autocompleteRef.current.addListener('place_changed', () => {
-          const place = autocompleteRef.current.getPlace();
-          console.log('Place selected:', place);
-          
-          if (place.geometry && place.formatted_address) {
-            setAddress(place.formatted_address);
-            // Automatically process the selected address
-            handleAddressSelection(place);
-          } else {
-            console.warn('Selected place is missing required data');
-          }
-        });
+    const initGooglePlaces = () => {
+      if (window.google?.maps?.places) {
+        console.log('Google Places API loaded successfully');
+        setupPlaceAutocomplete();
+      } else {
+        console.log('Waiting for Google Places API to load...');
+        setTimeout(initGooglePlaces, 500);
       }
     };
 
-    // Set up global callback function for Google Maps API
-    window.initAutocomplete = initAutocomplete;
+    const setupPlaceAutocomplete = () => {
+      const autocompleteEl = document.getElementById('spryfi-autocomplete');
+      if (!autocompleteEl) return;
 
-    // Try to initialize if Google is already loaded
-    if (window.google?.maps?.places) {
-      initAutocomplete();
-    } else {
-      // Retry with delays if Google isn't ready yet
-      const retryInit = () => {
-        if (window.google?.maps?.places) {
-          initAutocomplete();
-        } else {
-          setTimeout(retryInit, 500);
+      autocompleteEl.addEventListener('gmp-placechange', async () => {
+        const inputValue = (autocompleteEl as any).value;
+        setAddress(inputValue);
+        
+        if (!inputValue) return;
+
+        try {
+          // Use Places Service to get detailed place information
+          const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+          const request = {
+            query: inputValue,
+            fields: ['place_id', 'formatted_address', 'address_components', 'geometry']
+          };
+
+          service.textSearch(request, (results: any[], status: any) => {
+            if (status === window.google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+              const place = results[0];
+              console.log('Place found via text search:', place);
+              setSelectedPlace(place);
+              handleAddressSelection(place);
+            } else {
+              console.warn('No place found for:', inputValue);
+            }
+          });
+        } catch (error) {
+          console.error('Error processing place selection:', error);
         }
-      };
-      retryInit();
-    }
+      });
+    };
+
+    // Initialize when component mounts
+    initGooglePlaces();
 
     return () => {
-      if (autocompleteRef.current && window.google?.maps?.event) {
-        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      // Cleanup event listeners
+      const autocompleteEl = document.getElementById('spryfi-autocomplete');
+      if (autocompleteEl) {
+        autocompleteEl.removeEventListener('gmp-placechange', () => {});
       }
     };
   }, []);
@@ -249,19 +261,21 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   const handleSubmit = async () => {
-    if (!address || !autocompleteRef.current) {
-      alert('Please select an address from the dropdown suggestions');
+    if (!address) {
+      alert('Please enter and select an address');
       return;
     }
 
-    const place = autocompleteRef.current.getPlace();
-    
-    if (!place?.geometry) {
-      alert('Please select a valid address from the dropdown');
+    if (!selectedPlace) {
+      alert('Please wait for address validation or select from the suggestions');
       return;
     }
 
-    await handleAddressSelection(place);
+    // Address selection should have already triggered via the event listener
+    // If we reach here and haven't processed yet, try to process the selected place
+    if (selectedPlace && !loading) {
+      await handleAddressSelection(selectedPlace);
+    }
   };
 
   return (
@@ -282,18 +296,20 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       {/* Input Section */}
       <div className="space-y-6">
         <div className="relative">
-          <input
-            ref={inputRef}
-            id="address-input"
-            name="address"
-            type="text"
+          <gmp-place-autocomplete
+            id="spryfi-autocomplete"
             placeholder="Start typing your address..."
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            autoComplete="off"
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-gray-900 placeholder-gray-400"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+              fontSize: '16px',
+              outline: 'none'
+            }}
           />
-          <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
         </div>
 
         {/* Trust Badge */}
