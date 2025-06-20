@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
@@ -20,25 +21,58 @@ interface AddressStepProps {
 export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) => {
   const [loading, setLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
+  const [isGoogleReady, setIsGoogleReady] = useState(false);
+  const autocompleteRef = useRef<HTMLElement>(null);
   const { currentHook, isVisible } = useRotatingHook();
 
   useEffect(() => {
-    const autocomplete = document.getElementById('spryfi-autocomplete') as any;
+    // Wait for Google Maps API and extended components to be ready
+    const checkGoogleReady = () => {
+      if (window.google && window.google.maps && window.customElements?.get('gmpx-placeautocomplete')) {
+        setIsGoogleReady(true);
+        return true;
+      }
+      return false;
+    };
 
-    if (autocomplete) {
-      autocomplete.addEventListener('gmpx-placechange', (event: any) => {
-        setSelectedAddress(event.detail.place.formatted_address);
-      });
+    if (checkGoogleReady()) {
+      return;
     }
 
-    return () => {
-      if (autocomplete) {
-        autocomplete.removeEventListener('gmpx-placechange', (event: any) => {
-          setSelectedAddress(event.detail.place.formatted_address);
-        });
+    const interval = setInterval(() => {
+      if (checkGoogleReady()) {
+        clearInterval(interval);
       }
-    };
+    }, 100);
+
+    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!isGoogleReady) return;
+
+    const timer = setTimeout(() => {
+      const autocomplete = document.getElementById('spryfi-autocomplete') as any;
+      if (autocomplete) {
+        console.log('Setting up autocomplete listeners');
+        
+        const handlePlaceChange = (event: any) => {
+          console.log('Place changed:', event.detail);
+          if (event.detail?.place?.formatted_address) {
+            setSelectedAddress(event.detail.place.formatted_address);
+          }
+        };
+
+        autocomplete.addEventListener('gmpx-placechange', handlePlaceChange);
+        
+        return () => {
+          autocomplete.removeEventListener('gmpx-placechange', handlePlaceChange);
+        };
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [isGoogleReady]);
 
   const handleNext = async () => {
     if (!selectedAddress) {
@@ -156,18 +190,27 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       </div>
 
       <div className="w-full z-10 relative bg-white space-y-4">
-        <gmpx-placeautocomplete
-          id="spryfi-autocomplete"
-          placeholder="Start typing your address"
-          theme="filled"
-          style={{
-            width: '100%', 
-            display: 'block',
-            minHeight: '48px',
-            fontSize: '16px'
-          }}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-        />
+        <div className="relative w-full">
+          {isGoogleReady ? (
+            <gmpx-placeautocomplete
+              id="spryfi-autocomplete"
+              placeholder="Start typing your address"
+              theme="filled"
+              style={{
+                display: 'block',
+                width: '100%',
+                minHeight: '48px',
+                fontSize: '16px',
+                fontFamily: 'inherit'
+              }}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            />
+          ) : (
+            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-500 shadow-sm bg-gray-50">
+              Loading address search...
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center justify-center text-xs text-gray-500 space-x-4">
           <div className="flex items-center">
@@ -188,9 +231,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           id="next-button"
           type="button"
           onClick={handleNext}
-          disabled={!selectedAddress || loading}
+          disabled={!selectedAddress || loading || !isGoogleReady}
           className={`w-full py-4 text-lg font-semibold rounded-lg transition-all ${
-            selectedAddress && !loading
+            selectedAddress && !loading && isGoogleReady
               ? 'bg-blue-600 hover:bg-blue-700 text-white'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
           }`}
