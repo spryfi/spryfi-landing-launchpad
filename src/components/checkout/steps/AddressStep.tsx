@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,56 +43,68 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       console.log('Initializing Google Places Autocomplete...');
       
-      const input = document.getElementById('address-input') as HTMLInputElement;
+      const autocompleteEl = document.getElementById('spryfi-autocomplete') as any;
       const nextButton = document.getElementById('next-button') as HTMLButtonElement;
       
-      if (!input || !nextButton) {
+      if (!autocompleteEl || !nextButton) {
         setTimeout(initializeAutocomplete, 100);
         return;
       }
 
-      const autocomplete = new window.google.maps.places.Autocomplete(input, {
-        types: ['address'],
-        fields: ['place_id', 'formatted_address', 'geometry', 'address_components'],
-      });
+      autocompleteEl.addEventListener('gmpx-placechange', async (event: any) => {
+        const place = event.target.value;
+        console.log('Selected address:', place);
 
-      autocomplete.addListener('place_changed', async () => {
-        const place = autocomplete.getPlace();
-        console.log('Place selected:', place);
-        
-        if (!place.place_id || !place.formatted_address) {
-          console.warn('Invalid place selected');
+        if (!place) {
           setNextButtonEnabled(false);
           return;
         }
 
-        setSelectedAddress(place.formatted_address);
-        setSelectedPlace(place);
+        // Use Google's PlacesService to get full details
+        const map = document.createElement("div");
+        const placesService = new window.google.maps.places.PlacesService(map);
 
-        const payload = {
-          address: place.formatted_address,
-          place_id: place.place_id,
-          latitude: place.geometry?.location?.lat(),
-          longitude: place.geometry?.location?.lng(),
-        };
+        placesService.findPlaceFromQuery({
+          query: place,
+          fields: ['place_id', 'formatted_address', 'geometry', 'address_components']
+        }, async (results: any[], status: any) => {
+          if (status !== window.google.maps.places.PlacesServiceStatus.OK || !results[0]) {
+            console.warn('Place details not found');
+            setNextButtonEnabled(false);
+            return;
+          }
 
-        try {
-          // Send to fwa-check API
-          const response = await supabase.functions.invoke('fwa-check', {
-            body: payload
-          });
-
-          console.log('FWA check response:', response);
+          const result = results[0];
+          console.log('Place details:', result);
           
-          // Enable the NEXT button after API call
-          setNextButtonEnabled(true);
-          nextButton.disabled = false;
-          nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
-          
-        } catch (error) {
-          console.error('Error checking address:', error);
-          setNextButtonEnabled(false);
-        }
+          setSelectedAddress(result.formatted_address);
+          setSelectedPlace(result);
+
+          const payload = {
+            address: result.formatted_address,
+            place_id: result.place_id,
+            latitude: result.geometry?.location?.lat(),
+            longitude: result.geometry?.location?.lng(),
+          };
+
+          try {
+            // Send to fwa-check API
+            const response = await supabase.functions.invoke('fwa-check', {
+              body: payload
+            });
+
+            console.log('FWA check response:', response);
+            
+            // Enable the NEXT button after API call
+            setNextButtonEnabled(true);
+            nextButton.disabled = false;
+            nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+          } catch (error) {
+            console.error('Error checking address:', error);
+            setNextButtonEnabled(false);
+          }
+        });
       });
 
       console.log('Google Places Autocomplete initialized successfully');
@@ -105,7 +118,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   }, []);
 
-  const handleNext = () => {
+  const handleNext = (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent form refresh
     setCurrentStep('contact');
   };
 
@@ -178,7 +192,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     return mockResult;
   };
 
-  const handleCheckAddress = async () => {
+  const handleCheckAddress = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent form refresh
+    
     if (!contactInfo.firstName || !contactInfo.lastName || !contactInfo.email) {
       alert('Please fill in all fields');
       return;
@@ -302,14 +318,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </p>
       </div>
 
-      <div className="space-y-6">
+      <form onSubmit={handleNext} className="space-y-6">
         <div className="relative">
-          <input
-            id="address-input"
-            type="text"
+          <gmpx-placeautocomplete
+            id="spryfi-autocomplete"
+            style={{ width: '100%' }}
             placeholder="Start typing your address..."
-            className="w-full px-4 py-3 pr-10 border rounded-lg shadow-sm outline-none focus:border-[#0047AB] text-gray-900"
-            autoComplete="off"
+            theme="filled"
+            class="w-full px-4 py-3 pr-10 border rounded-lg shadow-sm outline-none focus:border-[#0047AB] text-gray-900"
           />
           <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
         </div>
@@ -321,7 +337,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
         <button
           id="next-button"
-          onClick={handleNext}
+          type="submit"
           disabled={!nextButtonEnabled}
           className="w-full py-3 text-white font-semibold rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
@@ -335,7 +351,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         <p className="text-xs text-gray-400 text-center leading-relaxed">
           We only use your address to check coverage. No spam, no pressure.
         </p>
-      </div>
+      </form>
 
       <div 
         className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl"
@@ -360,7 +376,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </p>
       </div>
 
-      <div className="space-y-4">
+      <form onSubmit={handleCheckAddress} className="space-y-4">
         <Input
           type="text"
           placeholder="First Name"
@@ -386,7 +402,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         />
 
         <Button
-          onClick={handleCheckAddress}
+          type="submit"
           disabled={loading || !contactInfo.firstName || !contactInfo.lastName || !contactInfo.email}
           className="w-full py-3 text-white font-semibold rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
@@ -407,7 +423,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         <p className="text-xs text-gray-400 text-center leading-relaxed">
           Selected address: {selectedAddress}
         </p>
-      </div>
+      </form>
 
       <div 
         className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl"

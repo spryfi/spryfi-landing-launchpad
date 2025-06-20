@@ -9,6 +9,13 @@ declare global {
         placeholder?: string;
         style?: React.CSSProperties;
       };
+      'gmpx-placeautocomplete': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        id?: string;
+        placeholder?: string;
+        style?: React.CSSProperties;
+        theme?: string;
+        class?: string;
+      };
     }
   }
 }
