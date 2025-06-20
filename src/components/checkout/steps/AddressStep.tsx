@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
@@ -20,12 +20,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
 
   useEffect(() => {
     const initializeAutocomplete = () => {
-      if (!window.google?.maps?.places || !inputRef.current) {
+      if (!window.google?.maps?.places) {
         console.log('Google Maps API not ready yet, retrying...');
         setTimeout(initializeAutocomplete, 500);
         return;
@@ -33,27 +31,50 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       console.log('Initializing Google Places Autocomplete...');
       
-      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ['address'],
-        fields: ['place_id', 'formatted_address', 'geometry', 'address_components']
-      });
+      const autocompleteEl = document.getElementById('spryfi-autocomplete') as any;
+      if (!autocompleteEl) {
+        setTimeout(initializeAutocomplete, 100);
+        return;
+      }
 
-      autocompleteRef.current = autocomplete;
-
-      autocomplete.addListener('place_changed', async () => {
-        const place = autocomplete.getPlace();
-        console.log('Place selected:', place);
+      autocompleteEl.addEventListener('gmp-placechange', async () => {
+        const selectedPlace = autocompleteEl.value;
+        console.log('Place selected:', selectedPlace);
         
-        if (!place || !place.place_id) {
-          console.warn('Invalid place selected');
+        if (!selectedPlace) {
+          console.warn('No place selected');
           return;
         }
 
-        setAddress(place.formatted_address || '');
-        setSelectedPlace(place);
-        
-        // Automatically process the address selection
-        await handleAddressSelection(place);
+        setAddress(selectedPlace);
+
+        const autocompleteService = new window.google.maps.places.AutocompleteService();
+        const placesService = new window.google.maps.places.PlacesService(document.createElement('div'));
+
+        autocompleteService.getPlacePredictions({ input: selectedPlace }, (predictions: any) => {
+          if (!predictions?.length) {
+            console.warn('No predictions found');
+            return;
+          }
+
+          const placeId = predictions[0].place_id;
+
+          placesService.getDetails({ 
+            placeId, 
+            fields: ['place_id', 'formatted_address', 'geometry', 'address_components'] 
+          }, async (place: any) => {
+            if (!place?.place_id) {
+              console.warn('Invalid place details');
+              return;
+            }
+
+            console.log('Place details received:', place);
+            setSelectedPlace(place);
+            
+            // Automatically process the address selection
+            await handleAddressSelection(place);
+          });
+        });
       });
 
       console.log('Google Places Autocomplete initialized successfully');
@@ -277,16 +298,19 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       {/* Input Section */}
       <div className="space-y-6">
         <div className="relative">
-          <input
-            ref={inputRef}
-            id="address-input"
-            name="address"
-            type="text"
+          <gmp-place-autocomplete
+            id="spryfi-autocomplete"
             placeholder="Start typing your address..."
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-gray-900 placeholder-gray-400"
-            autoComplete="off"
+            style={{
+              width: '100%',
+              padding: '12px 40px 12px 16px',
+              fontSize: '1rem',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+              outline: 'none',
+              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+              color: '#111827'
+            }}
           />
           <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
         </div>
