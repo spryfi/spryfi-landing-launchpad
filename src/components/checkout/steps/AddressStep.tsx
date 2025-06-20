@@ -13,13 +13,6 @@ interface AddressStepProps {
 declare global {
   interface Window {
     google: any;
-    initAutocomplete?: () => void;
-  }
-  
-  namespace JSX {
-    interface IntrinsicElements {
-      'gmp-place-autocomplete': any;
-    }
   }
 }
 
@@ -27,63 +20,52 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
   useEffect(() => {
-    const initGooglePlaces = () => {
-      if (window.google?.maps?.places) {
-        console.log('Google Places API loaded successfully');
-        setupPlaceAutocomplete();
-      } else {
-        console.log('Waiting for Google Places API to load...');
-        setTimeout(initGooglePlaces, 500);
+    const initializeAutocomplete = () => {
+      if (!window.google?.maps?.places || !inputRef.current) {
+        console.log('Google Maps API not ready yet, retrying...');
+        setTimeout(initializeAutocomplete, 500);
+        return;
       }
-    };
 
-    const setupPlaceAutocomplete = () => {
-      const autocompleteEl = document.getElementById('spryfi-autocomplete');
-      if (!autocompleteEl) return;
-
-      autocompleteEl.addEventListener('gmp-placechange', async () => {
-        const inputValue = (autocompleteEl as any).value;
-        setAddress(inputValue);
-        
-        if (!inputValue) return;
-
-        try {
-          // Use Places Service to get detailed place information
-          const service = new window.google.maps.places.PlacesService(document.createElement('div'));
-          const request = {
-            query: inputValue,
-            fields: ['place_id', 'formatted_address', 'address_components', 'geometry']
-          };
-
-          service.textSearch(request, (results: any[], status: any) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
-              const place = results[0];
-              console.log('Place found via text search:', place);
-              setSelectedPlace(place);
-              handleAddressSelection(place);
-            } else {
-              console.warn('No place found for:', inputValue);
-            }
-          });
-        } catch (error) {
-          console.error('Error processing place selection:', error);
-        }
+      console.log('Initializing Google Places Autocomplete...');
+      
+      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ['address'],
+        fields: ['place_id', 'formatted_address', 'geometry', 'address_components']
       });
+
+      autocompleteRef.current = autocomplete;
+
+      autocomplete.addListener('place_changed', async () => {
+        const place = autocomplete.getPlace();
+        console.log('Place selected:', place);
+        
+        if (!place || !place.place_id) {
+          console.warn('Invalid place selected');
+          return;
+        }
+
+        setAddress(place.formatted_address || '');
+        setSelectedPlace(place);
+        
+        // Automatically process the address selection
+        await handleAddressSelection(place);
+      });
+
+      console.log('Google Places Autocomplete initialized successfully');
     };
 
-    // Initialize when component mounts
-    initGooglePlaces();
-
-    return () => {
-      // Cleanup event listeners
-      const autocompleteEl = document.getElementById('spryfi-autocomplete');
-      if (autocompleteEl) {
-        autocompleteEl.removeEventListener('gmp-placechange', () => {});
-      }
-    };
+    // Wait for the window to load completely
+    if (document.readyState === 'complete') {
+      initializeAutocomplete();
+    } else {
+      window.addEventListener('load', initializeAutocomplete);
+      return () => window.removeEventListener('load', initializeAutocomplete);
+    }
   }, []);
 
   const handleAddressSelection = async (place: any) => {
@@ -115,7 +97,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         longitude
       });
 
-      // Call the coverage API with detailed logging
+      // Call the coverage API
       console.log('Calling fwa-check API...');
       const coverageResponse = await supabase.functions.invoke('fwa-check', {
         body: {
@@ -144,7 +126,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const { qualified, network_type, raw_data } = coverageResponse.data;
       console.log('Coverage result:', { qualified, network_type });
 
-      // First, insert or get anchor_address
+      // Create/update anchor_address
       console.log('Creating/updating anchor_address...');
       const { data: anchorData, error: anchorError } = await supabase
         .from('anchor_address')
@@ -209,7 +191,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         await supabase
           .from('drip_marketing')
           .insert({
-            email: '', // Will be filled when we get contact info
+            email: '',
             name: '',
             address: place.formatted_address,
             status: 'active',
@@ -271,8 +253,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       return;
     }
 
-    // Address selection should have already triggered via the event listener
-    // If we reach here and haven't processed yet, try to process the selected place
+    // Address selection should have already triggered
     if (selectedPlace && !loading) {
       await handleAddressSelection(selectedPlace);
     }
@@ -296,18 +277,16 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       {/* Input Section */}
       <div className="space-y-6">
         <div className="relative">
-          <gmp-place-autocomplete
-            id="spryfi-autocomplete"
+          <input
+            ref={inputRef}
+            id="address-input"
+            name="address"
+            type="text"
             placeholder="Start typing your address..."
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-gray-900 placeholder-gray-400"
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-              fontSize: '16px',
-              outline: 'none'
-            }}
+            autoComplete="off"
           />
           <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
         </div>
