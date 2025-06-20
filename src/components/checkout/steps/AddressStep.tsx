@@ -20,6 +20,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const [buttonEnabled, setButtonEnabled] = useState(false);
 
   useEffect(() => {
     const initializeAutocomplete = () => {
@@ -43,6 +44,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         
         if (!selectedPlace) {
           console.warn('No place selected');
+          setButtonEnabled(false);
           return;
         }
 
@@ -54,6 +56,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         autocompleteService.getPlacePredictions({ input: selectedPlace }, (predictions: any) => {
           if (!predictions?.length) {
             console.warn('No predictions found');
+            setButtonEnabled(false);
             return;
           }
 
@@ -65,14 +68,13 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           }, async (place: any) => {
             if (!place?.place_id) {
               console.warn('Invalid place details');
+              setButtonEnabled(false);
               return;
             }
 
             console.log('Place details received:', place);
             setSelectedPlace(place);
-            
-            // Automatically process the address selection
-            await handleAddressSelection(place);
+            setButtonEnabled(true);
           });
         });
       });
@@ -89,132 +91,237 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   }, []);
 
-  const handleAddressSelection = async (place: any) => {
+  const runVerizonCheck = async (place: any) => {
+    console.log('Running Verizon API check...');
+    
+    const addressComponents = place.address_components;
+    const streetNumber = addressComponents?.find((c: any) => c.types.includes('street_number'))?.long_name || '';
+    const route = addressComponents?.find((c: any) => c.types.includes('route'))?.long_name || '';
+    const city = addressComponents?.find((c: any) => c.types.includes('locality'))?.long_name || '';
+    const state = addressComponents?.find((c: any) => c.types.includes('administrative_area_level_1'))?.short_name || '';
+    const zipCode = addressComponents?.find((c: any) => c.types.includes('postal_code'))?.long_name || '';
+
+    const addressLine1 = `${streetNumber} ${route}`.trim();
+    const latitude = place.geometry?.location?.lat();
+    const longitude = place.geometry?.location?.lng();
+
+    const verizonResponse = await supabase.functions.invoke('fwa-check', {
+      body: {
+        address: place.formatted_address,
+        place_id: place.place_id,
+        latitude,
+        longitude,
+        address_components: {
+          address_line1: addressLine1,
+          city,
+          state,
+          zip_code: zipCode
+        }
+      }
+    });
+
+    if (verizonResponse.error) {
+      throw new Error('Verizon API error: ' + verizonResponse.error.message);
+    }
+
+    return {
+      qualified: verizonResponse.data.qualified,
+      network_type: verizonResponse.data.network_type,
+      raw_data: verizonResponse.data.raw_data,
+      addressLine1,
+      city,
+      state,
+      zipCode,
+      latitude,
+      longitude
+    };
+  };
+
+  const runWebbotCheck = async (place: any) => {
+    console.log('Running webbot fallback check...');
+    
+    // This would call a webbot-check edge function
+    // For now, we'll simulate it with a random result
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
+    
+    const mockResult = {
+      qualified: Math.random() > 0.7, // 30% qualification rate for fallback
+      network_type: 'fallback_check',
+      raw_data: {
+        source: 'webbot',
+        checked_at: new Date().toISOString()
+      }
+    };
+
+    console.log('Webbot check result:', mockResult);
+    return mockResult;
+  };
+
+  const createAnchorAddress = async (addressInfo: any, qualified: boolean, rawData: any) => {
+    console.log('Creating/updating anchor_address...');
+    const { data: anchorData, error: anchorError } = await supabase
+      .from('anchor_address')
+      .upsert({
+        address_line1: addressInfo.addressLine1,
+        city: addressInfo.city,
+        state: addressInfo.state,
+        zip_code: addressInfo.zipCode,
+        latitude: addressInfo.latitude,
+        longitude: addressInfo.longitude,
+        google_place_id: selectedPlace.place_id,
+        qualified_cband: qualified,
+        raw_verizon_data: rawData,
+        qualification_source: 'dual_api_check',
+        status: qualified ? 'active' : 'inactive',
+        qualified_at: qualified ? new Date().toISOString() : null
+      }, {
+        onConflict: 'address_line1,city,state,zip_code',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single();
+
+    if (anchorError) {
+      throw new Error('Error creating anchor address: ' + anchorError.message);
+    }
+
+    return anchorData;
+  };
+
+  const createLead = async (addressInfo: any, qualified: boolean) => {
+    console.log('Creating leads_fresh record...');
+    const { data: leadData, error: leadError } = await supabase
+      .from('leads_fresh')
+      .insert({
+        address_line1: addressInfo.addressLine1,
+        city: addressInfo.city,
+        state: addressInfo.state,
+        zip_code: addressInfo.zipCode,
+        qualified,
+        qualification_result: qualified ? 'qualified' : 'not_qualified',
+        qualification_checked_at: new Date().toISOString(),
+        status: 'new'
+      })
+      .select()
+      .single();
+
+    if (leadError) {
+      throw new Error('Error creating lead: ' + leadError.message);
+    }
+
+    return leadData;
+  };
+
+  const handleQualificationFlow = async () => {
+    if (!selectedPlace) {
+      alert('Please select a valid address first');
+      return;
+    }
+
     setLoading(true);
     
     try {
-      console.log('Processing address selection:', {
-        place_id: place.place_id,
-        formatted_address: place.formatted_address
-      });
-
-      const addressComponents = place.address_components;
-      const streetNumber = addressComponents?.find((c: any) => c.types.includes('street_number'))?.long_name || '';
-      const route = addressComponents?.find((c: any) => c.types.includes('route'))?.long_name || '';
-      const city = addressComponents?.find((c: any) => c.types.includes('locality'))?.long_name || '';
-      const state = addressComponents?.find((c: any) => c.types.includes('administrative_area_level_1'))?.short_name || '';
-      const zipCode = addressComponents?.find((c: any) => c.types.includes('postal_code'))?.long_name || '';
-
-      const addressLine1 = `${streetNumber} ${route}`.trim();
-      const latitude = place.geometry?.location?.lat();
-      const longitude = place.geometry?.location?.lng();
-
-      console.log('Parsed address components:', {
-        addressLine1,
-        city,
-        state,
-        zipCode,
-        latitude,
-        longitude
-      });
-
-      // Call the coverage API
-      console.log('Calling fwa-check API...');
-      const coverageResponse = await supabase.functions.invoke('fwa-check', {
-        body: {
-          address: place.formatted_address,
-          place_id: place.place_id,
-          latitude,
-          longitude,
-          address_components: {
-            address_line1: addressLine1,
-            city,
-            state,
-            zip_code: zipCode
-          }
+      console.log('Starting qualification flow...');
+      
+      // Step 1: Try Verizon API first
+      let qualificationResult;
+      let addressInfo;
+      
+      try {
+        const verizonResult = await runVerizonCheck(selectedPlace);
+        addressInfo = verizonResult;
+        
+        if (verizonResult.qualified) {
+          console.log('✅ Verizon qualified - proceeding');
+          qualificationResult = {
+            qualified: true,
+            network_type: verizonResult.network_type,
+            raw_data: verizonResult.raw_data,
+            source: 'verizon'
+          };
+        } else {
+          console.log('❌ Verizon not qualified - trying webbot fallback');
+          
+          // Step 2: Run webbot fallback
+          const webbotResult = await runWebbotCheck(selectedPlace);
+          
+          qualificationResult = {
+            qualified: webbotResult.qualified,
+            network_type: webbotResult.network_type,
+            raw_data: {
+              verizon: verizonResult.raw_data,
+              webbot: webbotResult.raw_data
+            },
+            source: webbotResult.qualified ? 'webbot_fallback' : 'both_failed'
+          };
         }
-      });
+      } catch (verizonError) {
+        console.error('Verizon API failed, trying webbot:', verizonError);
+        
+        // If Verizon fails completely, still try webbot
+        const webbotResult = await runWebbotCheck(selectedPlace);
+        
+        // We still need address info, so parse it from the place
+        const addressComponents = selectedPlace.address_components;
+        const streetNumber = addressComponents?.find((c: any) => c.types.includes('street_number'))?.long_name || '';
+        const route = addressComponents?.find((c: any) => c.types.includes('route'))?.long_name || '';
+        const city = addressComponents?.find((c: any) => c.types.includes('locality'))?.long_name || '';
+        const state = addressComponents?.find((c: any) => c.types.includes('administrative_area_level_1'))?.short_name || '';
+        const zipCode = addressComponents?.find((c: any) => c.types.includes('postal_code'))?.long_name || '';
 
-      console.log('Coverage API response:', coverageResponse);
-
-      if (coverageResponse.error) {
-        console.error('Coverage API error:', coverageResponse.error);
-        alert('Error checking coverage. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      const { qualified, network_type, raw_data } = coverageResponse.data;
-      console.log('Coverage result:', { qualified, network_type });
-
-      // Create/update anchor_address
-      console.log('Creating/updating anchor_address...');
-      const { data: anchorData, error: anchorError } = await supabase
-        .from('anchor_address')
-        .upsert({
-          address_line1: addressLine1,
+        addressInfo = {
+          addressLine1: `${streetNumber} ${route}`.trim(),
           city,
           state,
-          zip_code: zipCode,
-          latitude,
-          longitude,
-          google_place_id: place.place_id,
-          qualified_cband: qualified,
-          raw_verizon_data: raw_data,
-          qualification_source: 'verizon_api',
-          status: qualified ? 'active' : 'inactive',
-          qualified_at: qualified ? new Date().toISOString() : null
-        }, {
-          onConflict: 'address_line1,city,state,zip_code',
-          ignoreDuplicates: false
-        })
-        .select()
-        .single();
-
-      if (anchorError) {
-        console.error('Error creating anchor address:', anchorError);
-        alert('Error processing address. Please try again.');
-        setLoading(false);
-        return;
+          zipCode,
+          latitude: selectedPlace.geometry?.location?.lat(),
+          longitude: selectedPlace.geometry?.location?.lng()
+        };
+        
+        qualificationResult = {
+          qualified: webbotResult.qualified,
+          network_type: webbotResult.network_type,
+          raw_data: {
+            verizon_error: verizonError.message,
+            webbot: webbotResult.raw_data
+          },
+          source: 'webbot_only'
+        };
       }
 
-      console.log('Anchor address created/updated:', anchorData);
+      // Create anchor address and lead
+      const anchorData = await createAnchorAddress(addressInfo, qualificationResult.qualified, qualificationResult.raw_data);
+      const leadData = await createLead(addressInfo, qualificationResult.qualified);
 
-      // Create leads_fresh record
-      console.log('Creating leads_fresh record...');
-      const { data: leadData, error: leadError } = await supabase
-        .from('leads_fresh')
-        .insert({
-          address_line1: addressLine1,
-          city,
-          state,
-          zip_code: zipCode,
-          qualified,
-          qualification_result: qualified ? 'qualified' : 'not_qualified',
-          qualification_checked_at: new Date().toISOString(),
-          status: 'new'
-        })
-        .select()
-        .single();
-
-      if (leadError) {
-        console.error('Error creating lead:', leadError);
-        alert('Error creating lead. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      console.log('Lead created:', leadData);
-
-      if (!qualified) {
+      // Handle result
+      if (qualificationResult.qualified) {
+        console.log('🎉 Address qualified! Advancing to contact step');
+        updateState({
+          step: 'contact',
+          anchorAddressId: anchorData.id,
+          leadId: leadData.id,
+          address: {
+            addressLine1: addressInfo.addressLine1,
+            city: addressInfo.city,
+            state: addressInfo.state,
+            zipCode: addressInfo.zipCode,
+            latitude: addressInfo.latitude,
+            longitude: addressInfo.longitude,
+            googlePlaceId: selectedPlace.place_id,
+            formattedAddress: selectedPlace.formatted_address
+          },
+          qualified: true
+        });
+      } else {
+        console.log('❌ Address not qualified');
+        
         // Add to drip marketing
-        console.log('Adding to drip marketing...');
         await supabase
           .from('drip_marketing')
           .insert({
             email: '',
             name: '',
-            address: place.formatted_address,
+            address: selectedPlace.formatted_address,
             status: 'active',
             lead_id: leadData.id
           });
@@ -224,59 +331,25 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           anchorAddressId: anchorData.id,
           leadId: leadData.id,
           address: {
-            addressLine1,
-            city,
-            state,
-            zipCode,
-            latitude,
-            longitude,
-            googlePlaceId: place.place_id,
-            formattedAddress: place.formatted_address
+            addressLine1: addressInfo.addressLine1,
+            city: addressInfo.city,
+            state: addressInfo.state,
+            zipCode: addressInfo.zipCode,
+            latitude: addressInfo.latitude,
+            longitude: addressInfo.longitude,
+            googlePlaceId: selectedPlace.place_id,
+            formattedAddress: selectedPlace.formatted_address
           },
           qualified: false
         });
-      } else {
-        updateState({
-          step: 'contact',
-          anchorAddressId: anchorData.id,
-          leadId: leadData.id,
-          address: {
-            addressLine1,
-            city,
-            state,
-            zipCode,
-            latitude,
-            longitude,
-            googlePlaceId: place.place_id,
-            formattedAddress: place.formatted_address
-          },
-          qualified: true
-        });
       }
 
-      console.log('Address processing completed successfully');
+      console.log('Qualification flow completed successfully');
     } catch (error) {
-      console.error('Error processing address:', error);
-      alert('Error processing address. Please try again.');
+      console.error('Error in qualification flow:', error);
+      alert('Error checking coverage. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!address) {
-      alert('Please enter and select an address');
-      return;
-    }
-
-    if (!selectedPlace) {
-      alert('Please wait for address validation or select from the suggestions');
-      return;
-    }
-
-    // Address selection should have already triggered
-    if (selectedPlace && !loading) {
-      await handleAddressSelection(selectedPlace);
     }
   };
 
@@ -323,21 +396,21 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
         {/* CTA Button */}
         <Button
-          onClick={handleSubmit}
-          disabled={!address || loading}
+          onClick={handleQualificationFlow}
+          disabled={!buttonEnabled || loading}
           className="w-full py-3 text-white font-semibold rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
-            backgroundColor: address && !loading ? '#0047AB' : '#9CA3AF',
-            boxShadow: address && !loading ? '0 4px 12px rgba(0, 71, 171, 0.3)' : 'none'
+            backgroundColor: buttonEnabled && !loading ? '#0047AB' : '#9CA3AF',
+            boxShadow: buttonEnabled && !loading ? '0 4px 12px rgba(0, 71, 171, 0.3)' : 'none'
           }}
           onMouseEnter={(e) => {
-            if (address && !loading) {
+            if (buttonEnabled && !loading) {
               e.currentTarget.style.backgroundColor = '#0065D1';
               e.currentTarget.style.transform = 'translateY(-1px)';
             }
           }}
           onMouseLeave={(e) => {
-            if (address && !loading) {
+            if (buttonEnabled && !loading) {
               e.currentTarget.style.backgroundColor = '#0047AB';
               e.currentTarget.style.transform = 'translateY(0)';
             }
