@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
-import { MapPin, Loader2 } from 'lucide-react';
+import { MapPin, Loader2, Shield } from 'lucide-react';
 
 interface AddressStepProps {
   state: CheckoutState;
@@ -210,114 +210,63 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div 
-      className="rounded-xl max-w-md mx-auto relative transition-all duration-300"
-      style={{
-        background: 'linear-gradient(to bottom, #0047ab 0%, #0047ab 50%, #ffffff 100%)',
-        padding: '48px 32px',
-        borderRadius: '18px',
-        boxShadow: `
-          inset 0 1px 4px rgba(255, 255, 255, 0.2),
-          inset 0 -1px 3px rgba(0, 0, 0, 0.05),
-          0 4px 12px rgba(0, 0, 0, 0.15),
-          0 16px 32px rgba(0, 0, 0, 0.08)
-        `,
-        transform: 'translateZ(0)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = `
-          inset 0 1px 4px rgba(255, 255, 255, 0.2),
-          inset 0 -1px 3px rgba(0, 0, 0, 0.05),
-          0 8px 24px rgba(0, 0, 0, 0.2),
-          0 24px 48px rgba(0, 0, 0, 0.1)
-        `;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = `
-          inset 0 1px 4px rgba(255, 255, 255, 0.2),
-          inset 0 -1px 3px rgba(0, 0, 0, 0.05),
-          0 4px 12px rgba(0, 0, 0, 0.15),
-          0 16px 32px rgba(0, 0, 0, 0.08)
-        `;
-      }}
-    >
+    <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md mx-auto relative">
+      {/* Header Section */}
       <div className="text-center mb-8">
-        <div className="text-3xl mb-4">📍</div>
-        <h2 className="text-2xl font-bold mb-2" style={{ color: 'white' }}>
-          Let's see if SpryFi works at your address.
+        <div className="mb-4">
+          <MapPin className="w-8 h-8 text-[#0047AB] mx-auto" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+          Check if SpryFi works at your address
         </h2>
-        <p className="mb-1" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-          Type it in below — no contracts, no hassle.
-        </p>
-        <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>
-          We'll only use your address to check coverage — no spam, no pressure.
+        <p className="text-sm text-gray-500 mt-3 leading-relaxed">
+          Enter your address below to see if our fast, contract-free internet is available in your area.
         </p>
       </div>
 
+      {/* Input Section */}
       <div className="space-y-6">
         <div className="relative">
-          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
           <input
             ref={inputRef}
             id="address-input"
             name="formatted_address"
             type="text"
-            placeholder="Enter your address"
+            placeholder="Enter your full address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             autoComplete="off"
-            className="w-full rounded-lg transition-all duration-200 focus:outline-none"
-            style={{
-              height: '42px',
-              padding: '10px 16px 10px 48px',
-              fontSize: '15px',
-              borderRadius: '6px',
-              background: 'linear-gradient(to right, #eaf4ff, #dbeeff)',
-              border: '1px solid #aad4ff',
-              boxShadow: '0 1px 6px rgba(0, 112, 243, 0.08)',
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#0070f3';
-              e.target.style.boxShadow = '0 0 0 3px rgba(0, 112, 243, 0.2)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#aad4ff';
-              e.target.style.boxShadow = '0 1px 6px rgba(0, 112, 243, 0.08)';
-            }}
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0047AB] focus:border-transparent transition-all duration-200"
           />
+          <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
         </div>
 
-        {/* Cobalt divider bar above the button */}
-        <div 
-          className="w-full"
-          style={{
-            height: '3px',
-            background: 'linear-gradient(to right, #0047ab, #0070f3)',
-            borderRadius: '1.5px',
-            margin: '24px 0 12px',
-          }}
-        />
+        {/* Trust Badge */}
+        <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+          <Shield className="w-4 h-4 text-[#0047AB]" />
+          <span>No contracts • No credit checks • No hassle</span>
+        </div>
 
+        {/* CTA Button */}
         <Button
           onClick={handleSubmit}
           disabled={!address || loading}
-          className="w-full py-4 text-lg font-bold rounded-full transition-all duration-300 hover:shadow-lg"
+          className="w-full py-3 text-white font-semibold rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
-            background: address ? (loading ? '#0047AB' : 'linear-gradient(to right, #0047AB, #007FFF)') : '#ccc',
-            color: 'white'
+            backgroundColor: address && !loading ? '#0047AB' : '#9CA3AF',
+            boxShadow: address && !loading ? '0 4px 12px rgba(0, 71, 171, 0.3)' : 'none'
           }}
           onMouseEnter={(e) => {
             if (address && !loading) {
-              e.currentTarget.style.transform = 'scale(1.02)';
-              e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,112,243,0.2)';
+              e.currentTarget.style.backgroundColor = '#0065D1';
+              e.currentTarget.style.transform = 'translateY(-1px)';
             }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '';
+            if (address && !loading) {
+              e.currentTarget.style.backgroundColor = '#0047AB';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }
           }}
         >
           {loading ? (
@@ -326,12 +275,17 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
               Checking Coverage...
             </div>
           ) : (
-            'Check Availability'
+            'CHECK AVAILABILITY'
           )}
         </Button>
+
+        {/* Privacy Note */}
+        <p className="text-xs text-gray-400 text-center leading-relaxed">
+          We only use your address to check coverage. No spam, no pressure.
+        </p>
       </div>
 
-      {/* Branding bar at bottom */}
+      {/* Blue Accent Bar */}
       <div 
         className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl"
         style={{
