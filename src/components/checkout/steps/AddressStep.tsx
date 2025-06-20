@@ -26,6 +26,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   useEffect(() => {
     const initAutocomplete = () => {
       if (window.google && inputRef.current && !autocompleteRef.current) {
+        console.log('Initializing Google Places Autocomplete');
+        
         autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
           types: ['address'],
           componentRestrictions: { country: 'us' },
@@ -34,9 +36,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
         autocompleteRef.current.addListener('place_changed', () => {
           const place = autocompleteRef.current.getPlace();
+          console.log('Place selected:', place);
+          
           if (place.geometry && place.formatted_address) {
             setAddress(place.formatted_address);
+            // Automatically process the selected address
             handleAddressSelection(place);
+          } else {
+            console.warn('Selected place is missing required data');
           }
         });
       }
@@ -46,12 +53,12 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     window.initAutocomplete = initAutocomplete;
 
     // Try to initialize if Google is already loaded
-    if (window.google) {
+    if (window.google?.maps?.places) {
       initAutocomplete();
     } else {
       // Retry with delays if Google isn't ready yet
       const retryInit = () => {
-        if (window.google) {
+        if (window.google?.maps?.places) {
           initAutocomplete();
         } else {
           setTimeout(retryInit, 500);
@@ -61,8 +68,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
 
     return () => {
-      if (autocompleteRef.current) {
-        window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
+      if (autocompleteRef.current && window.google?.maps?.event) {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
   }, []);
@@ -71,28 +78,49 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     setLoading(true);
     
     try {
+      console.log('Processing address selection:', {
+        place_id: place.place_id,
+        formatted_address: place.formatted_address
+      });
+
       const addressComponents = place.address_components;
-      const streetNumber = addressComponents.find((c: any) => c.types.includes('street_number'))?.long_name || '';
-      const route = addressComponents.find((c: any) => c.types.includes('route'))?.long_name || '';
-      const city = addressComponents.find((c: any) => c.types.includes('locality'))?.long_name || '';
-      const state = addressComponents.find((c: any) => c.types.includes('administrative_area_level_1'))?.short_name || '';
-      const zipCode = addressComponents.find((c: any) => c.types.includes('postal_code'))?.long_name || '';
+      const streetNumber = addressComponents?.find((c: any) => c.types.includes('street_number'))?.long_name || '';
+      const route = addressComponents?.find((c: any) => c.types.includes('route'))?.long_name || '';
+      const city = addressComponents?.find((c: any) => c.types.includes('locality'))?.long_name || '';
+      const state = addressComponents?.find((c: any) => c.types.includes('administrative_area_level_1'))?.short_name || '';
+      const zipCode = addressComponents?.find((c: any) => c.types.includes('postal_code'))?.long_name || '';
 
       const addressLine1 = `${streetNumber} ${route}`.trim();
-      const latitude = place.geometry.location.lat();
-      const longitude = place.geometry.location.lng();
+      const latitude = place.geometry?.location?.lat();
+      const longitude = place.geometry?.location?.lng();
 
-      console.log('Checking coverage for:', { address: place.formatted_address, place_id: place.place_id });
+      console.log('Parsed address components:', {
+        addressLine1,
+        city,
+        state,
+        zipCode,
+        latitude,
+        longitude
+      });
 
-      // Call the coverage API
+      // Call the coverage API with detailed logging
+      console.log('Calling fwa-check API...');
       const coverageResponse = await supabase.functions.invoke('fwa-check', {
         body: {
           address: place.formatted_address,
           place_id: place.place_id,
           latitude,
-          longitude
+          longitude,
+          address_components: {
+            address_line1: addressLine1,
+            city,
+            state,
+            zip_code: zipCode
+          }
         }
       });
+
+      console.log('Coverage API response:', coverageResponse);
 
       if (coverageResponse.error) {
         console.error('Coverage API error:', coverageResponse.error);
@@ -105,6 +133,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       console.log('Coverage result:', { qualified, network_type });
 
       // First, insert or get anchor_address
+      console.log('Creating/updating anchor_address...');
       const { data: anchorData, error: anchorError } = await supabase
         .from('anchor_address')
         .upsert({
@@ -134,7 +163,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         return;
       }
 
+      console.log('Anchor address created/updated:', anchorData);
+
       // Create leads_fresh record
+      console.log('Creating leads_fresh record...');
       const { data: leadData, error: leadError } = await supabase
         .from('leads_fresh')
         .insert({
@@ -157,8 +189,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         return;
       }
 
+      console.log('Lead created:', leadData);
+
       if (!qualified) {
         // Add to drip marketing
+        console.log('Adding to drip marketing...');
         await supabase
           .from('drip_marketing')
           .insert({
@@ -203,6 +238,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           qualified: true
         });
       }
+
+      console.log('Address processing completed successfully');
     } catch (error) {
       console.error('Error processing address:', error);
       alert('Error processing address. Please try again.');
@@ -212,11 +249,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   const handleSubmit = async () => {
-    if (!address || !autocompleteRef.current) return;
+    if (!address || !autocompleteRef.current) {
+      alert('Please select an address from the dropdown suggestions');
+      return;
+    }
 
     const place = autocompleteRef.current.getPlace();
     
-    if (!place.geometry) {
+    if (!place?.geometry) {
       alert('Please select a valid address from the dropdown');
       return;
     }
@@ -247,7 +287,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             id="address-input"
             name="address"
             type="text"
-            placeholder="Enter your address"
+            placeholder="Start typing your address..."
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             autoComplete="off"
