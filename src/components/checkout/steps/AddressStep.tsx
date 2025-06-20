@@ -24,7 +24,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Initialize Google Places Autocomplete
     const initAutocomplete = () => {
       if (window.google && inputRef.current && !autocompleteRef.current) {
         autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
@@ -43,17 +42,29 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       }
     };
 
-    // Try to initialize immediately if Google is already loaded
+    // Set up global callback function for Google Maps API
+    window.initAutocomplete = initAutocomplete;
+
+    // Try to initialize if Google is already loaded
     if (window.google) {
       initAutocomplete();
     } else {
-      // Set up global function for script callback
-      window.initAutocomplete = initAutocomplete;
-      
-      // Also try with a slight delay
-      const timer = setTimeout(initAutocomplete, 1000);
-      return () => clearTimeout(timer);
+      // Retry with delays if Google isn't ready yet
+      const retryInit = () => {
+        if (window.google) {
+          initAutocomplete();
+        } else {
+          setTimeout(retryInit, 500);
+        }
+      };
+      retryInit();
     }
+
+    return () => {
+      if (autocompleteRef.current) {
+        window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
   }, []);
 
   const handleAddressSelection = async (place: any) => {
@@ -234,13 +245,13 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           <input
             ref={inputRef}
             id="address-input"
-            name="formatted_address"
+            name="address"
             type="text"
-            placeholder="Enter your full address"
+            placeholder="Enter your address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             autoComplete="off"
-            className="w-full rounded-lg px-4 py-3 text-gray-900 border border-gray-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-500 shadow-sm transition placeholder-gray-400"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-gray-900 placeholder-gray-400"
           />
           <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
         </div>
