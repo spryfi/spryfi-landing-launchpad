@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
@@ -27,16 +28,6 @@ export const PlansSection = () => {
       features: ["Great for streaming, Zoom, and gaming"],
       popular: true,
       style: "premium"
-    },
-    {
-      name: "SpryFi Max",
-      price: "$169.95/mo",
-      speed: "Up to 500 Mbps",
-      description: "For big households or home offices", 
-      subtitle: "Handles everything at once",
-      features: ["Built for ultra-heavy use"],
-      popular: false,
-      style: "max"
     }
   ];
 
@@ -54,20 +45,18 @@ export const PlansSection = () => {
           <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-4">
             Pick the Plan That's Right for You.
           </h2>
-          <p className="text-xl text-gray-600 text-center mb-16 max-w-2xl mx-auto">
-            Simple, honest pricing. No hidden fees, no surprises.
-          </p>
+          <h2 className="text-center text-xl font-medium text-gray-700 mb-16">
+            Two simple plans. Both with plenty of power to make your life online a dream.
+          </h2>
           
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <div className="flex flex-wrap justify-center gap-6 mb-12">
             {plans.map((plan, index) => (
               <div 
                 key={index} 
-                className={`relative rounded-3xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl group ${
+                className={`relative rounded-3xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl group w-full md:w-1/2 max-w-md ${
                   plan.style === 'basic' 
                     ? 'bg-white border border-gray-200 shadow-lg hover:shadow-gray-200/50' 
-                    : plan.style === 'premium'
-                    ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 shadow-xl transform scale-105 hover:shadow-blue-200/50' 
-                    : 'bg-gray-900 text-white shadow-xl hover:shadow-gray-800/50'
+                    : 'bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 shadow-xl transform scale-105 hover:shadow-blue-200/50'
                 }`}
               >
                 {plan.popular && (
@@ -77,47 +66,35 @@ export const PlansSection = () => {
                 )}
                 
                 <div className="text-center">
-                  <h3 className={`text-2xl font-bold mb-2 ${
-                    plan.style === 'max' ? 'text-white' : 'text-gray-900'
-                  }`}>
+                  <h3 className="text-2xl font-bold mb-2 text-gray-900">
                     {plan.name}
                   </h3>
                   
                   <div className={`text-lg font-semibold mb-4 ${
-                    plan.style === 'basic' ? 'text-blue-600' :
-                    plan.style === 'premium' ? 'text-blue-700' : 'text-blue-400'
+                    plan.style === 'basic' ? 'text-blue-600' : 'text-blue-700'
                   }`}>
                     {plan.speed}
                   </div>
                   
                   <div className={`text-5xl font-bold mb-6 ${
-                    plan.style === 'basic' ? 'text-gray-900' :
-                    plan.style === 'premium' ? 'text-blue-700' : 'text-white'
+                    plan.style === 'basic' ? 'text-gray-900' : 'text-blue-700'
                   }`}>
                     {plan.price}
                   </div>
                   
-                  <div className={`text-lg font-medium mb-3 ${
-                    plan.style === 'max' ? 'text-gray-100' : 'text-gray-700'
-                  }`}>
+                  <div className="text-lg font-medium mb-3 text-gray-700">
                     {plan.description}
                   </div>
                   
-                  <div className={`text-base mb-6 ${
-                    plan.style === 'max' ? 'text-gray-300' : 'text-gray-600'
-                  }`}>
+                  <div className="text-base mb-6 text-gray-600">
                     {plan.subtitle}
                   </div>
                   
                   <div className="mb-8 space-y-3">
                     {plan.features.map((feature, featureIndex) => (
                       <div key={featureIndex} className="flex items-center justify-center">
-                        <Check className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                          plan.style === 'max' ? 'text-green-400' : 'text-green-500'
-                        }`} />
-                        <span className={`text-sm ${
-                          plan.style === 'max' ? 'text-gray-200' : 'text-gray-600'
-                        }`}>
+                        <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-500" />
+                        <span className="text-sm text-gray-600">
                           {feature}
                         </span>
                       </div>
@@ -129,9 +106,7 @@ export const PlansSection = () => {
                     className={`w-full py-4 text-lg font-semibold rounded-2xl transition-all duration-300 transform group-hover:scale-105 ${
                       plan.style === 'basic' 
                         ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/25' 
-                        : plan.style === 'premium'
-                        ? 'bg-blue-700 text-white hover:bg-blue-800 hover:shadow-lg hover:shadow-blue-600/25' 
-                        : 'bg-white text-gray-900 hover:bg-gray-100 hover:shadow-lg'
+                        : 'bg-blue-700 text-white hover:bg-blue-800 hover:shadow-lg hover:shadow-blue-600/25'
                     }`}
                   >
                     Choose {plan.name.split(' ')[1]}
