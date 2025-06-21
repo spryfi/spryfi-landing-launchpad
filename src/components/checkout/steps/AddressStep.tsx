@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,23 +10,92 @@ interface AddressStepProps {
   updateState: (updates: Partial<CheckoutState>) => void;
 }
 
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) => {
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [stateInput, setStateInput] = useState('');
   const [zipCode, setZipCode] = useState('');
+  
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
+
+  useEffect(() => {
+    const initializeAutocomplete = () => {
+      if (window.google && window.google.maps && window.google.maps.places && addressInputRef.current) {
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(
+          addressInputRef.current,
+          {
+            types: ['address'],
+            componentRestrictions: { country: 'us' }
+          }
+        );
+
+        autocompleteRef.current.addListener('place_changed', () => {
+          const place = autocompleteRef.current.getPlace();
+          
+          if (place.formatted_address) {
+            setAddress(place.formatted_address);
+            
+            // Parse address components
+            const components = place.address_components || [];
+            let parsedCity = '';
+            let parsedState = '';
+            let parsedZip = '';
+            
+            components.forEach((component: any) => {
+              const types = component.types;
+              
+              if (types.includes('locality')) {
+                parsedCity = component.long_name;
+              } else if (types.includes('administrative_area_level_1')) {
+                parsedState = component.short_name;
+              } else if (types.includes('postal_code')) {
+                parsedZip = component.long_name;
+              }
+            });
+            
+            setCity(parsedCity);
+            setStateInput(parsedState);
+            setZipCode(parsedZip);
+          }
+        });
+      }
+    };
+
+    // Check if Google Maps is already loaded
+    if (window.google) {
+      initializeAutocomplete();
+    } else {
+      // Wait for Google Maps to load
+      const checkGoogleMaps = setInterval(() => {
+        if (window.google && window.google.maps && window.google.maps.places) {
+          clearInterval(checkGoogleMaps);
+          initializeAutocomplete();
+        }
+      }, 100);
+
+      // Cleanup interval after 10 seconds
+      setTimeout(() => clearInterval(checkGoogleMaps), 10000);
+    }
+  }, []);
 
   const handleNext = async () => {
     if (!address || !city || !stateInput || !zipCode) {
-      alert('Please fill in all address fields');
+      alert('Please select a complete address from the suggestions');
       return;
     }
 
     setLoading(true);
 
     try {
-      const formattedAddress = `${address}, ${city}, ${stateInput} ${zipCode}`;
+      const formattedAddress = address;
 
       // Check availability via Supabase function
       const { data, error } = await supabase.functions.invoke('check-availability', {
@@ -112,55 +181,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             Street Address
           </label>
           <Input
+            ref={addressInputRef}
             id="address"
             type="text"
-            placeholder="123 Main Street"
+            placeholder="123 Main Street, City, State ZIP"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="w-full"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-              City
-            </label>
-            <Input
-              id="city"
-              type="text"
-              placeholder="City"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
-              State
-            </label>
-            <Input
-              id="state"
-              type="text"
-              placeholder="CA"
-              value={stateInput}
-              onChange={(e) => setStateInput(e.target.value)}
-              className="w-full"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
-            ZIP Code
-          </label>
-          <Input
-            id="zipCode"
-            type="text"
-            placeholder="12345"
-            value={zipCode}
-            onChange={(e) => setZipCode(e.target.value)}
-            className="w-full"
+            autoComplete="off"
           />
         </div>
 
