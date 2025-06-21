@@ -21,39 +21,44 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [loading, setLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
   const [isGoogleReady, setIsGoogleReady] = useState(false);
-  const autocompleteRef = useRef<HTMLElement>(null);
   const { currentHook, isVisible } = useRotatingHook();
 
   useEffect(() => {
-    // Wait for Google Maps API and extended components to be ready
-    const checkGoogleReady = () => {
-      if (window.google?.maps && window.customElements?.get('gmpx-placeautocomplete')) {
+    // Wait for Google's extended component library to be ready
+    const waitForGoogle = setInterval(() => {
+      if (window.customElements?.get('gmpx-placeautocomplete')) {
+        console.log('Google extended components ready');
         setIsGoogleReady(true);
-        return true;
+        
+        // Render the autocomplete field
+        const wrapper = document.getElementById('autocomplete-wrapper');
+        if (wrapper) {
+          wrapper.innerHTML = `
+            <gmpx-placeautocomplete
+              id="spryfi-autocomplete"
+              placeholder="Start typing your address"
+              theme="filled"
+              style="display: block; width: 100%; min-height: 48px; font-size: 16px; font-family: inherit;"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            ></gmpx-placeautocomplete>
+          `;
+        }
+        
+        clearInterval(waitForGoogle);
       }
-      return false;
-    };
+    }, 200);
 
-    if (checkGoogleReady()) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      if (checkGoogleReady()) {
-        clearInterval(interval);
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
+    return () => clearInterval(waitForGoogle);
   }, []);
 
   useEffect(() => {
     if (!isGoogleReady) return;
 
+    // Add a delay to ensure the autocomplete element is fully rendered
     const timer = setTimeout(() => {
       const autocomplete = document.getElementById('spryfi-autocomplete') as any;
       if (autocomplete) {
-        console.log('Setting up autocomplete listeners');
+        console.log('Setting up autocomplete event listeners');
         
         const handlePlaceChange = (event: any) => {
           console.log('Place changed:', event.detail);
@@ -188,22 +193,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </p>
       </div>
 
-      <div className="w-full z-10 relative bg-white space-y-4">
-        <div className="relative w-full">
+      <div className="w-full relative bg-white space-y-4">
+        <div className="relative w-full z-20">
           {isGoogleReady ? (
-            <gmpx-placeautocomplete
-              id="spryfi-autocomplete"
-              placeholder="Start typing your address"
-              theme="filled"
-              style={{
-                display: 'block',
-                width: '100%',
-                minHeight: '48px',
-                fontSize: '16px',
-                fontFamily: 'inherit'
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            />
+            <div id="autocomplete-wrapper" className="w-full"></div>
           ) : (
             <div className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-500 shadow-sm bg-gray-50">
               Loading address search...

@@ -11,9 +11,13 @@ export const Hero = () => {
 
   return (
     <>
-      <div className="bg-gradient-to-br from-blue-50 to-white min-h-screen flex items-center">
-        <div className="container mx-auto px-4 py-20">
-          <div className="max-w-4xl mx-auto text-center">
+      <div className="relative w-full min-h-screen overflow-hidden bg-gradient-to-br from-blue-50 to-white">
+        {/* Hero background layer */}
+        <div className="absolute inset-0 z-0 bg-gradient-to-br from-blue-50 to-white"></div>
+        
+        {/* Content overlay */}
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen text-center px-4 py-20">
+          <div className="max-w-4xl mx-auto">
             <h1 
               className={`text-5xl md:text-7xl font-bold text-gray-900 mb-6 transition-opacity duration-500 ${
                 isVisible ? 'opacity-100' : 'opacity-0'
