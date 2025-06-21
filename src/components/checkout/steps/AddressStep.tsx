@@ -31,7 +31,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           }
         );
 
-        autocompleteRef.current.addListener('place_changed', () => {
+        autocompleteRef.current.addListener('place_changed', (e: Event) => {
+          // Prevent any default behavior
+          e.preventDefault();
+          e.stopPropagation();
+          
           const place = autocompleteRef.current.getPlace();
           
           if (place.formatted_address) {
@@ -94,7 +98,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   }, []);
 
-  const handleNext = async () => {
+  const handleNext = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent form submission
+    
     if (!address || !city || !stateInput || !zipCode) {
       alert('Please select a complete address from the suggestions');
       return;
@@ -183,7 +189,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </p>
       </div>
 
-      <div className="w-full space-y-4">
+      <form onSubmit={handleNext} className="w-full space-y-4">
         <div>
           <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
             Street Address
@@ -216,13 +222,13 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </div>
 
         <Button
-          onClick={handleNext}
+          type="submit"
           disabled={!address || !city || !stateInput || !zipCode || loading}
           className="w-full py-4 text-lg font-semibold rounded-lg transition-all"
         >
           {loading ? 'Checking availability...' : 'NEXT'}
         </Button>
-      </div>
+      </form>
     </div>
   );
 };
