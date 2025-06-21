@@ -26,39 +26,45 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
-  const autocompleteRef = useRef<HTMLElement>(null);
+  const autocompleteRef = useRef<HTMLInputElement>(null);
+  const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
     const initializeAutocomplete = () => {
-      if (!window.customElements?.get('gmpx-placeautocomplete')) {
+      if (!window.google?.maps?.places?.Autocomplete) {
         setTimeout(initializeAutocomplete, 100);
         return;
       }
 
       if (!autocompleteRef.current) return;
 
-      const autocomplete = autocompleteRef.current as any;
-      
-      // Configure the autocomplete
-      autocomplete.addEventListener('gmpx-placechange', async (event: any) => {
-        const place = event.detail.place;
+      const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' }
+      });
+
+      autocomplete.addListener('place_changed', async () => {
+        const place = autocomplete.getPlace();
         
-        if (!place || !place.geometry || !place.addressComponents) {
+        if (!place.geometry || !place.address_components) {
           console.log('No details available for selected place');
           return;
         }
 
         console.log('Selected place:', place);
 
+        // Immediately update the input field with the selected address
+        setInputValue(place.formatted_address || '');
+
         setIsLoading(true);
         setIsProcessed(false);
 
         try {
           // Parse address components
-          const components = place.addressComponents.reduce((acc: any, component: any) => {
+          const components = place.address_components.reduce((acc: any, component: any) => {
             component.types.forEach((type: string) => {
-              acc[type] = component.longText;
-              acc[`${type}_short`] = component.shortText;
+              acc[type] = component.long_name;
+              acc[`${type}_short`] = component.short_name;
             });
             return acc;
           }, {});
@@ -88,15 +94,15 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           }
 
           const addressData: AddressData = {
-            google_place_id: place.id || '',
-            formatted_address: place.formattedAddress || '',
+            google_place_id: place.place_id || '',
+            formatted_address: place.formatted_address || '',
             address_line1: addressLine1.trim(),
             address_line2: addressLine2.trim(),
             city: components.locality || components.sublocality_level_1 || components.administrative_area_level_3 || '',
             state: components.administrative_area_level_1_short || components.administrative_area_level_1 || '',
             zip_code: components.postal_code || '',
-            latitude: place.geometry.location.lat,
-            longitude: place.geometry.location.lng
+            latitude: place.geometry.location.lat(),
+            longitude: place.geometry.location.lng()
           };
 
           console.log("Parsed address payload:", addressData);
@@ -157,19 +163,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       </div>
 
       <div className="w-full max-w-xl mx-auto">
-        <gmpx-placeautocomplete
+        <input
           ref={autocompleteRef}
-          id="address-autocomplete"
+          type="text"
           placeholder="Start typing your address..."
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-          style={{
-            width: '100%',
-            padding: '0.75rem 1rem',
-            borderRadius: '0.5rem',
-            border: '1px solid #d1d5db',
-            fontSize: '1rem',
-            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-          }}
         />
       </div>
 
