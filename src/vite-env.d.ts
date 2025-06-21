@@ -6,24 +6,7 @@ declare global {
     google?: {
       maps: {
         places: {
-          Autocomplete: new (input: HTMLInputElement, options?: any) => {
-            addListener: (event: string, callback: () => void) => void;
-            getPlace: () => {
-              place_id?: string;
-              formatted_address?: string;
-              geometry?: {
-                location: {
-                  lat: () => number;
-                  lng: () => number;
-                };
-              };
-              address_components?: Array<{
-                long_name: string;
-                short_name: string;
-                types: string[];
-              }>;
-            };
-          };
+          PlaceAutocompleteElement: any;
           PlacesService: any;
           PlacesServiceStatus: {
             OK: string;
@@ -49,6 +32,9 @@ declare global {
         theme?: string;
         style?: React.CSSProperties;
         className?: string;
+        country?: string;
+        types?: string;
+        value?: string;
       };
     }
   }
