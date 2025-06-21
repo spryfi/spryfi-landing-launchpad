@@ -31,20 +31,19 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           }
         );
 
-        autocompleteRef.current.addListener('place_changed', (e: Event) => {
-          // Prevent any default behavior
-          e.preventDefault();
-          e.stopPropagation();
-          
+        autocompleteRef.current.addListener('place_changed', () => {
           const place = autocompleteRef.current.getPlace();
           
+          console.log('Place selected:', place);
+          
           if (place.formatted_address) {
-            // Set the full formatted address in the input field
-            setAddress(place.formatted_address);
+            // Set the full formatted address
+            const fullAddress = place.formatted_address;
+            setAddress(fullAddress);
             
-            // Force update the input field value to show the full address
+            // Manually update the input field to show the full address
             if (addressInputRef.current) {
-              addressInputRef.current.value = place.formatted_address;
+              addressInputRef.current.value = fullAddress;
             }
             
             // Parse address components in the background
@@ -71,7 +70,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             setZipCode(parsedZip);
 
             console.log('Address parsed:', {
-              fullAddress: place.formatted_address,
+              fullAddress: fullAddress,
               city: parsedCity,
               state: parsedState,
               zip: parsedZip
@@ -175,6 +174,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   };
 
+  // Handle manual address input changes
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAddress(e.target.value);
+  };
+
   return (
     <div className="p-8">
       <div className="text-center mb-8">
@@ -200,7 +204,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             type="text"
             placeholder="123 Main Street, City, State ZIP"
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            onChange={handleAddressChange}
             className="w-full"
             autoComplete="off"
           />
