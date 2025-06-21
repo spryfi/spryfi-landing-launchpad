@@ -93,6 +93,7 @@ serve(async (req) => {
       network_type: '5G_HOME',
       coverage_type: 'OUTDOOR',
       max_speed_mbps: 300,
+      source: Math.random() > 0.5 ? 'verizon' : 'bot', // Randomly assign source for demo
       raw_data: {
         address_validated: true,
         service_availability: true,
@@ -124,6 +125,7 @@ serve(async (req) => {
         success: true,
         qualified: mockVerizonResponse.qualified,
         network_type: mockVerizonResponse.network_type,
+        source: mockVerizonResponse.source,
         anchor_address_id: anchorAddressId,
         raw_data: mockVerizonResponse
       }),
@@ -141,7 +143,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message,
+        source: 'none'
       }),
       { 
         status: 500,
