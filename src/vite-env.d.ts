@@ -2,6 +2,15 @@
 /// <reference types="vite/client" />
 
 declare global {
+  interface Window {
+    google?: {
+      maps?: any;
+    };
+    customElements?: {
+      get: (name: string) => any;
+    };
+  }
+
   namespace JSX {
     interface IntrinsicElements {
       'gmp-place-autocomplete': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +27,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   useEffect(() => {
     // Wait for Google Maps API and extended components to be ready
     const checkGoogleReady = () => {
-      if (window.google && window.google.maps && window.customElements?.get('gmpx-placeautocomplete')) {
+      if (window.google?.maps && window.customElements?.get('gmpx-placeautocomplete')) {
         setIsGoogleReady(true);
         return true;
       }
