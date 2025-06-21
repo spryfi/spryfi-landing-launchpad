@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AddressStep } from './steps/AddressStep';
@@ -30,6 +31,11 @@ export interface CheckoutState {
   routerAdded: boolean;
   totalAmount: number;
   qualified: boolean;
+  qualificationResult?: {
+    source: string;
+    network_type?: string;
+    max_speed_mbps?: number;
+  } | null;
 }
 
 interface CheckoutModalProps {
@@ -47,7 +53,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     planSelected: null,
     routerAdded: false,
     totalAmount: 0,
-    qualified: false
+    qualified: false,
+    qualificationResult: null
   });
 
   const updateState = (updates: Partial<CheckoutState>) => {
