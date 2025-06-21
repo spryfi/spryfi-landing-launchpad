@@ -10,27 +10,28 @@ export const Hero = () => {
   const { currentHook, isVisible } = useRotatingHook();
 
   React.useEffect(() => {
-    // Curated hero images - home and lifestyle focused
+    // Home and lifestyle focused WiFi scenes
     const heroImages = [
-      "https://images.unsplash.com/photo-1649972904349-6e44c42644a7", // woman with laptop on bed
-      "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158", // woman using laptop at home
-      "https://images.unsplash.com/photo-1721322800607-8c38375eef04", // modern living room setup
-      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f", // person working from home office
-      "https://images.unsplash.com/photo-1556761175-b413da4baf72", // cozy home workspace
+      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b", // family on couch with devices
+      "https://images.unsplash.com/photo-1560472354-b33ff0c44a43", // woman working from home kitchen
+      "https://images.unsplash.com/photo-1519389950473-47ba0277781c", // person streaming in living room
+      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f", // home office natural light
+      "https://images.unsplash.com/photo-1551836022-deb4988cc6c0", // couple using laptop outdoor patio
+      "https://images.unsplash.com/photo-1521737604893-d14cc237f11d", // woman relaxing with tablet
     ];
 
     let currentImage = 0;
-
     const rotateImages = setInterval(() => {
       currentImage = (currentImage + 1) % heroImages.length;
       const heroImg = document.getElementById("hero-image") as HTMLImageElement;
       if (heroImg) {
+        // Start fade out
         heroImg.classList.add("opacity-0");
 
         setTimeout(() => {
           heroImg.src = heroImages[currentImage];
           heroImg.classList.remove("opacity-0");
-        }, 750); // Smooth fade out
+        }, 1500); // Match 1.5s transition duration
       }
     }, 5000); // Rotate every 5 seconds
 
@@ -40,12 +41,13 @@ export const Hero = () => {
   return (
     <>
       <section className="relative w-full h-[80vh] overflow-hidden">
-        {/* Background Image with smooth transitions */}
+        {/* Background Image with smooth 1.5s dissolve transitions */}
         <img 
           id="hero-image" 
-          src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7" 
-          alt="People enjoying reliable internet at home" 
+          src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b" 
+          alt="Happy families enjoying reliable WiFi at home" 
           className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] opacity-60" 
+          style={{ transition: 'opacity 1.5s ease-in-out' }}
         />
         
         {/* Dark overlay for better text contrast */}
@@ -61,7 +63,7 @@ export const Hero = () => {
             {currentHook}
           </h1>
 
-          <p className="text-lg text-gray-200 mb-6 drop-shadow-sm">
+          <p className="text-lg text-gray-200 mb-6 drop-shadow-lg">
             Enter your address • Takes 30 seconds
           </p>
 
