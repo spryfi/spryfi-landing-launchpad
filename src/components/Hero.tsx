@@ -76,13 +76,6 @@ export const Hero = () => {
           >
             Check Availability
           </Button>
-
-          {/* Clean benefit icons */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center text-center text-white space-y-2 sm:space-y-0 sm:space-x-8 text-sm">
-            <span className="flex items-center">📦 Free shipping</span>
-            <span className="flex items-center">⚡ Fast setup</span>
-            <span className="flex items-center">✅ No contracts</span>
-          </div>
         </div>
       </section>
 
