@@ -35,12 +35,25 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           wrapper.innerHTML = `
             <gmpx-placeautocomplete
               id="spryfi-autocomplete"
-              placeholder="Start typing your address"
+              placeholder="Start typing your address..."
               theme="filled"
-              style="display: block; width: 100%; min-height: 48px; font-size: 16px; font-family: inherit;"
+              style="display: block; width: 100%; min-height: 48px; font-size: 16px; font-family: inherit; pointer-events: auto; cursor: text;"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             ></gmpx-placeautocomplete>
           `;
+          
+          // Ensure the input inside is clickable
+          setTimeout(() => {
+            const autocompleteElement = document.getElementById('spryfi-autocomplete');
+            if (autocompleteElement) {
+              const input = autocompleteElement.shadowRoot?.querySelector('input') || 
+                           autocompleteElement.querySelector('input');
+              if (input) {
+                input.style.pointerEvents = 'auto';
+                input.style.cursor = 'text';
+              }
+            }
+          }, 100);
         }
         
         clearInterval(waitForGoogle);
@@ -189,9 +202,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       </div>
 
       <div className="w-full relative bg-white space-y-4">
-        <div className="relative w-full z-20">
+        <div className="relative w-full z-20" style={{ pointerEvents: 'auto' }}>
           {isGoogleReady ? (
-            <div id="autocomplete-wrapper" className="w-full"></div>
+            <div id="autocomplete-wrapper" className="w-full" style={{ pointerEvents: 'auto' }}></div>
           ) : (
             <div className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-500 shadow-sm bg-gray-50">
               Loading address search...
