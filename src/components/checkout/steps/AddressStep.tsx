@@ -21,73 +21,86 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [loading, setLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
   const [isGoogleReady, setIsGoogleReady] = useState(false);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Wait for Google's extended component library to be ready
+    // Wait for both Google Maps API and extended components to be ready
     const waitForGoogle = setInterval(() => {
-      if (window.customElements?.get('gmpx-placeautocomplete')) {
-        console.log('Google extended components ready');
+      if (window.google && window.google.maps && window.customElements?.get('gmpx-placeautocomplete')) {
+        console.log('Google extended components and Maps API ready');
         setIsGoogleReady(true);
-        
-        // Render the autocomplete field
-        const wrapper = document.getElementById('autocomplete-wrapper');
-        if (wrapper) {
-          wrapper.innerHTML = `
-            <gmpx-placeautocomplete
-              id="spryfi-autocomplete"
-              placeholder="Start typing your address..."
-              theme="filled"
-              style="display: block; width: 100%; min-height: 48px; font-size: 16px; font-family: inherit; pointer-events: auto; cursor: text;"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            ></gmpx-placeautocomplete>
-          `;
-          
-          // Ensure the input inside is clickable
-          setTimeout(() => {
-            const autocompleteElement = document.getElementById('spryfi-autocomplete');
-            if (autocompleteElement) {
-              const input = autocompleteElement.shadowRoot?.querySelector('input') || 
-                           autocompleteElement.querySelector('input');
-              if (input) {
-                input.style.pointerEvents = 'auto';
-                input.style.cursor = 'text';
-              }
-            }
-          }, 100);
-        }
-        
         clearInterval(waitForGoogle);
       }
     }, 200);
 
-    return () => clearInterval(waitForGoogle);
+    // Cleanup interval after 30 seconds to prevent infinite checking
+    const timeout = setTimeout(() => {
+      clearInterval(waitForGoogle);
+      console.error('Google Maps API or extended components failed to load');
+    }, 30000);
+
+    return () => {
+      clearInterval(waitForGoogle);
+      clearTimeout(timeout);
+    };
   }, []);
 
   useEffect(() => {
-    if (!isGoogleReady) return;
+    if (!isGoogleReady || !autocompleteRef.current) return;
 
-    // Add a delay to ensure the autocomplete element is fully rendered
-    const timer = setTimeout(() => {
-      const autocomplete = document.getElementById('spryfi-autocomplete') as any;
-      if (autocomplete) {
-        console.log('Setting up autocomplete event listeners');
-        
-        const handlePlaceChange = (event: any) => {
-          console.log('Place changed:', event.detail);
-          if (event.detail?.place?.formatted_address) {
-            setSelectedAddress(event.detail.place.formatted_address);
-          }
-        };
+    // Clear any existing content
+    autocompleteRef.current.innerHTML = '';
+    
+    // Create the autocomplete element
+    const autocompleteElement = document.createElement('gmpx-placeautocomplete');
+    autocompleteElement.id = 'spryfi-autocomplete';
+    autocompleteElement.setAttribute('placeholder', 'Start typing your address...');
+    autocompleteElement.setAttribute('theme', 'filled');
+    autocompleteElement.style.cssText = `
+      display: block;
+      width: 100%;
+      min-height: 48px;
+      font-size: 16px;
+      font-family: inherit;
+      pointer-events: auto !important;
+      cursor: text !important;
+    `;
+    autocompleteElement.className = 'w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200';
 
-        autocomplete.addEventListener('gmpx-placechange', handlePlaceChange);
-        
-        return () => {
-          autocomplete.removeEventListener('gmpx-placechange', handlePlaceChange);
-        };
+    // Add event listener for place changes
+    const handlePlaceChange = (event: any) => {
+      console.log('Place changed:', event.detail);
+      if (event.detail?.place?.formatted_address) {
+        setSelectedAddress(event.detail.place.formatted_address);
       }
-    }, 500);
+    };
 
-    return () => clearTimeout(timer);
+    autocompleteElement.addEventListener('gmpx-placechange', handlePlaceChange);
+    
+    // Append to container
+    autocompleteRef.current.appendChild(autocompleteElement);
+
+    // Ensure the shadow DOM input is accessible after a short delay
+    const makeInputAccessible = () => {
+      setTimeout(() => {
+        const shadowRoot = autocompleteElement.shadowRoot;
+        if (shadowRoot) {
+          const input = shadowRoot.querySelector('input');
+          if (input) {
+            input.style.pointerEvents = 'auto';
+            input.style.cursor = 'text';
+            input.style.userSelect = 'text';
+            console.log('Made autocomplete input accessible');
+          }
+        }
+      }, 500);
+    };
+
+    makeInputAccessible();
+
+    return () => {
+      autocompleteElement.removeEventListener('gmpx-placechange', handlePlaceChange);
+    };
   }, [isGoogleReady]);
 
   const handleNext = async () => {
@@ -204,7 +217,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       <div className="w-full relative bg-white space-y-4">
         <div className="relative w-full z-20" style={{ pointerEvents: 'auto' }}>
           {isGoogleReady ? (
-            <div id="autocomplete-wrapper" className="w-full" style={{ pointerEvents: 'auto' }}></div>
+            <div 
+              ref={autocompleteRef}
+              className="w-full" 
+              style={{ pointerEvents: 'auto' }}
+            ></div>
           ) : (
             <div className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-500 shadow-sm bg-gray-50">
               Loading address search...
