@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { CheckoutState } from '../CheckoutModal';
+import { AddressAutocomplete } from '../../AddressAutocomplete';
 
 interface AddressStepProps {
   state: CheckoutState;
@@ -8,6 +9,27 @@ interface AddressStepProps {
 }
 
 export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) => {
+  const handleAddressSelected = (addressData: any) => {
+    updateState({
+      address: {
+        addressLine1: addressData.address_line1,
+        addressLine2: addressData.address_line2,
+        city: addressData.city,
+        state: addressData.state,
+        zipCode: addressData.zip_code,
+        latitude: addressData.latitude,
+        longitude: addressData.longitude,
+        googlePlaceId: addressData.google_place_id,
+        formattedAddress: addressData.formatted_address
+      }
+    });
+  };
+
+  const handleNext = () => {
+    // Move to contact step or qualification check
+    updateState({ step: 'contact' });
+  };
+
   return (
     <div className="p-8">
       <div className="text-center mb-8">
@@ -18,17 +40,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </h2>
         
         <p className="text-gray-600 mb-6">
-          Address form functionality has been removed and is ready for reimplementation.
+          Enter your address to see if SpryFi is available in your area
         </p>
       </div>
 
-      {/* Address form has been removed — ready for reimplementation */}
-      <div className="w-full text-center">
-        <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg p-8">
-          <p className="text-gray-500">Address form placeholder</p>
-          <p className="text-sm text-gray-400 mt-2">Ready for new implementation</p>
-        </div>
-      </div>
+      <AddressAutocomplete 
+        onAddressSelected={handleAddressSelected}
+        onNext={handleNext}
+      />
     </div>
   );
 };

@@ -19,9 +19,73 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { address, place_id, latitude, longitude } = await req.json()
+    const { 
+      google_place_id, 
+      formatted_address, 
+      address_line1, 
+      address_line2, 
+      city, 
+      state, 
+      zip_code, 
+      latitude, 
+      longitude 
+    } = await req.json()
     
-    console.log('FWA check request:', { address, place_id, latitude, longitude })
+    console.log('FWA check request:', { 
+      google_place_id, 
+      formatted_address, 
+      address_line1, 
+      city, 
+      state, 
+      zip_code, 
+      latitude, 
+      longitude 
+    })
+
+    // Check if address already exists in anchor_address table
+    const { data: existingAddress, error: checkError } = await supabase
+      .from('anchor_address')
+      .select('id, qualified_cband, last_qualified_at')
+      .eq('address_line1', address_line1)
+      .eq('city', city)
+      .eq('zip_code', zip_code)
+      .maybeSingle()
+
+    if (checkError) {
+      console.error('Database check error:', checkError)
+    }
+
+    let anchorAddressId: string;
+
+    if (existingAddress) {
+      // Address exists, use existing ID
+      anchorAddressId = existingAddress.id
+      console.log('Using existing address:', anchorAddressId)
+    } else {
+      // Insert new address into anchor_address table
+      const { data: newAddress, error: insertError } = await supabase
+        .from('anchor_address')
+        .insert({
+          address_line1,
+          address_line2: address_line2 || null,
+          city,
+          state,
+          zip_code,
+          latitude,
+          longitude,
+          status: 'active'
+        })
+        .select('id')
+        .single()
+
+      if (insertError) {
+        console.error('Address insert error:', insertError)
+        throw new Error('Failed to save address')
+      }
+
+      anchorAddressId = newAddress.id
+      console.log('Created new address:', anchorAddressId)
+    }
 
     // Mock Verizon API call - replace with actual Verizon API integration
     const mockVerizonResponse = {
@@ -39,6 +103,20 @@ serve(async (req) => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000))
 
+    // Update the anchor_address with qualification results
+    const { error: updateError } = await supabase
+      .from('anchor_address')
+      .update({
+        qualified_cband: mockVerizonResponse.qualified,
+        last_qualified_at: new Date().toISOString(),
+        raw_verizon_data: mockVerizonResponse
+      })
+      .eq('id', anchorAddressId)
+
+    if (updateError) {
+      console.error('Address update error:', updateError)
+    }
+
     console.log('Verizon API response:', mockVerizonResponse)
 
     return new Response(
@@ -46,6 +124,7 @@ serve(async (req) => {
         success: true,
         qualified: mockVerizonResponse.qualified,
         network_type: mockVerizonResponse.network_type,
+        anchor_address_id: anchorAddressId,
         raw_data: mockVerizonResponse
       }),
       { 
