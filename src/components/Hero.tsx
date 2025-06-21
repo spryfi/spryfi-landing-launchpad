@@ -12,11 +12,13 @@ export const Hero = () => {
   React.useEffect(() => {
     // Core home internet usage: work, streaming, gaming
     const heroImages = [
-      "https://images.unsplash.com/photo-1556075798-4825dfaaf498", // family using tablet together at home
-      "https://images.unsplash.com/photo-1574168612922-c801da5c7f8e", // family gathered around laptop at home
-      "https://images.unsplash.com/photo-1609220136736-443140cffec6", // family with laptop in living room
-      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b", // family streaming on couch
-      "https://images.unsplash.com/photo-1551836022-deb4988cc6c0", // couple with laptop in backyard
+      "/lovable-uploads/b2299131-f552-4bda-aa70-25bb52991901.png", // gaming at home
+      "/lovable-uploads/8c1667e5-2814-4a78-abe6-4469911e4e24.png", // dad working from home with child
+      "/lovable-uploads/c9f4e146-8c48-4411-8b5f-0c9ceb66fc4e.png", // family streaming together
+      "/lovable-uploads/3ce628a3-58d7-4f62-972d-82411046939a.png", // child using tablet with headphones
+      "/lovable-uploads/cd5c8c35-7747-4f47-9491-e9f1d0bc53df.png", // mobile gaming
+      "/lovable-uploads/4d57e83f-db1b-430a-8b7e-3be3e4f0f7b8.png", // family with devices on couch
+      "/lovable-uploads/e5884a69-1d16-4c82-9387-c9bf9c831e61.png", // family working/studying at kitchen table
     ];
 
     let currentImage = 0;
@@ -45,7 +47,7 @@ export const Hero = () => {
         {/* Background Image with blur and fade transitions */}
         <img 
           id="hero-image" 
-          src="https://images.unsplash.com/photo-1556075798-4825dfaaf498" 
+          src="/lovable-uploads/b2299131-f552-4bda-aa70-25bb52991901.png" 
           alt="People enjoying reliable internet at home" 
           className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 opacity-60" 
           style={{ transition: 'opacity 1s ease-in-out, filter 1s ease-in-out' }}
