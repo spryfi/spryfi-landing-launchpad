@@ -47,7 +47,8 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
           state: state.address?.state,
           zip_code: state.address?.zipCode,
           status: 'new',
-          lead_type: 'address_check'
+          lead_type: 'address_check',
+          qualified: state.qualified
         })
         .select()
         .single();
@@ -57,32 +58,61 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
         throw leadError;
       }
 
-      console.log('Lead created:', leadData);
+      console.log('✅ Lead created successfully:', leadData);
+      console.log('✅ Lead ID:', leadData.id);
+      console.log('✅ Anchor Address ID:', state.anchorAddressId);
 
-      // Also add to drip_marketing if needed
-      const { error: dripError } = await supabase
-        .from('drip_marketing')
-        .upsert({
-          email,
-          name: `${firstName} ${lastName}`,
-          address: state.address?.formattedAddress,
-          lead_id: leadData.id,
-          qualified: false,
-          status: 'active'
-        }, {
-          onConflict: 'email'
-        });
+      // Update anchor_address with first_lead_id if we have it
+      if (state.anchorAddressId) {
+        const { error: updateError } = await supabase
+          .from('anchor_address')
+          .update({ first_lead_id: leadData.id })
+          .eq('id', state.anchorAddressId);
 
-      if (dripError) {
-        console.error('Error updating drip marketing:', dripError);
+        if (updateError) {
+          console.error('Error updating anchor_address:', updateError);
+        } else {
+          console.log('✅ Anchor address updated with lead ID');
+        }
+      }
+
+      // Also add to drip_marketing if not qualified
+      if (!state.qualified) {
+        const { error: dripError } = await supabase
+          .from('drip_marketing')
+          .upsert({
+            email,
+            name: `${firstName} ${lastName}`,
+            address: state.address?.formattedAddress,
+            lead_id: leadData.id,
+            qualified: state.qualified,
+            status: 'active'
+          }, {
+            onConflict: 'email'
+          });
+
+        if (dripError) {
+          console.error('Error updating drip marketing:', dripError);
+        } else {
+          console.log('✅ Added to drip marketing');
+        }
       }
 
       // Update state with contact info and lead ID
       updateState({
-        contact: { email, phone: '' }, // phone not collected in this step
+        contact: { email, phone: '' },
         leadId: leadData.id,
-        step: 'qualification-success'
+        step: state.qualified ? 'qualification-success' : 'not-qualified'
       });
+
+      // Debug output
+      console.log('✅ FINAL SUMMARY:');
+      console.log('- Lead ID:', leadData.id);
+      console.log('- Anchor Address ID:', state.anchorAddressId);
+      console.log('- Email:', email);
+      console.log('- Name:', `${firstName} ${lastName}`);
+      console.log('- Qualified:', state.qualified);
+      console.log('- Source:', state.qualificationResult?.source);
 
     } catch (error) {
       console.error('Error saving contact info:', error);
@@ -142,6 +172,15 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
         >
           {loading ? 'Saving...' : 'Submit'}
         </button>
+
+        {/* Debug info - remove in production */}
+        {state.anchorAddressId && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
+            <p>Debug: Anchor Address ID: {state.anchorAddressId}</p>
+            <p>Qualified: {state.qualified ? 'Yes' : 'No'}</p>
+            <p>Source: {state.qualificationResult?.source || 'None'}</p>
+          </div>
+        )}
       </div>
     </div>
   );
