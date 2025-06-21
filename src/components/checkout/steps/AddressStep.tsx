@@ -10,12 +10,6 @@ interface AddressStepProps {
   updateState: (updates: Partial<CheckoutState>) => void;
 }
 
-declare global {
-  interface Window {
-    google: any;
-  }
-}
-
 export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) => {
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
@@ -28,7 +22,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
   useEffect(() => {
     const initializeAutocomplete = () => {
-      if (window.google && window.google.maps && window.google.maps.places && addressInputRef.current) {
+      if (window.google?.maps?.places && addressInputRef.current) {
         autocompleteRef.current = new window.google.maps.places.Autocomplete(
           addressInputRef.current,
           {
@@ -43,7 +37,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           if (place.formatted_address) {
             setAddress(place.formatted_address);
             
-            // Parse address components
+            // Parse address components in the background
             const components = place.address_components || [];
             let parsedCity = '';
             let parsedState = '';
@@ -70,12 +64,12 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     };
 
     // Check if Google Maps is already loaded
-    if (window.google) {
+    if (window.google?.maps?.places) {
       initializeAutocomplete();
     } else {
       // Wait for Google Maps to load
       const checkGoogleMaps = setInterval(() => {
-        if (window.google && window.google.maps && window.google.maps.places) {
+        if (window.google?.maps?.places) {
           clearInterval(checkGoogleMaps);
           initializeAutocomplete();
         }
