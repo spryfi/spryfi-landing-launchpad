@@ -55,20 +55,47 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         setIsProcessed(false);
 
         try {
-          const components = place.address_components.reduce((acc: any, c: any) => {
-            const type = c.types[0];
-            acc[type] = c.long_name;
+          // More comprehensive address component parsing
+          const components = place.address_components.reduce((acc: any, component: any) => {
+            component.types.forEach((type: string) => {
+              acc[type] = component.long_name;
+              acc[`${type}_short`] = component.short_name;
+            });
             return acc;
           }, {});
+
+          console.log('Address components:', components);
+
+          // Build complete address line 1
+          const streetNumber = components.street_number || '';
+          const route = components.route || '';
+          const premise = components.premise || '';
+          const subpremise = components.subpremise || '';
+          
+          // Construct address line 1 with all available parts
+          let addressLine1 = '';
+          if (streetNumber && route) {
+            addressLine1 = `${streetNumber} ${route}`;
+          } else if (route) {
+            addressLine1 = route;
+          } else if (premise) {
+            addressLine1 = premise;
+          }
+          
+          // Add unit/apartment info if available
+          let addressLine2 = '';
+          if (subpremise) {
+            addressLine2 = `Unit ${subpremise}`;
+          }
 
           const addressData: AddressData = {
             google_place_id: place.place_id || '',
             formatted_address: place.formatted_address || '',
-            address_line1: `${components.street_number || ""} ${components.route || ""}`.trim(),
-            address_line2: "",
-            city: components.locality || components.sublocality || "",
-            state: components.administrative_area_level_1 || "",
-            zip_code: components.postal_code || "",
+            address_line1: addressLine1.trim(),
+            address_line2: addressLine2.trim(),
+            city: components.locality || components.sublocality_level_1 || components.administrative_area_level_3 || '',
+            state: components.administrative_area_level_1_short || components.administrative_area_level_1 || '',
+            zip_code: components.postal_code || '',
             latitude: place.geometry.location.lat(),
             longitude: place.geometry.location.lng()
           };
@@ -146,6 +173,11 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <h4 className="font-medium text-green-800 mb-2">Selected Address:</h4>
           <p className="text-green-700">{selectedAddress.formatted_address}</p>
+          <div className="text-sm text-green-600 mt-2">
+            <p>Address Line 1: {selectedAddress.address_line1}</p>
+            {selectedAddress.address_line2 && <p>Address Line 2: {selectedAddress.address_line2}</p>}
+            <p>City: {selectedAddress.city}, State: {selectedAddress.state}, ZIP: {selectedAddress.zip_code}</p>
+          </div>
         </div>
       )}
 
