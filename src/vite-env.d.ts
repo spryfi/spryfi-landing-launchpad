@@ -19,4 +19,17 @@ declare global {
   }
 }
 
+// Declare custom Google Maps Extended Components
+declare namespace JSX {
+  interface IntrinsicElements {
+    'gmpx-placeautocomplete': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+      id?: string;
+      placeholder?: string;
+      theme?: string;
+      style?: React.CSSProperties;
+      className?: string;
+    };
+  }
+}
+
 export {};
