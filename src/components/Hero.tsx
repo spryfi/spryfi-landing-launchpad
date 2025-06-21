@@ -10,14 +10,13 @@ export const Hero = () => {
   const { currentHook, isVisible } = useRotatingHook();
 
   React.useEffect(() => {
-    // Family-focused home internet scenes only
+    // Core home internet usage: work, streaming, gaming
     const heroImages = [
-      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b", // family on couch with devices
-      "https://images.unsplash.com/photo-1556075798-4825dfaaf498", // family using tablet together at home
-      "https://images.unsplash.com/photo-1609220136736-443140cffec6", // family with laptop in living room
-      "https://images.unsplash.com/photo-1551836022-deb4988cc6c0", // couple using laptop in backyard
-      "https://images.unsplash.com/photo-1574168612922-c801da5c7f8e", // family gathered around laptop at home
-      "https://images.unsplash.com/photo-1517048676732-d65bc937f952", // parents and children with tablet
+      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b", // family streaming on couch
+      "https://images.unsplash.com/photo-1560472354-b33ff0c44a43", // woman working from home kitchen
+      "https://images.unsplash.com/photo-1551836022-deb4988cc6c0", // couple with laptop in backyard
+      "https://images.unsplash.com/photo-1556075798-4825dfaaf498", // family using tablet together
+      "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8", // gaming setup at home
     ];
 
     let currentImage = 0;
@@ -47,7 +46,7 @@ export const Hero = () => {
         <img 
           id="hero-image" 
           src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b" 
-          alt="Families enjoying reliable internet at home" 
+          alt="People enjoying reliable internet at home" 
           className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 opacity-60" 
           style={{ transition: 'opacity 1s ease-in-out, filter 1s ease-in-out' }}
         />
