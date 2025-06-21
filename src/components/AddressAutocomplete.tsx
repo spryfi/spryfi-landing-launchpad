@@ -28,128 +28,167 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [isProcessed, setIsProcessed] = useState(false);
   const autocompleteRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState('');
+  const autocompleteInstance = useRef<google.maps.places.Autocomplete | null>(null);
 
   useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 50;
+
     const initializeAutocomplete = () => {
+      if (retryCount >= maxRetries) {
+        console.error('Failed to initialize Google Places Autocomplete after maximum retries');
+        return;
+      }
+
       if (!window.google?.maps?.places?.Autocomplete) {
+        retryCount++;
         setTimeout(initializeAutocomplete, 100);
         return;
       }
 
-      if (!autocompleteRef.current) return;
+      if (!autocompleteRef.current) {
+        setTimeout(initializeAutocomplete, 100);
+        return;
+      }
 
-      const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
-        types: ['address'],
-        componentRestrictions: { country: 'us' }
-      });
-
-      autocomplete.addListener('place_changed', async () => {
-        const place = autocomplete.getPlace();
-        
-        if (!place.geometry || !place.address_components) {
-          console.log('No details available for selected place');
-          return;
+      try {
+        // Clear any existing instance
+        if (autocompleteInstance.current) {
+          google.maps.event.clearInstanceListeners(autocompleteInstance.current);
         }
 
-        console.log('Selected place:', place);
+        const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
+          types: ['address'],
+          componentRestrictions: { country: 'us' },
+          fields: ['place_id', 'formatted_address', 'address_components', 'geometry']
+        });
 
-        // Immediately update the input field with the selected address
-        setInputValue(place.formatted_address || '');
+        autocompleteInstance.current = autocomplete;
 
-        setIsLoading(true);
-        setIsProcessed(false);
-
-        try {
-          // Parse address components
-          const components = place.address_components.reduce((acc: any, component: any) => {
-            component.types.forEach((type: string) => {
-              acc[type] = component.long_name;
-              acc[`${type}_short`] = component.short_name;
-            });
-            return acc;
-          }, {});
-
-          console.log('Address components:', components);
-
-          // Build complete address line 1
-          const streetNumber = components.street_number || '';
-          const route = components.route || '';
-          const premise = components.premise || '';
-          const subpremise = components.subpremise || '';
+        autocomplete.addListener('place_changed', async () => {
+          const place = autocomplete.getPlace();
           
-          // Construct address line 1 with all available parts
-          let addressLine1 = '';
-          if (streetNumber && route) {
-            addressLine1 = `${streetNumber} ${route}`;
-          } else if (route) {
-            addressLine1 = route;
-          } else if (premise) {
-            addressLine1 = premise;
-          }
-          
-          // Add unit/apartment info if available
-          let addressLine2 = '';
-          if (subpremise) {
-            addressLine2 = `Unit ${subpremise}`;
+          if (!place.geometry || !place.address_components || !place.formatted_address) {
+            console.log('No details available for selected place');
+            return;
           }
 
-          const addressData: AddressData = {
-            google_place_id: place.place_id || '',
-            formatted_address: place.formatted_address || '',
-            address_line1: addressLine1.trim(),
-            address_line2: addressLine2.trim(),
-            city: components.locality || components.sublocality_level_1 || components.administrative_area_level_3 || '',
-            state: components.administrative_area_level_1_short || components.administrative_area_level_1 || '',
-            zip_code: components.postal_code || '',
-            latitude: place.geometry.location.lat(),
-            longitude: place.geometry.location.lng()
-          };
+          console.log('Selected place:', place);
 
-          console.log("Parsed address payload:", addressData);
+          // Update input with formatted address
+          setInputValue(place.formatted_address);
 
-          // POST to backend route to check/insert into anchor_address
+          setIsLoading(true);
+          setIsProcessed(false);
+
           try {
-            const response = await fetch('/functions/v1/fwa-check', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnp6cXF0bWlhemxzbXdwcm10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDY1OTgsImV4cCI6MjA1NzkyMjU5OH0.bEvvlwbLBC2I7oDyWPyMF_B_d7Hkk8sTL8SvL2kFI6w`
-              },
-              body: JSON.stringify(addressData)
-            });
+            // Parse address components
+            const components = place.address_components.reduce((acc: any, component: any) => {
+              component.types.forEach((type: string) => {
+                acc[type] = component.long_name;
+                acc[`${type}_short`] = component.short_name;
+              });
+              return acc;
+            }, {});
 
-            if (!response.ok) {
-              throw new Error('Failed to process address');
+            console.log('Address components:', components);
+
+            // Build complete address line 1
+            const streetNumber = components.street_number || '';
+            const route = components.route || '';
+            const premise = components.premise || '';
+            const subpremise = components.subpremise || '';
+            
+            // Construct address line 1 with all available parts
+            let addressLine1 = '';
+            if (streetNumber && route) {
+              addressLine1 = `${streetNumber} ${route}`;
+            } else if (route) {
+              addressLine1 = route;
+            } else if (premise) {
+              addressLine1 = premise;
+            }
+            
+            // Add unit/apartment info if available
+            let addressLine2 = '';
+            if (subpremise) {
+              addressLine2 = `Unit ${subpremise}`;
             }
 
-            const result = await response.json();
-            console.log('Address processing result:', result);
-            
-            // Add the anchor_address_id to our address data
-            const finalAddressData = {
-              ...addressData,
-              anchor_address_id: result.anchor_address_id
+            const addressData: AddressData = {
+              google_place_id: place.place_id || '',
+              formatted_address: place.formatted_address || '',
+              address_line1: addressLine1.trim(),
+              address_line2: addressLine2.trim(),
+              city: components.locality || components.sublocality_level_1 || components.administrative_area_level_3 || '',
+              state: components.administrative_area_level_1_short || components.administrative_area_level_1 || '',
+              zip_code: components.postal_code || '',
+              latitude: place.geometry.location.lat(),
+              longitude: place.geometry.location.lng()
             };
 
-            // Store the address data and notify parent
-            setSelectedAddress(finalAddressData);
-            onAddressSelected(finalAddressData);
-            setIsProcessed(true);
+            console.log("Parsed address payload:", addressData);
 
+            // POST to backend route to check/insert into anchor_address
+            try {
+              const response = await fetch('/functions/v1/fwa-check', {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnp6cXF0bWlhemxzbXdwcm10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDY1OTgsImV4cCI6MjA1NzkyMjU5OH0.bEvvlwbLBC2I7oDyWPyMF_B_d7Hkk8sTL8SvL2kFI6w`
+                },
+                body: JSON.stringify(addressData)
+              });
+
+              if (!response.ok) {
+                throw new Error('Failed to process address');
+              }
+
+              const result = await response.json();
+              console.log('Address processing result:', result);
+              
+              // Add the anchor_address_id to our address data
+              const finalAddressData = {
+                ...addressData,
+                anchor_address_id: result.anchor_address_id
+              };
+
+              // Store the address data and notify parent
+              setSelectedAddress(finalAddressData);
+              onAddressSelected(finalAddressData);
+              setIsProcessed(true);
+
+            } catch (error) {
+              console.error('Error processing address:', error);
+            }
+
+            setIsLoading(false);
           } catch (error) {
-            console.error('Error processing address:', error);
+            console.error('Error with address selection:', error);
+            setIsLoading(false);
           }
+        });
 
-          setIsLoading(false);
-        } catch (error) {
-          console.error('Error with address selection:', error);
-          setIsLoading(false);
-        }
-      });
+        console.log('Google Places Autocomplete initialized successfully');
+      } catch (error) {
+        console.error('Error initializing autocomplete:', error);
+        retryCount++;
+        setTimeout(initializeAutocomplete, 200);
+      }
     };
 
     initializeAutocomplete();
+
+    return () => {
+      if (autocompleteInstance.current) {
+        google.maps.event.clearInstanceListeners(autocompleteInstance.current);
+      }
+    };
   }, [onAddressSelected]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
 
   return (
     <div className="space-y-6">
@@ -168,8 +207,12 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           type="text"
           placeholder="Start typing your address..."
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={handleInputChange}
           className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+          style={{ 
+            position: 'relative',
+            zIndex: 1
+          }}
         />
       </div>
 
