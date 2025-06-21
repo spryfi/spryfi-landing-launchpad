@@ -10,28 +10,18 @@ const BRAND_HOOKS = [
 ];
 
 export const useRotatingHook = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentHook, setCurrentHook] = useState('');
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Set initial hook
+    // Pick a random hook on initial load
+    const randomIndex = Math.floor(Math.random() * BRAND_HOOKS.length);
+    setCurrentHook(BRAND_HOOKS[randomIndex]);
     setIsVisible(true);
-
-    // Set up rotation every 4 seconds
-    const interval = setInterval(() => {
-      setIsVisible(false);
-      
-      setTimeout(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % BRAND_HOOKS.length);
-        setIsVisible(true);
-      }, 500); // 0.5 second fade out before changing text
-    }, 4000); // Rotate every 4 seconds
-
-    return () => clearInterval(interval);
   }, []);
 
   return { 
-    currentHook: BRAND_HOOKS[currentIndex], 
+    currentHook, 
     isVisible 
   };
 };
