@@ -59,7 +59,7 @@ export const Hero = () => {
         {/* Overlay Content */}
         <div className="relative z-10 flex flex-col justify-center items-center text-white text-center h-full px-6">
           <h1 
-            className={`text-3xl md:text-5xl font-bold mb-4 drop-shadow-lg transition-opacity duration-500 leading-tight ${
+            className={`text-3xl md:text-5xl font-bold mb-4 drop-shadow-lg transition-opacity duration-500 leading-tight max-w-4xl ${
               isVisible ? 'opacity-100' : 'opacity-0'
             }`}
           >
