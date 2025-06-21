@@ -12,15 +12,12 @@ interface ContactStepProps {
 
 export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) => {
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const validatePhone = (phone: string) => {
-    return /^[\+]?[1-9][\d]{0,15}$/.test(phone.replace(/[\s\-\(\)]/g, ''));
   };
 
   const handleSubmit = async () => {
@@ -29,38 +26,66 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
       return;
     }
 
-    if (!validatePhone(phone)) {
-      alert('Please enter a valid phone number');
+    if (!firstName.trim() || !lastName.trim()) {
+      alert('Please enter your first and last name');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Update leads_fresh with contact info
-      await supabase
+      // Create a new lead record in leads_fresh
+      const { data: leadData, error: leadError } = await supabase
         .from('leads_fresh')
-        .update({
+        .insert({
           email,
-          phone
+          first_name: firstName,
+          last_name: lastName,
+          address_line1: state.address?.addressLine1,
+          address_line2: state.address?.addressLine2,
+          city: state.address?.city,
+          state: state.address?.state,
+          zip_code: state.address?.zipCode,
+          status: 'new',
+          lead_type: 'address_check'
         })
-        .eq('id', state.leadId);
+        .select()
+        .single();
 
-      // Update drip_marketing if it exists
-      await supabase
+      if (leadError) {
+        console.error('Error creating lead:', leadError);
+        throw leadError;
+      }
+
+      console.log('Lead created:', leadData);
+
+      // Also add to drip_marketing if needed
+      const { error: dripError } = await supabase
         .from('drip_marketing')
-        .update({
+        .upsert({
           email,
-          name: `${email.split('@')[0]}` // Simple name extraction
-        })
-        .eq('address', state.address?.formattedAddress);
+          name: `${firstName} ${lastName}`,
+          address: state.address?.formattedAddress,
+          lead_id: leadData.id,
+          qualified: false,
+          status: 'active'
+        }, {
+          onConflict: 'email'
+        });
 
+      if (dripError) {
+        console.error('Error updating drip marketing:', dripError);
+      }
+
+      // Update state with contact info and lead ID
       updateState({
-        step: 'qualification-success',
-        contact: { email, phone }
+        contact: { email, phone: '' }, // phone not collected in this step
+        leadId: leadData.id,
+        step: 'qualification-success'
       });
+
     } catch (error) {
-      console.error('Error updating contact info:', error);
+      console.error('Error saving contact info:', error);
       alert('Error saving contact information. Please try again.');
     } finally {
       setLoading(false);
@@ -71,19 +96,19 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
     <div className="p-8">
       <div className="text-center mb-8">
         <div className="text-6xl mb-4">📧</div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          Stay in the loop and get your setup guide!
+        <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
+          Almost there — let's get your contact info
         </h2>
-        <p className="text-gray-600">
+        <p className="text-sm text-gray-500 text-center mb-4">
           We'll send you installation instructions and updates
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-md mx-auto">
         <div>
           <Input
             type="email"
-            placeholder="your.email@example.com"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full text-lg p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500"
@@ -92,25 +117,31 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
 
         <div>
           <Input
-            type="tel"
-            placeholder="(555) 123-4567"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            type="text"
+            placeholder="First Name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
             className="w-full text-lg p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500"
           />
         </div>
 
-        <Button
+        <div>
+          <Input
+            type="text"
+            placeholder="Last Name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            className="w-full text-lg p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500"
+          />
+        </div>
+
+        <button
           onClick={handleSubmit}
-          disabled={!email || !phone || loading}
-          className="w-full py-4 text-lg font-semibold rounded-lg"
-          style={{
-            background: email && phone ? '#0047AB' : '#ccc',
-            color: 'white'
-          }}
+          disabled={!email || !firstName || !lastName || loading}
+          className="w-full bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold py-3 px-6 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Saving...' : 'Continue'}
-        </Button>
+          {loading ? 'Saving...' : 'Submit'}
+        </button>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
+
 import React, { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
 
 interface AddressData {
   google_place_id: string;
@@ -11,6 +11,7 @@ interface AddressData {
   zip_code: string;
   latitude: number;
   longitude: number;
+  anchor_address_id?: string;
 }
 
 interface AddressAutocompleteProps {
@@ -24,7 +25,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 }) => {
   const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const autocompleteRef = useRef<HTMLElement>(null);
+  const [isProcessed, setIsProcessed] = useState(false);
 
   useEffect(() => {
     const initializeAutocomplete = () => {
@@ -41,6 +42,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         if (!selectedAddressValue) return;
 
         setIsLoading(true);
+        setIsProcessed(false);
 
         try {
           // Use PlacesService to get full details
@@ -78,17 +80,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
             console.log("Parsed address payload:", addressData);
 
-            // Store the address data
-            setSelectedAddress(addressData);
-            onAddressSelected(addressData);
-
             // POST to backend route to check/insert into anchor_address
             try {
               const response = await fetch('/functions/v1/fwa-check', {
                 method: 'POST',
                 headers: { 
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+                  'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnp6cXF0bWlhemxzbXdwcm10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDY1OTgsImV4cCI6MjA1NzkyMjU5OH0.bEvvlwbLBC2I7oDyWPyMF_B_d7Hkk8sTL8SvL2kFI6w`
                 },
                 body: JSON.stringify(addressData)
               });
@@ -99,6 +97,18 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
               const result = await response.json();
               console.log('Address processing result:', result);
+              
+              // Add the anchor_address_id to our address data
+              const finalAddressData = {
+                ...addressData,
+                anchor_address_id: result.anchor_address_id
+              };
+
+              // Store the address data and notify parent
+              setSelectedAddress(finalAddressData);
+              onAddressSelected(finalAddressData);
+              setIsProcessed(true);
+
             } catch (error) {
               console.error('Error processing address:', error);
             }
@@ -126,14 +136,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         </p>
       </div>
 
-      <div id="autocomplete-wrapper" className="w-full max-w-xl mx-auto z-10">
+      <div id="autocomplete-wrapper" className="w-full max-w-xl mx-auto">
         <gmpx-placeautocomplete
           id="spryfi-autocomplete"
-          placeholder="Enter your address"
+          placeholder="Start typing your address"
           className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          style={{ display: 'block' }}
+          style={{ display: 'block', width: '100%' }}
           theme="filled"
-          ref={autocompleteRef}
         />
       </div>
 
@@ -154,10 +163,10 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       <div className="flex justify-end">
         <button 
           onClick={onNext}
-          disabled={!selectedAddress || isLoading}
+          disabled={!isProcessed || isLoading}
           className="bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold px-6 py-3 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Check My Address
+          Next
         </button>
       </div>
     </div>

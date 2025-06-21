@@ -21,12 +21,13 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         longitude: addressData.longitude,
         googlePlaceId: addressData.google_place_id,
         formattedAddress: addressData.formatted_address
-      }
+      },
+      anchorAddressId: addressData.anchor_address_id
     });
   };
 
   const handleNext = () => {
-    // Move to contact step or qualification check
+    // Move to contact step for email and name collection
     updateState({ step: 'contact' });
   };
 
