@@ -10,12 +10,13 @@ export const Hero = () => {
   const { currentHook, isVisible } = useRotatingHook();
 
   React.useEffect(() => {
-    // Hero image rotation script
+    // Curated hero images - home and lifestyle focused
     const heroImages = [
-      "https://images.unsplash.com/photo-1649972904349-6e44c42644a7", // woman with laptop
-      "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b", // gray laptop
-      "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158", // woman using laptop
-      "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5", // matrix style
+      "https://images.unsplash.com/photo-1649972904349-6e44c42644a7", // woman with laptop on bed
+      "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158", // woman using laptop at home
+      "https://images.unsplash.com/photo-1721322800607-8c38375eef04", // modern living room setup
+      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f", // person working from home office
+      "https://images.unsplash.com/photo-1556761175-b413da4baf72", // cozy home workspace
     ];
 
     let currentImage = 0;
@@ -24,16 +25,14 @@ export const Hero = () => {
       currentImage = (currentImage + 1) % heroImages.length;
       const heroImg = document.getElementById("hero-image") as HTMLImageElement;
       if (heroImg) {
-        heroImg.classList.remove("opacity-100");
         heroImg.classList.add("opacity-0");
 
         setTimeout(() => {
           heroImg.src = heroImages[currentImage];
           heroImg.classList.remove("opacity-0");
-          heroImg.classList.add("opacity-100");
-        }, 400);
+        }, 750); // Smooth fade out
       }
-    }, 5000);
+    }, 5000); // Rotate every 5 seconds
 
     return () => clearInterval(rotateImages);
   }, []);
@@ -41,15 +40,15 @@ export const Hero = () => {
   return (
     <>
       <section className="relative w-full h-[80vh] overflow-hidden">
-        {/* Background Image */}
+        {/* Background Image with smooth transitions */}
         <img 
           id="hero-image" 
           src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7" 
-          alt="Hero Background" 
-          className="absolute inset-0 w-full h-full object-cover opacity-60 transition-opacity duration-1000" 
+          alt="People enjoying reliable internet at home" 
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] opacity-60" 
         />
         
-        {/* Dark overlay for better contrast */}
+        {/* Dark overlay for better text contrast */}
         <div className="absolute inset-0 bg-black/40"></div>
 
         {/* Overlay Content */}
@@ -73,7 +72,7 @@ export const Hero = () => {
             Check Availability
           </Button>
 
-          {/* Clean simple benefits */}
+          {/* Clean benefit icons */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center text-center text-white space-y-2 sm:space-y-0 sm:space-x-8 text-sm">
             <span className="flex items-center">📦 Free shipping</span>
             <span className="flex items-center">⚡ Fast setup</span>
