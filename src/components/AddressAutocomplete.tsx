@@ -39,7 +39,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
       console.log('Initializing Google Places Autocomplete...');
 
-      // Create autocomplete instance
+      // Create autocomplete instance using window.google to avoid namespace issues
       autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
         types: ['address'],
         componentRestrictions: { country: 'us' },
