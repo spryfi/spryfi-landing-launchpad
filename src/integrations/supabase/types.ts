@@ -106,6 +106,7 @@ export type Database = {
           qualification_source: string | null
           qualified_at: string | null
           qualified_cband: boolean | null
+          raw_bot_data: Json | null
           raw_verizon_data: Json | null
           site_coverage: string[] | null
           site_coverage_checked_at: string | null
@@ -130,6 +131,7 @@ export type Database = {
           qualification_source?: string | null
           qualified_at?: string | null
           qualified_cband?: boolean | null
+          raw_bot_data?: Json | null
           raw_verizon_data?: Json | null
           site_coverage?: string[] | null
           site_coverage_checked_at?: string | null
@@ -154,6 +156,7 @@ export type Database = {
           qualification_source?: string | null
           qualified_at?: string | null
           qualified_cband?: boolean | null
+          raw_bot_data?: Json | null
           raw_verizon_data?: Json | null
           site_coverage?: string[] | null
           site_coverage_checked_at?: string | null

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { CheckoutState } from '../CheckoutModal';
 import SimpleAddressInput from '../../SimpleAddressInput';
 import { supabase } from '@/integrations/supabase/client';
+import { QualificationBadge } from '@/components/QualificationBadge';
 
 interface AddressStepProps {
   state: CheckoutState;
@@ -12,6 +13,7 @@ interface AddressStepProps {
 export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) => {
   const [loading, setLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>('');
+  const [qualificationSource, setQualificationSource] = useState<string>('');
 
   const parseAddress = (fullAddress: string) => {
     // Basic address parsing - you might want to enhance this
@@ -73,6 +75,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       }
 
       console.log('FWA check result:', data);
+      
+      // Set the qualification source for badge display
+      setQualificationSource(data.source || 'none');
 
       // Update state with address and qualification results
       updateState({
@@ -131,14 +136,28 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </div>
 
         <div className="w-full max-w-xl mx-auto">
-          <SimpleAddressInput 
-            onAddressSelect={handleAddressSelected}
-            placeholder="Start typing your address..."
-          />
+          <div className="relative">
+            <SimpleAddressInput 
+              onAddressSelect={handleAddressSelected}
+              placeholder="Start typing your address..."
+            />
+            
+            {/* Qualification Badge */}
+            {qualificationSource && (
+              <div className="absolute top-2 right-2 z-10" id="qual-status-badge">
+                <QualificationBadge source={qualificationSource} />
+              </div>
+            )}
+          </div>
           
           {selectedAddress && (
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-600">Selected: {selectedAddress}</p>
+              {qualificationSource && (
+                <div className="mt-2">
+                  <QualificationBadge source={qualificationSource} />
+                </div>
+              )}
             </div>
           )}
           
