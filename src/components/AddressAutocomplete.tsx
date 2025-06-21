@@ -52,7 +52,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       });
 
       // Add place changed listener
-      const listener = autocompleteRef.current.addListener('place_changed', async () => {
+      const handlePlaceChanged = async () => {
         const place = autocompleteRef.current?.getPlace();
         
         if (!place || !place.formatted_address) {
@@ -148,19 +148,14 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           console.error('Error parsing address:', error);
           setIsLoading(false);
         }
-      });
-
-      return () => {
-        if (listener && window.google?.maps?.event) {
-          window.google.maps.event.removeListener(listener);
-        }
       };
+
+      autocompleteRef.current.addListener('place_changed', handlePlaceChanged);
     };
 
-    const cleanup = initializeAutocomplete();
+    initializeAutocomplete();
     
     return () => {
-      if (cleanup) cleanup();
       if (autocompleteRef.current && window.google?.maps?.event) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
