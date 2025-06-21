@@ -19,14 +19,6 @@ interface AddressAutocompleteProps {
   onNext: () => void;
 }
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'gmpx-placeautocomplete': any;
-    }
-  }
-}
-
 export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ 
   onAddressSelected, 
   onNext 
@@ -34,53 +26,54 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
-  const autocompleteRef = useRef<any>(null);
+  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   useEffect(() => {
     const initializeAutocomplete = () => {
-      // Wait for Google Maps Extended Components to load
-      if (!window.customElements?.get('gmpx-placeautocomplete')) {
+      if (!window.google?.maps?.places || !inputRef.current) {
         setTimeout(initializeAutocomplete, 100);
         return;
       }
 
-      const autocompleteElement = autocompleteRef.current;
-      if (!autocompleteElement) {
-        setTimeout(initializeAutocomplete, 100);
-        return;
-      }
+      console.log('Initializing Google Places Autocomplete...');
 
-      console.log('Initializing PlaceAutocompleteElement...');
+      // Create autocomplete instance
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' },
+        fields: [
+          'place_id',
+          'formatted_address', 
+          'address_components',
+          'geometry.location'
+        ]
+      });
 
-      // Configure the autocomplete element
-      autocompleteElement.country = 'us';
-      autocompleteElement.types = 'address';
-      autocompleteElement.placeholder = 'Start typing your address...';
-
-      // Add event listener for place selection
-      const handlePlaceChange = async (event: any) => {
-        const place = event.detail.place;
+      // Add place changed listener
+      autocompleteRef.current.addListener('place_changed', async () => {
+        const place = autocompleteRef.current?.getPlace();
         
-        if (!place || !place.formattedAddress) {
+        if (!place || !place.formatted_address) {
           console.error('No place details or formatted address available');
           return;
         }
 
         console.log('Place selected:', place);
-        console.log('Formatted address:', place.formattedAddress);
-
+        
         // Set the complete formatted address in the input
-        autocompleteElement.value = place.formattedAddress;
+        setInputValue(place.formatted_address);
 
         setIsLoading(true);
         setIsProcessed(false);
 
         try {
           // Parse address components
-          const components = place.addressComponents?.reduce((acc: any, component: any) => {
+          const components = place.address_components?.reduce((acc: any, component: any) => {
             component.types.forEach((type: string) => {
-              acc[type] = component.longText;
-              acc[`${type}_short`] = component.shortText;
+              acc[type] = component.long_name;
+              acc[`${type}_short`] = component.short_name;
             });
             return acc;
           }, {}) || {};
@@ -106,15 +99,15 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           }
 
           const addressData: AddressData = {
-            google_place_id: place.id || '',
-            formatted_address: place.formattedAddress,
+            google_place_id: place.place_id || '',
+            formatted_address: place.formatted_address,
             address_line1: addressLine1.trim(),
             address_line2: addressLine2.trim(),
             city: components.locality || components.sublocality_level_1 || components.administrative_area_level_3 || '',
             state: components.administrative_area_level_1_short || components.administrative_area_level_1 || '',
             zip_code: components.postal_code || '',
-            latitude: place.location?.lat() || 0,
-            longitude: place.location?.lng() || 0
+            latitude: place.geometry?.location?.lat() || 0,
+            longitude: place.geometry?.location?.lng() || 0
           };
 
           console.log("Parsed address data:", addressData);
@@ -155,21 +148,22 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           console.error('Error parsing address:', error);
           setIsLoading(false);
         }
-      };
-
-      autocompleteElement.addEventListener('gmpx-placechange', handlePlaceChange);
-
-      // Cleanup function
-      return () => {
-        if (autocompleteElement) {
-          autocompleteElement.removeEventListener('gmpx-placechange', handlePlaceChange);
-        }
-      };
+      });
     };
 
-    const cleanup = initializeAutocomplete();
-    return cleanup;
+    initializeAutocomplete();
+
+    // Cleanup
+    return () => {
+      if (autocompleteRef.current && window.google?.maps?.event) {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
   }, [onAddressSelected]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
 
   return (
     <div className="space-y-6">
@@ -183,14 +177,14 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       </div>
 
       <div className="w-full max-w-xl mx-auto">
-        <gmpx-placeautocomplete
-          ref={autocompleteRef}
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          placeholder="Start typing your address..."
           className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-          style={{ 
-            width: '100%',
-            fontSize: '16px',
-            zIndex: 1000
-          }}
+          style={{ fontSize: '16px' }}
         />
       </div>
 

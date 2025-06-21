@@ -6,7 +6,31 @@ declare global {
     google?: {
       maps: {
         places: {
-          PlaceAutocompleteElement: any;
+          Autocomplete: new (
+            input: HTMLInputElement,
+            options?: {
+              types?: string[];
+              componentRestrictions?: { country: string };
+              fields?: string[];
+            }
+          ) => {
+            addListener: (event: string, callback: () => void) => void;
+            getPlace: () => {
+              place_id?: string;
+              formatted_address?: string;
+              address_components?: Array<{
+                long_name: string;
+                short_name: string;
+                types: string[];
+              }>;
+              geometry?: {
+                location?: {
+                  lat: () => number;
+                  lng: () => number;
+                };
+              };
+            };
+          };
           PlacesService: any;
           PlacesServiceStatus: {
             OK: string;
@@ -17,26 +41,6 @@ declare global {
         };
       };
     };
-    customElements?: {
-      get: (name: string) => any;
-    };
-  }
-}
-
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'gmpx-placeautocomplete': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        id?: string;
-        placeholder?: string;
-        theme?: string;
-        style?: React.CSSProperties;
-        className?: string;
-        country?: string;
-        types?: string;
-        value?: string;
-      };
-    }
   }
 }
 
