@@ -39,7 +39,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
       console.log('Initializing Google Places Autocomplete...');
 
-      // Create autocomplete instance using window.google to avoid namespace issues
+      // Create standard Autocomplete instance
       autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
         types: ['address'],
         componentRestrictions: { country: 'us' },
@@ -52,7 +52,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       });
 
       // Add place changed listener
-      autocompleteRef.current.addListener('place_changed', async () => {
+      const listener = autocompleteRef.current.addListener('place_changed', async () => {
         const place = autocompleteRef.current?.getPlace();
         
         if (!place || !place.formatted_address) {
@@ -149,12 +149,18 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           setIsLoading(false);
         }
       });
+
+      return () => {
+        if (listener && window.google?.maps?.event) {
+          window.google.maps.event.removeListener(listener);
+        }
+      };
     };
 
-    initializeAutocomplete();
-
-    // Cleanup
+    const cleanup = initializeAutocomplete();
+    
     return () => {
+      if (cleanup) cleanup();
       if (autocompleteRef.current && window.google?.maps?.event) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
