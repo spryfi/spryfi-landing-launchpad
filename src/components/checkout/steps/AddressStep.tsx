@@ -35,12 +35,12 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       <div className="text-center mb-8">
         <div className="text-6xl mb-4">🏠</div>
         
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Check Internet Availability
+        <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
+          Let's see if SpryFi works at your address
         </h2>
         
-        <p className="text-gray-600 mb-6">
-          Enter your address to see if SpryFi is available in your area
+        <p className="text-sm text-gray-500 text-center mb-4">
+          Takes just 30 seconds — no commitments, no spam.
         </p>
       </div>
 

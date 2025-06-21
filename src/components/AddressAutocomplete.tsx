@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -153,13 +152,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       )}
 
       <div className="flex justify-end">
-        <Button 
+        <button 
           onClick={onNext}
           disabled={!selectedAddress || isLoading}
-          className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold px-6 py-3 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Continue
-        </Button>
+          Check My Address
+        </button>
       </div>
     </div>
   );
