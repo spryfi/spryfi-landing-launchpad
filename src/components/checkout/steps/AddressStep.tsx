@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { CheckoutState } from '../CheckoutModal';
-import AddressAutocomplete from '../../AddressAutocomplete';
+import SimpleAddressInput from '../../SimpleAddressInput';
 
 interface AddressStepProps {
   state: CheckoutState;
@@ -10,7 +10,7 @@ interface AddressStepProps {
 
 export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) => {
   const handleAddressSelected = (address: string) => {
-    console.log('Full address selected:', address);
+    console.log('FULL ADDRESS SELECTED:', address);
     // Parse the address and update state - for now just storing the formatted address
     updateState({
       address: {
@@ -57,8 +57,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </div>
 
         <div className="w-full max-w-xl mx-auto">
-          <AddressAutocomplete 
+          <SimpleAddressInput 
             onAddressSelect={handleAddressSelected}
+            placeholder="Start typing your address..."
           />
         </div>
 
