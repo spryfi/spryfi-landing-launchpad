@@ -26,95 +26,90 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
+  const autocompleteRef = useRef<HTMLInputElement>(null);
+  const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
     const initializeAutocomplete = () => {
-      if (!window.google || !window.customElements) {
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
         setTimeout(initializeAutocomplete, 100);
         return;
       }
 
-      const autocompleteEl = document.getElementById("spryfi-autocomplete");
-      if (!autocompleteEl) return;
+      if (!autocompleteRef.current) return;
 
-      autocompleteEl.addEventListener("gmpx-placechange", async () => {
-        const selectedAddressValue = (autocompleteEl as any).value;
-        if (!selectedAddressValue) return;
+      const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' }
+      });
+
+      autocomplete.addListener('place_changed', async () => {
+        const place = autocomplete.getPlace();
+        
+        if (!place.geometry || !place.address_components) {
+          console.log('No details available for selected place');
+          return;
+        }
 
         setIsLoading(true);
         setIsProcessed(false);
 
         try {
-          // Use PlacesService to get full details
-          const map = document.createElement("div");
-          const service = new window.google.maps.places.PlacesService(map);
+          const components = place.address_components.reduce((acc: any, c: any) => {
+            const type = c.types[0];
+            acc[type] = c.long_name;
+            return acc;
+          }, {});
 
-          service.findPlaceFromQuery({
-            query: selectedAddressValue,
-            fields: ['place_id', 'formatted_address', 'address_components', 'geometry']
-          }, async (results: any[], status: any) => {
-            if (status !== window.google.maps.places.PlacesServiceStatus.OK || !results[0]) {
-              setIsLoading(false);
-              return;
+          const addressData: AddressData = {
+            google_place_id: place.place_id || '',
+            formatted_address: place.formatted_address || '',
+            address_line1: `${components.street_number || ""} ${components.route || ""}`.trim(),
+            address_line2: "",
+            city: components.locality || components.sublocality || "",
+            state: components.administrative_area_level_1 || "",
+            zip_code: components.postal_code || "",
+            latitude: place.geometry.location.lat(),
+            longitude: place.geometry.location.lng()
+          };
+
+          console.log("Parsed address payload:", addressData);
+
+          // POST to backend route to check/insert into anchor_address
+          try {
+            const response = await fetch('/functions/v1/fwa-check', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnp6cXF0bWlhemxzbXdwcm10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDY1OTgsImV4cCI6MjA1NzkyMjU5OH0.bEvvlwbLBC2I7oDyWPyMF_B_d7Hkk8sTL8SvL2kFI6w`
+              },
+              body: JSON.stringify(addressData)
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to process address');
             }
 
-            const place = results[0];
-
-            const components = place.address_components.reduce((acc: any, c: any) => {
-              const type = c.types[0];
-              acc[type] = c.long_name;
-              return acc;
-            }, {});
-
-            const addressData: AddressData = {
-              google_place_id: place.place_id,
-              formatted_address: place.formatted_address,
-              address_line1: `${components.street_number || ""} ${components.route || ""}`.trim(),
-              address_line2: "",
-              city: components.locality || components.sublocality || "",
-              state: components.administrative_area_level_1 || "",
-              zip_code: components.postal_code || "",
-              latitude: place.geometry.location.lat(),
-              longitude: place.geometry.location.lng()
+            const result = await response.json();
+            console.log('Address processing result:', result);
+            
+            // Add the anchor_address_id to our address data
+            const finalAddressData = {
+              ...addressData,
+              anchor_address_id: result.anchor_address_id
             };
 
-            console.log("Parsed address payload:", addressData);
+            // Store the address data and notify parent
+            setSelectedAddress(finalAddressData);
+            onAddressSelected(finalAddressData);
+            setIsProcessed(true);
+            setInputValue(place.formatted_address || '');
 
-            // POST to backend route to check/insert into anchor_address
-            try {
-              const response = await fetch('/functions/v1/fwa-check', {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcnp6cXF0bWlhemxzbXdwcm10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzNDY1OTgsImV4cCI6MjA1NzkyMjU5OH0.bEvvlwbLBC2I7oDyWPyMF_B_d7Hkk8sTL8SvL2kFI6w`
-                },
-                body: JSON.stringify(addressData)
-              });
+          } catch (error) {
+            console.error('Error processing address:', error);
+          }
 
-              if (!response.ok) {
-                throw new Error('Failed to process address');
-              }
-
-              const result = await response.json();
-              console.log('Address processing result:', result);
-              
-              // Add the anchor_address_id to our address data
-              const finalAddressData = {
-                ...addressData,
-                anchor_address_id: result.anchor_address_id
-              };
-
-              // Store the address data and notify parent
-              setSelectedAddress(finalAddressData);
-              onAddressSelected(finalAddressData);
-              setIsProcessed(true);
-
-            } catch (error) {
-              console.error('Error processing address:', error);
-            }
-
-            setIsLoading(false);
-          });
+          setIsLoading(false);
         } catch (error) {
           console.error('Error with address selection:', error);
           setIsLoading(false);
@@ -136,13 +131,14 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         </p>
       </div>
 
-      <div id="autocomplete-wrapper" className="w-full max-w-xl mx-auto">
-        <gmpx-placeautocomplete
-          id="spryfi-autocomplete"
-          placeholder="Start typing your address"
-          className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          style={{ display: 'block', width: '100%' }}
-          theme="filled"
+      <div className="w-full max-w-xl mx-auto">
+        <input
+          ref={autocompleteRef}
+          type="text"
+          placeholder="Start typing your address..."
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
         />
       </div>
 
