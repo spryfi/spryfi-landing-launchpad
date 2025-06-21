@@ -28,7 +28,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [isProcessed, setIsProcessed] = useState(false);
   const autocompleteRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState('');
-  const autocompleteInstance = useRef<google.maps.places.Autocomplete | null>(null);
+  const autocompleteInstance = useRef<InstanceType<typeof window.google.maps.places.Autocomplete> | null>(null);
 
   useEffect(() => {
     let retryCount = 0;
@@ -54,7 +54,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       try {
         // Clear any existing instance
         if (autocompleteInstance.current) {
-          google.maps.event.clearInstanceListeners(autocompleteInstance.current);
+          window.google.maps.event.clearInstanceListeners(autocompleteInstance.current);
         }
 
         const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
@@ -181,7 +181,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
     return () => {
       if (autocompleteInstance.current) {
-        google.maps.event.clearInstanceListeners(autocompleteInstance.current);
+        window.google.maps.event.clearInstanceListeners(autocompleteInstance.current);
       }
     };
   }, [onAddressSelected]);

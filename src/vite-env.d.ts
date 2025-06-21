@@ -29,6 +29,9 @@ declare global {
             OK: string;
           };
         };
+        event: {
+          clearInstanceListeners: (instance: any) => void;
+        };
       };
     };
     customElements?: {
