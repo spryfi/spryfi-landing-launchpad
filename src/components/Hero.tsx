@@ -49,12 +49,12 @@ export const Hero = () => {
           id="hero-image" 
           src="/lovable-uploads/b2299131-f552-4bda-aa70-25bb52991901.png" 
           alt="People enjoying reliable internet at home" 
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-1500 opacity-50" 
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-1500 opacity-60" 
           style={{ transition: 'opacity 1.5s ease-in-out, filter 1.5s ease-in-out' }}
         />
         
         {/* Dark overlay for better text contrast */}
-        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="absolute inset-0 bg-black/60"></div>
 
         {/* Overlay Content */}
         <div className="relative z-10 flex flex-col justify-center items-center text-white text-center h-full px-6">
