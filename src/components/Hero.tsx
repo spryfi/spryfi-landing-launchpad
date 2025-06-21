@@ -22,7 +22,7 @@ export const Hero = () => {
 
     const rotateImages = setInterval(() => {
       currentImage = (currentImage + 1) % heroImages.length;
-      const heroImg = document.getElementById("hero-image");
+      const heroImg = document.getElementById("hero-image") as HTMLImageElement;
       if (heroImg) {
         heroImg.classList.remove("opacity-100");
         heroImg.classList.add("opacity-0");
@@ -40,66 +40,47 @@ export const Hero = () => {
 
   return (
     <>
-      <div className="relative w-full h-screen overflow-hidden">
-        {/* Rotating hero images */}
-        <div id="hero-rotator" className="absolute inset-0 w-full h-full z-0">
-          <img 
-            id="hero-image" 
-            src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7" 
-            alt="Hero" 
-            className="object-cover w-full h-full transition-opacity duration-1000 opacity-100" 
-          />
-          {/* Dark overlay for better text contrast */}
-          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-        </div>
+      <section className="relative w-full h-[80vh] overflow-hidden">
+        {/* Background Image */}
+        <img 
+          id="hero-image" 
+          src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7" 
+          alt="Hero Background" 
+          className="absolute inset-0 w-full h-full object-cover opacity-60 transition-opacity duration-1000" 
+        />
+        
+        {/* Dark overlay for better contrast */}
+        <div className="absolute inset-0 bg-black/40"></div>
 
-        {/* Hook overlay text */}
-        <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-6">
-          <div className="max-w-4xl mx-auto">
-            <h1 
-              className={`text-4xl md:text-6xl lg:text-7xl font-bold mb-6 drop-shadow-lg transition-opacity duration-500 ${
-                isVisible ? 'opacity-100' : 'opacity-0'
-              }`}
-            >
-              {currentHook}
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-2xl mx-auto drop-shadow-md">
-              Fast, reliable internet delivered to your door. No contracts, no credit checks, no technician visits required.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <Button 
-                onClick={openModal}
-                className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 text-lg font-semibold rounded-lg shadow-lg"
-              >
-                Check Availability
-              </Button>
-              <p className="text-sm text-gray-300">
-                Enter your address • Takes 30 seconds
-              </p>
-            </div>
+        {/* Overlay Content */}
+        <div className="relative z-10 flex flex-col justify-center items-center text-white text-center h-full px-6">
+          <h1 
+            className={`text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg transition-opacity duration-500 ${
+              isVisible ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {currentHook}
+          </h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
-              <div className="text-center">
-                <div className="text-3xl mb-2">📦</div>
-                <h3 className="font-semibold text-white mb-1 drop-shadow-md">Plug & Play</h3>
-                <p className="text-sm text-gray-300 drop-shadow-sm">Router delivered to your door, online in minutes</p>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl mb-2">⚡</div>
-                <h3 className="font-semibold text-white mb-1 drop-shadow-md">Lightning Fast</h3>
-                <p className="text-sm text-gray-300 drop-shadow-sm">Up to 200 Mbps speeds for all your devices</p>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl mb-2">🛡️</div>
-                <h3 className="font-semibold text-white mb-1 drop-shadow-md">14-Day Guarantee</h3>
-                <p className="text-sm text-gray-300 drop-shadow-sm">Not happy? Full refund, no questions asked</p>
-              </div>
-            </div>
+          <p className="text-lg text-gray-200 mb-6 drop-shadow-sm">
+            Enter your address • Takes 30 seconds
+          </p>
+
+          <Button
+            onClick={openModal}
+            className="bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold px-8 py-4 rounded-full text-lg shadow-lg transition-all duration-200"
+          >
+            Check Availability
+          </Button>
+
+          {/* Clean simple benefits */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center text-center text-white space-y-2 sm:space-y-0 sm:space-x-8 text-sm">
+            <span className="flex items-center">📦 Free shipping</span>
+            <span className="flex items-center">⚡ Fast setup</span>
+            <span className="flex items-center">✅ No contracts</span>
           </div>
         </div>
-      </div>
+      </section>
 
       <CheckoutModal isOpen={isOpen} onClose={closeModal} />
     </>
