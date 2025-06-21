@@ -31,7 +31,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   useEffect(() => {
     const initializeAutocomplete = () => {
-      if (!window.google || !window.google.maps || !window.google.maps.places) {
+      if (!window.google?.maps?.places?.Autocomplete) {
         setTimeout(initializeAutocomplete, 100);
         return;
       }
