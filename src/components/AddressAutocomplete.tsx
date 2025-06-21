@@ -1,29 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-// Declare Google Maps types
-declare global {
-  interface Window {
-    google: {
-      maps: {
-        places: {
-          Autocomplete: new (input: HTMLInputElement, options?: any) => {
-            addListener: (event: string, callback: () => void) => void;
-            getPlace: () => {
-              formatted_address?: string;
-              address_components?: any[];
-            };
-          };
-        };
-        event: {
-          clearInstanceListeners: (instance: any) => void;
-        };
-      };
-    };
-    initAutocomplete?: () => void;
-  }
-}
-
 interface Props {
   onAddressSelect?: (address: string) => void;
   value?: string;
@@ -36,14 +13,17 @@ const AddressAutocomplete: React.FC<Props> = ({ onAddressSelect, value = '' }) =
 
   useEffect(() => {
     const initializeAutocomplete = () => {
-      if (!inputRef.current || !window.google?.maps?.places) {
+      // Use type assertion to avoid declaration conflicts
+      const google = (window as any).google;
+      
+      if (!inputRef.current || !google?.maps?.places) {
         console.error('Google Maps not loaded');
         return;
       }
 
       try {
         // Create autocomplete instance
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(
+        autocompleteRef.current = new google.maps.places.Autocomplete(
           inputRef.current,
           {
             types: ['address'],
@@ -82,16 +62,17 @@ const AddressAutocomplete: React.FC<Props> = ({ onAddressSelect, value = '' }) =
     };
 
     // Check if Google Maps is already loaded
-    if (window.google?.maps?.places) {
+    const google = (window as any).google;
+    if (google?.maps?.places) {
       initializeAutocomplete();
     } else {
       // Wait for Google Maps to load
-      window.initAutocomplete = initializeAutocomplete;
+      (window as any).initAutocomplete = initializeAutocomplete;
     }
 
     return () => {
-      if (autocompleteRef.current && window.google?.maps?.event) {
-        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      if (autocompleteRef.current && (window as any).google?.maps?.event) {
+        (window as any).google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
   }, [onAddressSelect]);
