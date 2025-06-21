@@ -51,6 +51,9 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           return;
         }
 
+        // Immediately update the input field with the selected address
+        setInputValue(place.formatted_address || '');
+
         setIsLoading(true);
         setIsProcessed(false);
 
@@ -130,7 +133,6 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             setSelectedAddress(finalAddressData);
             onAddressSelected(finalAddressData);
             setIsProcessed(true);
-            setInputValue(place.formatted_address || '');
 
           } catch (error) {
             console.error('Error processing address:', error);
