@@ -26,21 +26,21 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [selectedAddress, setSelectedAddress] = useState<AddressData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
-  const autocompleteRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<HTMLElement>(null);
   const [inputValue, setInputValue] = useState('');
-  const autocompleteInstance = useRef<InstanceType<typeof window.google.maps.places.Autocomplete> | null>(null);
 
   useEffect(() => {
     let retryCount = 0;
     const maxRetries = 50;
 
-    const initializeAutocomplete = () => {
+    const initializeAutocomplete = async () => {
       if (retryCount >= maxRetries) {
-        console.error('Failed to initialize Google Places Autocomplete after maximum retries');
+        console.error('Failed to initialize Google PlaceAutocompleteElement after maximum retries');
         return;
       }
 
-      if (!window.google?.maps?.places?.Autocomplete) {
+      // Wait for Google Maps Extended Components to load
+      if (!window.customElements?.get('gmpx-placeautocomplete')) {
         retryCount++;
         setTimeout(initializeAutocomplete, 100);
         return;
@@ -52,44 +52,40 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       }
 
       try {
-        // Clear any existing instance
-        if (autocompleteInstance.current) {
-          window.google.maps.event.clearInstanceListeners(autocompleteInstance.current);
-        }
+        const autocompleteElement = autocompleteRef.current as any;
+        
+        // Configure the autocomplete element
+        autocompleteElement.setAttribute('country', 'us');
+        autocompleteElement.setAttribute('types', 'address');
+        autocompleteElement.setAttribute('placeholder', 'Start typing your address...');
 
-        const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
-          types: ['address'],
-          componentRestrictions: { country: 'us' },
-          fields: ['place_id', 'formatted_address', 'address_components', 'geometry']
-        });
-
-        autocompleteInstance.current = autocomplete;
-
-        autocomplete.addListener('place_changed', async () => {
-          const place = autocomplete.getPlace();
+        // Add event listener for place selection
+        autocompleteElement.addEventListener('gmpx-placechange', async (event: any) => {
+          const place = event.detail.place;
           
-          if (!place.geometry || !place.address_components || !place.formatted_address) {
-            console.log('No details available for selected place');
+          if (!place) {
+            console.log('No place details available');
             return;
           }
 
           console.log('Selected place:', place);
 
-          // Update input with formatted address
-          setInputValue(place.formatted_address);
+          // Use formatted_address for complete address display
+          const formattedAddress = place.formattedAddress || place.displayName;
+          setInputValue(formattedAddress);
 
           setIsLoading(true);
           setIsProcessed(false);
 
           try {
             // Parse address components
-            const components = place.address_components.reduce((acc: any, component: any) => {
+            const components = place.addressComponents?.reduce((acc: any, component: any) => {
               component.types.forEach((type: string) => {
-                acc[type] = component.long_name;
-                acc[`${type}_short`] = component.short_name;
+                acc[type] = component.longText;
+                acc[`${type}_short`] = component.shortText;
               });
               return acc;
-            }, {});
+            }, {}) || {};
 
             console.log('Address components:', components);
 
@@ -116,15 +112,15 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             }
 
             const addressData: AddressData = {
-              google_place_id: place.place_id || '',
-              formatted_address: place.formatted_address || '',
+              google_place_id: place.id || '',
+              formatted_address: formattedAddress || '',
               address_line1: addressLine1.trim(),
               address_line2: addressLine2.trim(),
               city: components.locality || components.sublocality_level_1 || components.administrative_area_level_3 || '',
               state: components.administrative_area_level_1_short || components.administrative_area_level_1 || '',
               zip_code: components.postal_code || '',
-              latitude: place.geometry.location.lat(),
-              longitude: place.geometry.location.lng()
+              latitude: place.location?.lat() || 0,
+              longitude: place.location?.lng() || 0
             };
 
             console.log("Parsed address payload:", addressData);
@@ -169,26 +165,16 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           }
         });
 
-        console.log('Google Places Autocomplete initialized successfully');
+        console.log('Google PlaceAutocompleteElement initialized successfully');
       } catch (error) {
-        console.error('Error initializing autocomplete:', error);
+        console.error('Error initializing PlaceAutocompleteElement:', error);
         retryCount++;
         setTimeout(initializeAutocomplete, 200);
       }
     };
 
     initializeAutocomplete();
-
-    return () => {
-      if (autocompleteInstance.current) {
-        window.google.maps.event.clearInstanceListeners(autocompleteInstance.current);
-      }
-    };
   }, [onAddressSelected]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
 
   return (
     <div className="space-y-6">
@@ -202,16 +188,14 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       </div>
 
       <div className="w-full max-w-xl mx-auto">
-        <input
+        <gmpx-placeautocomplete
           ref={autocompleteRef}
-          type="text"
-          placeholder="Start typing your address..."
-          value={inputValue}
-          onChange={handleInputChange}
           className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
           style={{ 
             position: 'relative',
-            zIndex: 1
+            zIndex: 1,
+            width: '100%',
+            fontSize: '16px'
           }}
         />
       </div>
