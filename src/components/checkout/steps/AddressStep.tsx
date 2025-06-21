@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { CheckoutState } from '../CheckoutModal';
-import { AddressAutocomplete } from '../../AddressAutocomplete';
+import AddressAutocomplete from '../../AddressAutocomplete';
 
 interface AddressStepProps {
   state: CheckoutState;
@@ -9,20 +9,21 @@ interface AddressStepProps {
 }
 
 export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) => {
-  const handleAddressSelected = (addressData: any) => {
+  const handleAddressSelected = (address: string) => {
+    console.log('Full address selected:', address);
+    // Parse the address and update state - for now just storing the formatted address
     updateState({
       address: {
-        addressLine1: addressData.address_line1,
-        addressLine2: addressData.address_line2,
-        city: addressData.city,
-        state: addressData.state,
-        zipCode: addressData.zip_code,
-        latitude: addressData.latitude,
-        longitude: addressData.longitude,
-        googlePlaceId: addressData.google_place_id,
-        formattedAddress: addressData.formatted_address
-      },
-      anchorAddressId: addressData.anchor_address_id
+        formattedAddress: address,
+        addressLine1: '', // Will need to parse these from the full address
+        addressLine2: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        latitude: 0,
+        longitude: 0,
+        googlePlaceId: ''
+      }
     });
   };
 
@@ -45,10 +46,32 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         </p>
       </div>
 
-      <AddressAutocomplete 
-        onAddressSelected={handleAddressSelected}
-        onNext={handleNext}
-      />
+      <div className="space-y-6">
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Enter Your Address
+          </h3>
+          <p className="text-gray-600">
+            We'll check if SpryFi internet is available in your area
+          </p>
+        </div>
+
+        <div className="w-full max-w-xl mx-auto">
+          <AddressAutocomplete 
+            onAddressSelect={handleAddressSelected}
+          />
+        </div>
+
+        <div className="flex justify-end">
+          <button 
+            onClick={handleNext}
+            disabled={!state.address?.formattedAddress}
+            className="bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold px-6 py-3 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

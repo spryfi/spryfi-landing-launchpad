@@ -17,21 +17,19 @@
     <meta name="twitter:site" content="@spryfi" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
-    <!-- Google Maps JS API with async loading -->
-    <script
-      async
-      defer
-      type="text/javascript"
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDWxX76u5JKMT9uAE_r-EN6LOzZGkxm-M8&libraries=places&loading=async">
+    <!-- Google Maps initialization script -->
+    <script>
+      function initAutocomplete() {
+        if (window.initAutocomplete) {
+          window.initAutocomplete();
+        }
+      }
     </script>
-
-    <!-- Extended Component Library for modern autocomplete -->
-    <script
-      type="module"
-      async
-      defer
-      src="https://unpkg.com/@googlemaps/extended-component-library@latest">
-    </script>
+    <script 
+      async 
+      defer 
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDWxX76u5JKMT9uAE_r-EN6LOzZGkxm-M8&libraries=places&callback=initAutocomplete"
+    ></script>
   </head>
 
   <body>
