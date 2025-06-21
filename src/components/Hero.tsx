@@ -59,20 +59,20 @@ export const Hero = () => {
         {/* Overlay Content */}
         <div className="relative z-10 flex flex-col justify-center items-center text-white text-center h-full px-6">
           <h1 
-            className={`text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg transition-opacity duration-500 ${
+            className={`text-2xl md:text-4xl font-bold mb-4 drop-shadow-lg transition-opacity duration-500 leading-tight ${
               isVisible ? 'opacity-100' : 'opacity-0'
             }`}
           >
             {currentHook}
           </h1>
 
-          <p className="text-lg text-gray-200 mb-6 drop-shadow-lg">
+          <p className="text-base md:text-lg text-gray-200 mb-6 drop-shadow-lg leading-relaxed mt-2">
             Enter your address • Takes 30 seconds
           </p>
 
           <Button
             onClick={openModal}
-            className="bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold px-8 py-4 rounded-full text-lg shadow-lg transition-all duration-200"
+            className="bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold px-8 py-4 rounded-full text-base shadow-lg transition-all duration-200 mt-4"
           >
             Check Availability
           </Button>
