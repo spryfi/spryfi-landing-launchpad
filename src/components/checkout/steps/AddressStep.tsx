@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
-import { useRotatingHook } from '@/hooks/useRotatingHook';
 
 declare global {
   namespace JSX {
@@ -21,7 +21,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [loading, setLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
   const [isGoogleReady, setIsGoogleReady] = useState(false);
-  const { currentHook, isVisible } = useRotatingHook();
 
   useEffect(() => {
     // Wait for Google's extended component library to be ready
@@ -180,12 +179,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       <div className="text-center mb-8">
         <div className="text-6xl mb-4">🏠</div>
         
-        <h2 
-          className={`text-2xl font-bold text-gray-900 mb-2 transition-opacity duration-500 ${
-            isVisible ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          {currentHook}
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Check Internet Availability
         </h2>
         
         <p className="text-gray-600 mb-6">
