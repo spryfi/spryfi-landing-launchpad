@@ -35,7 +35,13 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           const place = autocompleteRef.current.getPlace();
           
           if (place.formatted_address) {
+            // Set the full formatted address in the input field
             setAddress(place.formatted_address);
+            
+            // Force update the input field value to show the full address
+            if (addressInputRef.current) {
+              addressInputRef.current.value = place.formatted_address;
+            }
             
             // Parse address components in the background
             const components = place.address_components || [];
@@ -55,9 +61,17 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
               }
             });
             
+            // Update background state variables (not shown to user)
             setCity(parsedCity);
             setStateInput(parsedState);
             setZipCode(parsedZip);
+
+            console.log('Address parsed:', {
+              fullAddress: place.formatted_address,
+              city: parsedCity,
+              state: parsedState,
+              zip: parsedZip
+            });
           }
         });
       }
