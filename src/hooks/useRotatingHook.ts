@@ -5,26 +5,33 @@ const BRAND_HOOKS = [
   "Finally. Internet that doesn't hate you.",
   "We're not Comcast.",
   "Internet built by humans, not algorithms.",
-  "No contracts. No credit checks. No BS.",
-  "Internet that just works. Imagine that.",
-  "Your neighbors already switched. Join them."
+  "The internet you deserve. Not the internet you're stuck with.",
+  "We don't have shareholders. We have neighbors."
 ];
 
 export const useRotatingHook = () => {
-  const [currentHook, setCurrentHook] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const randomHook = BRAND_HOOKS[Math.floor(Math.random() * BRAND_HOOKS.length)];
-    setCurrentHook(randomHook);
-    
-    // Add a small delay for fade-in animation
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 100);
+    // Set initial hook
+    setIsVisible(true);
 
-    return () => clearTimeout(timer);
+    // Set up rotation every 4 seconds
+    const interval = setInterval(() => {
+      setIsVisible(false);
+      
+      setTimeout(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % BRAND_HOOKS.length);
+        setIsVisible(true);
+      }, 500); // 0.5 second fade out before changing text
+    }, 4000); // Rotate every 4 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
-  return { currentHook, isVisible };
+  return { 
+    currentHook: BRAND_HOOKS[currentIndex], 
+    isVisible 
+  };
 };

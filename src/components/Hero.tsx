@@ -34,7 +34,7 @@ export const Hero = () => {
           heroImg.src = heroImages[currentImage];
           heroImg.classList.remove("opacity-0");
           heroImg.style.filter = "blur(0px)";
-        }, 1000); // 1 second transition
+        }, 1500); // 1.5 second transition
       }
     }, 5000); // Rotate every 5 seconds
 
@@ -49,30 +49,30 @@ export const Hero = () => {
           id="hero-image" 
           src="/lovable-uploads/b2299131-f552-4bda-aa70-25bb52991901.png" 
           alt="People enjoying reliable internet at home" 
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 opacity-60" 
-          style={{ transition: 'opacity 1s ease-in-out, filter 1s ease-in-out' }}
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-1500 opacity-50" 
+          style={{ transition: 'opacity 1.5s ease-in-out, filter 1.5s ease-in-out' }}
         />
         
         {/* Dark overlay for better text contrast */}
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 bg-black/50"></div>
 
         {/* Overlay Content */}
         <div className="relative z-10 flex flex-col justify-center items-center text-white text-center h-full px-6">
           <h1 
-            className={`text-2xl md:text-4xl font-bold mb-4 drop-shadow-lg transition-opacity duration-500 leading-tight ${
+            className={`text-3xl md:text-5xl font-bold mb-4 drop-shadow-lg transition-opacity duration-500 leading-tight ${
               isVisible ? 'opacity-100' : 'opacity-0'
             }`}
           >
             {currentHook}
           </h1>
 
-          <p className="text-base md:text-lg text-gray-200 mb-6 drop-shadow-lg leading-relaxed mt-2">
-            Enter your address • Takes 30 seconds
+          <p className="text-base text-white mt-2 drop-shadow-lg leading-relaxed">
+            Takes just 30 seconds.
           </p>
 
           <Button
             onClick={openModal}
-            className="bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold px-8 py-4 rounded-full text-base shadow-lg transition-all duration-200 mt-4"
+            className="bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold px-8 py-4 rounded-full text-base shadow-lg transition-all duration-200 mt-4 min-w-[220px]"
           >
             Check Availability
           </Button>
