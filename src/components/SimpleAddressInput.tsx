@@ -21,6 +21,7 @@ const SimpleAddressInput: React.FC<Props> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [addressSelected, setAddressSelected] = useState(false);
+  const [error, setError] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
@@ -62,18 +63,27 @@ const SimpleAddressInput: React.FC<Props> = ({
   const debouncedSearch = useCallback(async (query: string) => {
     if (!mountedRef.current || query.length <= 2) return;
 
+    console.log('🔍 Searching for:', query);
     setIsLoading(true);
+    setError('');
     
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
         `access_token=${MAPBOX_TOKEN}&` +
         `country=US&` +
         `types=address&` +
-        `limit=5`
-      );
+        `limit=5`;
+      
+      console.log('📡 API URL:', url);
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+      }
       
       const data = await response.json();
+      console.log('📨 API Response:', data);
       
       if (mountedRef.current && data.features) {
         const addressOptions: AddressOption[] = data.features.map((feature: any) => ({
@@ -82,11 +92,13 @@ const SimpleAddressInput: React.FC<Props> = ({
           place_name: feature.place_name
         }));
         
+        console.log('✅ Processed suggestions:', addressOptions);
         setSuggestions(addressOptions);
         setShowSuggestions(true);
       }
     } catch (error) {
-      console.error('Error fetching addresses:', error);
+      console.error('❌ Error fetching addresses:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch suggestions');
       if (mountedRef.current) {
         setSuggestions([]);
       }
@@ -104,6 +116,7 @@ const SimpleAddressInput: React.FC<Props> = ({
     }
 
     if (inputValue.length > 2 && !addressSelected) {
+      console.log('⏰ Debouncing search for:', inputValue);
       debounceTimerRef.current = setTimeout(() => {
         debouncedSearch(inputValue);
       }, 300);
@@ -111,6 +124,7 @@ const SimpleAddressInput: React.FC<Props> = ({
       setSuggestions([]);
       setShowSuggestions(false);
       setIsLoading(false);
+      setError('');
     }
 
     return () => {
@@ -121,15 +135,18 @@ const SimpleAddressInput: React.FC<Props> = ({
   }, [inputValue, addressSelected, debouncedSearch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+    const value = e.target.value;
+    console.log('✏️ Input changed:', value);
+    setInputValue(value);
     setAddressSelected(false);
+    setError('');
   };
 
   // Prevent form submission on Enter key
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      // Don't auto-select first suggestion, let user click to choose
+      console.log('⚠️ Enter key pressed - prevented form submission');
     }
   };
 
@@ -141,7 +158,7 @@ const SimpleAddressInput: React.FC<Props> = ({
   }, [onAddressSelect]);
 
   const handleSuggestionClick = (suggestion: AddressOption) => {
-    console.log('FULL ADDRESS SELECTED:', suggestion.formatted);
+    console.log('🎯 Address selected:', suggestion.formatted);
     
     setInputValue(suggestion.formatted);
     setAddressSelected(true);
@@ -154,6 +171,7 @@ const SimpleAddressInput: React.FC<Props> = ({
     // Clear suggestions and localStorage since address is selected
     setShowSuggestions(false);
     setSuggestions([]);
+    setError('');
     localStorage.removeItem('addressFormData');
     
     stableOnAddressSelect(suggestion.formatted);
@@ -188,6 +206,8 @@ const SimpleAddressInput: React.FC<Props> = ({
         className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:outline-none transition-colors ${
           addressSelected 
             ? 'border-green-500 bg-green-50' 
+            : error
+            ? 'border-red-500 bg-red-50'
             : 'border-gray-300 focus:border-blue-500'
         }`}
         autoComplete="off"
@@ -199,13 +219,19 @@ const SimpleAddressInput: React.FC<Props> = ({
         </div>
       )}
       
-      {isLoading && !addressSelected && (
-        <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-b-lg p-2 shadow-lg z-50">
-          <div className="text-gray-500 text-sm">Searching addresses...</div>
+      {error && (
+        <div className="absolute top-full left-0 right-0 bg-red-50 border border-red-300 rounded-b-lg p-2 shadow-lg z-50">
+          <div className="text-red-600 text-sm">⚠️ {error}</div>
         </div>
       )}
       
-      {showSuggestions && suggestions.length > 0 && !addressSelected && (
+      {isLoading && !addressSelected && !error && (
+        <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-b-lg p-2 shadow-lg z-50">
+          <div className="text-gray-500 text-sm">🔍 Searching addresses...</div>
+        </div>
+      )}
+      
+      {showSuggestions && suggestions.length > 0 && !addressSelected && !error && (
         <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-b-lg shadow-lg z-50 max-h-60 overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <div
@@ -213,15 +239,23 @@ const SimpleAddressInput: React.FC<Props> = ({
               onClick={() => handleSuggestionClick(suggestion)}
               className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
             >
-              {suggestion.display_name}
+              📍 {suggestion.display_name}
             </div>
           ))}
         </div>
       )}
       
-      {showSuggestions && suggestions.length === 0 && !isLoading && inputValue.length > 2 && !addressSelected && (
+      {showSuggestions && suggestions.length === 0 && !isLoading && inputValue.length > 2 && !addressSelected && !error && (
         <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-b-lg p-3 shadow-lg z-50">
-          <div className="text-gray-500 text-sm">No addresses found</div>
+          <div className="text-gray-500 text-sm">❌ No addresses found</div>
+        </div>
+      )}
+
+      {/* Debug info - remove in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-2 text-xs text-gray-400">
+          Debug: Input length: {inputValue.length}, Loading: {isLoading.toString()}, 
+          Suggestions: {suggestions.length}, Show: {showSuggestions.toString()}
         </div>
       )}
     </div>
