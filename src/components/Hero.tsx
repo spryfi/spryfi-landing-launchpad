@@ -6,6 +6,7 @@ import { useCheckoutModal } from '@/hooks/useCheckoutModal';
 import { useRotatingHook } from '@/hooks/useRotatingHook';
 
 export const Hero = () => {
+  // Call all hooks at the top level - this is critical
   const { isOpen, openModal, closeModal } = useCheckoutModal();
   const { currentHook, isVisible } = useRotatingHook();
 
@@ -22,24 +23,37 @@ export const Hero = () => {
     ];
 
     let currentImage = 0;
-    const rotateImages = setInterval(() => {
-      currentImage = (currentImage + 1) % heroImages.length;
-      const heroImg = document.getElementById("hero-image") as HTMLImageElement;
-      if (heroImg) {
-        // Start blur and fade out
-        heroImg.style.filter = "blur(4px)";
-        heroImg.classList.add("opacity-0");
+    let intervalId: NodeJS.Timeout;
 
-        setTimeout(() => {
-          heroImg.src = heroImages[currentImage];
-          heroImg.classList.remove("opacity-0");
-          heroImg.style.filter = "blur(0px)";
-        }, 1500); // 1.5 second transition
+    // Add a small delay to ensure DOM is ready
+    const startRotation = () => {
+      intervalId = setInterval(() => {
+        currentImage = (currentImage + 1) % heroImages.length;
+        const heroImg = document.getElementById("hero-image") as HTMLImageElement;
+        if (heroImg) {
+          // Start blur and fade out
+          heroImg.style.filter = "blur(4px)";
+          heroImg.classList.add("opacity-0");
+
+          setTimeout(() => {
+            heroImg.src = heroImages[currentImage];
+            heroImg.classList.remove("opacity-0");
+            heroImg.style.filter = "blur(0px)";
+          }, 1500); // 1.5 second transition
+        }
+      }, 5000); // Rotate every 5 seconds
+    };
+
+    // Start rotation after a brief delay
+    const timeoutId = setTimeout(startRotation, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) {
+        clearInterval(intervalId);
       }
-    }, 5000); // Rotate every 5 seconds
-
-    return () => clearInterval(rotateImages);
-  }, []);
+    };
+  }, []); // Empty dependency array
 
   return (
     <>
@@ -63,7 +77,7 @@ export const Hero = () => {
               isVisible ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            {currentHook}
+            {currentHook || "Finally. Internet that doesn't hate you."}
           </h1>
 
           <p className="text-base text-white mt-2 drop-shadow-lg leading-relaxed">

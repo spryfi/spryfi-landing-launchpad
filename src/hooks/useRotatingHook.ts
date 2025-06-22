@@ -10,15 +10,22 @@ const BRAND_HOOKS = [
 ];
 
 export const useRotatingHook = () => {
+  // Always call hooks at the top level - no conditions
   const [currentHook, setCurrentHook] = useState('');
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Pick a random hook on initial load
-    const randomIndex = Math.floor(Math.random() * BRAND_HOOKS.length);
-    setCurrentHook(BRAND_HOOKS[randomIndex]);
-    setIsVisible(true);
-  }, []);
+    // Ensure we have a stable initial state
+    if (!currentHook) {
+      const randomIndex = Math.floor(Math.random() * BRAND_HOOKS.length);
+      setCurrentHook(BRAND_HOOKS[randomIndex]);
+      
+      // Use setTimeout to ensure proper timing
+      setTimeout(() => {
+        setIsVisible(true);
+      }, 100);
+    }
+  }, []); // Empty dependency array to run only once
 
   return { 
     currentHook, 
