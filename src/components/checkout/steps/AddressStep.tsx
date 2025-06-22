@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CheckoutState } from '../CheckoutModal';
 import SimpleAddressInput from '../../SimpleAddressInput';
 import { supabase } from '@/integrations/supabase/client';
+import { HomeWifi } from 'lucide-react';
 
 interface AddressStepProps {
   state: CheckoutState;
@@ -127,7 +128,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   return (
     <div className="p-8">
       <div className="text-center mb-8">
-        <div className="text-6xl mb-4">🏠</div>
+        <HomeWifi className="h-10 w-10 text-[#0047AB] mx-auto mb-2" />
         
         <h2 className="text-2xl md:text-3xl font-semibold text-center text-gray-900 mb-2">
           Let's see if we can get you connected
