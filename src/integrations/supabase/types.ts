@@ -1085,6 +1085,7 @@ export type Database = {
         Row: {
           address_line1: string | null
           address_line2: string | null
+          anchor_address_id: string | null
           city: string | null
           created_at: string | null
           email: string | null
@@ -1111,6 +1112,7 @@ export type Database = {
         Insert: {
           address_line1?: string | null
           address_line2?: string | null
+          anchor_address_id?: string | null
           city?: string | null
           created_at?: string | null
           email?: string | null
@@ -1137,6 +1139,7 @@ export type Database = {
         Update: {
           address_line1?: string | null
           address_line2?: string | null
+          anchor_address_id?: string | null
           city?: string | null
           created_at?: string | null
           email?: string | null
@@ -1160,7 +1163,22 @@ export type Database = {
           usage_types?: string[] | null
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leads_fresh_anchor_address_id_fkey"
+            columns: ["anchor_address_id"]
+            isOneToOne: false
+            referencedRelation: "anchor_address"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_fresh_anchor_address_id_fkey"
+            columns: ["anchor_address_id"]
+            isOneToOne: false
+            referencedRelation: "lead_qualification_view"
+            referencedColumns: ["anchor_address_id"]
+          },
+        ]
       }
       leads_qualifications: {
         Row: {
