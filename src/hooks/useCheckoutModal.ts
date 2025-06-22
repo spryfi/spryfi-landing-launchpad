@@ -1,17 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export const useCheckoutModal = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    // Auto-launch modal after 10 seconds
-    const timer = setTimeout(() => {
-      setIsOpen(true);
-    }, 10000);
-
-    return () => clearTimeout(timer);
-  }, []);
+  // REMOVED: Auto-launch timer that was causing unwanted modal behavior
+  // Users should have full control over when the modal opens
 
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);

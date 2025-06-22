@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 interface AddressOption {
   display_name: string;
@@ -22,55 +22,123 @@ const SimpleAddressInput: React.FC<Props> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [addressSelected, setAddressSelected] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
 
   const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoicGRtY2tuaWdodCIsImEiOiJjbWM1bmp3MGcwcmpxMnJvaXNqeW15cDNqIn0._jS8MsELPUKSxU7ys6cxdg';
 
+  // Form persistence - save input to localStorage
   useEffect(() => {
-    if (inputValue.length > 2 && !addressSelected) {
-      setIsLoading(true);
-      
-      const timer = setTimeout(async () => {
-        try {
-          const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(inputValue)}.json?` +
-            `access_token=${MAPBOX_TOKEN}&` +
-            `country=US&` +
-            `types=address&` +
-            `limit=5`
-          );
-          
-          const data = await response.json();
-          
-          if (data.features) {
-            const addressOptions: AddressOption[] = data.features.map((feature: any) => ({
-              display_name: feature.place_name,
-              formatted: feature.place_name,
-              place_name: feature.place_name
-            }));
-            
-            setSuggestions(addressOptions);
-            setShowSuggestions(true);
-          }
-        } catch (error) {
-          console.error('Error fetching addresses:', error);
-          setSuggestions([]);
-        } finally {
-          setIsLoading(false);
-        }
-      }, 300);
+    if (inputValue && !addressSelected) {
+      const formData = {
+        address: inputValue,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('addressFormData', JSON.stringify(formData));
+    }
+  }, [inputValue, addressSelected]);
 
-      return () => clearTimeout(timer);
+  // Restore form data on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('addressFormData');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        // Only restore if saved within last hour to avoid stale data
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 3600000) {
+          setInputValue(parsed.address || '');
+        }
+      } catch (error) {
+        console.error('Error restoring form data:', error);
+      }
+    }
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Debounced search function
+  const debouncedSearch = useCallback(async (query: string) => {
+    if (!mountedRef.current || query.length <= 2) return;
+
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
+        `access_token=${MAPBOX_TOKEN}&` +
+        `country=US&` +
+        `types=address&` +
+        `limit=5`
+      );
+      
+      const data = await response.json();
+      
+      if (mountedRef.current && data.features) {
+        const addressOptions: AddressOption[] = data.features.map((feature: any) => ({
+          display_name: feature.place_name,
+          formatted: feature.place_name,
+          place_name: feature.place_name
+        }));
+        
+        setSuggestions(addressOptions);
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+      if (mountedRef.current) {
+        setSuggestions([]);
+      }
+    } finally {
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [MAPBOX_TOKEN]);
+
+  // Handle input changes with debouncing
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (inputValue.length > 2 && !addressSelected) {
+      debounceTimerRef.current = setTimeout(() => {
+        debouncedSearch(inputValue);
+      }, 300);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
       setIsLoading(false);
     }
-  }, [inputValue, MAPBOX_TOKEN, addressSelected]);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [inputValue, addressSelected, debouncedSearch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
     setAddressSelected(false);
   };
+
+  // Prevent form submission on Enter key
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Don't auto-select first suggestion, let user click to choose
+    }
+  };
+
+  // Stable callback to prevent unnecessary re-renders
+  const stableOnAddressSelect = useCallback((address: string) => {
+    if (onAddressSelect) {
+      onAddressSelect(address);
+    }
+  }, [onAddressSelect]);
 
   const handleSuggestionClick = (suggestion: AddressOption) => {
     console.log('FULL ADDRESS SELECTED:', suggestion.formatted);
@@ -80,20 +148,24 @@ const SimpleAddressInput: React.FC<Props> = ({
     
     if (inputRef.current) {
       inputRef.current.value = suggestion.formatted;
-      inputRef.current.blur(); // Remove focus to hide any remaining dropdowns
+      inputRef.current.blur();
     }
     
-    // Immediately hide suggestions
+    // Clear suggestions and localStorage since address is selected
     setShowSuggestions(false);
     setSuggestions([]);
+    localStorage.removeItem('addressFormData');
     
-    if (onAddressSelect) {
-      onAddressSelect(suggestion.formatted);
-    }
+    stableOnAddressSelect(suggestion.formatted);
   };
 
   const handleInputBlur = () => {
-    setTimeout(() => setShowSuggestions(false), 200);
+    // Delay hiding suggestions to allow for clicks
+    setTimeout(() => {
+      if (mountedRef.current) {
+        setShowSuggestions(false);
+      }
+    }, 200);
   };
 
   const handleInputFocus = () => {
@@ -109,6 +181,7 @@ const SimpleAddressInput: React.FC<Props> = ({
         type="text"
         value={inputValue}
         onChange={handleInputChange}
+        onKeyPress={handleKeyPress}
         onBlur={handleInputBlur}
         onFocus={handleInputFocus}
         placeholder={placeholder}

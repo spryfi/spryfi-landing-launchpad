@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useCallback } from 'react';
 import { CheckoutState } from '../CheckoutModal';
 import SimpleAddressInput from '../../SimpleAddressInput';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,7 +44,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     };
   };
 
-  const handleAddressSelected = async (address: string) => {
+  // Stable callback to prevent unnecessary re-renders
+  const handleAddressSelected = useCallback(async (address: string) => {
     console.log('ADDRESS SELECTED:', address);
     setSelectedAddress(address);
     setAddressSelected(true);
@@ -60,7 +62,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         googlePlaceId: ''
       }
     });
-  };
+  }, [updateState]);
 
   const handleNext = async () => {
     if (!selectedAddress || !state.address) {
@@ -110,6 +112,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         anchorAddressId = newAddress.id;
         console.log('Created new address:', anchorAddressId);
       }
+
+      // Clear any saved form data since we're moving to next step
+      localStorage.removeItem('addressFormData');
 
       // Update state with anchor address ID and move to contact step
       updateState({
