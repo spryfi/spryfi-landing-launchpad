@@ -38,12 +38,19 @@ const SimpleAddressInput: React.FC<Props> = ({
   useEffect(() => {
     const savedAddress = loadAddressFromStorage();
     if (savedAddress) {
+      console.log('🔄 Restored address from storage:', savedAddress);
       setInputValue(savedAddress);
     }
   }, []);
 
   // Handle search with debouncing
   useEffect(() => {
+    console.log('🔄 Input effect triggered:', {
+      inputLength: inputValue.length,
+      addressSelected,
+      suggestionsCount: suggestions.length
+    });
+    
     if (inputValue.length > 2 && !addressSelected) {
       debouncedSearch(inputValue);
       setShowSuggestions(true);
@@ -58,6 +65,11 @@ const SimpleAddressInput: React.FC<Props> = ({
     console.log('✏️ Input changed:', value);
     setInputValue(value);
     setAddressSelected(false);
+    
+    // Reset error state when user starts typing
+    if (error) {
+      console.log('🔄 Resetting error state');
+    }
   };
 
   // Prevent form submission on Enter key
@@ -102,13 +114,28 @@ const SimpleAddressInput: React.FC<Props> = ({
   };
 
   const handleInputFocus = () => {
+    console.log('🎯 Input focused, suggestions available:', suggestions.length);
     if (suggestions.length > 0 && !addressSelected) {
+      setShowSuggestions(true);
+    }
+    // Trigger search if there's existing input
+    if (inputValue.length > 2 && !addressSelected) {
+      debouncedSearch(inputValue);
       setShowSuggestions(true);
     }
   };
 
   const showNoResults = showSuggestions && suggestions.length === 0 && !isLoading && 
                        inputValue.length > 2 && !addressSelected && !error;
+
+  console.log('🔍 Render state:', {
+    inputValue: inputValue.substring(0, 20) + (inputValue.length > 20 ? '...' : ''),
+    suggestionsCount: suggestions.length,
+    showSuggestions,
+    isLoading,
+    error: error ? 'Present' : 'None',
+    addressSelected
+  });
 
   return (
     <div className="relative w-full">
@@ -129,6 +156,7 @@ const SimpleAddressInput: React.FC<Props> = ({
             : 'border-gray-300 focus:border-blue-500'
         }`}
         autoComplete="off"
+        spellCheck="false"
       />
       
       {addressSelected && (
@@ -150,11 +178,16 @@ const SimpleAddressInput: React.FC<Props> = ({
         isVisible={showSuggestions && !addressSelected && !error}
       />
 
-      {/* Debug info - remove in production */}
+      {/* Debug info - visible in development */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="mt-2 text-xs text-gray-400">
-          Debug: Input length: {inputValue.length}, Loading: {isLoading.toString()}, 
-          Suggestions: {suggestions.length}, Show: {showSuggestions.toString()}
+        <div className="mt-2 p-2 text-xs text-gray-400 bg-gray-50 rounded">
+          <div>Debug Info:</div>
+          <div>• Input: "{inputValue}" (length: {inputValue.length})</div>
+          <div>• Loading: {isLoading.toString()}</div>
+          <div>• Suggestions: {suggestions.length}</div>
+          <div>• Show dropdown: {showSuggestions.toString()}</div>
+          <div>• Error: {error || 'None'}</div>
+          <div>• Selected: {addressSelected.toString()}</div>
         </div>
       )}
     </div>
