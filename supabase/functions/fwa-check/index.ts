@@ -20,6 +20,7 @@ serve(async (req) => {
     )
 
     const { 
+      lead_id,
       google_place_id, 
       formatted_address, 
       address_line1, 
@@ -32,6 +33,7 @@ serve(async (req) => {
     } = await req.json()
     
     console.log('FWA check request:', { 
+      lead_id,
       google_place_id, 
       formatted_address, 
       address_line1, 
@@ -41,6 +43,33 @@ serve(async (req) => {
       latitude, 
       longitude 
     })
+
+    // Verify lead exists if lead_id provided
+    if (lead_id) {
+      const { data: leadData, error: leadError } = await supabase
+        .from('leads_fresh')
+        .select('id')
+        .eq('id', lead_id)
+        .single()
+
+      if (leadError) {
+        console.error('Lead verification error:', leadError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Invalid lead ID'
+          }),
+          { 
+            status: 400,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            }
+          }
+        )
+      }
+      console.log('✅ Lead verified:', leadData.id)
+    }
 
     // Check if address already exists in anchor_address table
     const { data: existingAddress, error: checkError } = await supabase
@@ -61,20 +90,42 @@ serve(async (req) => {
       // Address exists, use existing ID
       anchorAddressId = existingAddress.id
       console.log('Using existing address:', anchorAddressId)
+      
+      // Update first_lead_id if provided and not already set
+      if (lead_id) {
+        const { error: updateLeadError } = await supabase
+          .from('anchor_address')
+          .update({ first_lead_id: lead_id })
+          .eq('id', anchorAddressId)
+          .is('first_lead_id', null) // Only update if not already set
+
+        if (updateLeadError) {
+          console.error('Error updating first_lead_id:', updateLeadError)
+        } else {
+          console.log('✅ Updated anchor address with lead ID')
+        }
+      }
     } else {
       // Insert new address into anchor_address table
+      const insertData: any = {
+        address_line1,
+        address_line2: address_line2 || null,
+        city,
+        state,
+        zip_code,
+        latitude,
+        longitude,
+        status: 'active'
+      }
+
+      // Set first_lead_id if provided
+      if (lead_id) {
+        insertData.first_lead_id = lead_id
+      }
+
       const { data: newAddress, error: insertError } = await supabase
         .from('anchor_address')
-        .insert({
-          address_line1,
-          address_line2: address_line2 || null,
-          city,
-          state,
-          zip_code,
-          latitude,
-          longitude,
-          status: 'active'
-        })
+        .insert(insertData)
         .select('id')
         .single()
 
@@ -104,6 +155,8 @@ serve(async (req) => {
         longitude
       });
 
+      console.log('📡 Verizon API result:', verizonResponse);
+
       if (verizonResponse.success && verizonResponse.qualified) {
         qualificationResult = {
           qualified: true,
@@ -115,6 +168,7 @@ serve(async (req) => {
         };
         source = 'verizon';
         console.log('✅ Verizon qualification successful')
+        console.log('✅ Qualification source set to:', source);
       } else {
         console.log('❌ Verizon qualification failed, trying bot fallback')
         throw new Error('Verizon API returned unqualified or failed')
@@ -142,6 +196,7 @@ serve(async (req) => {
       };
       source = 'bot';
       console.log('✅ Bot qualification completed')
+      console.log('✅ Qualification source set to:', source);
     }
 
     // Update the anchor_address with qualification results
@@ -166,10 +221,34 @@ serve(async (req) => {
       console.error('Address update error:', updateError)
     }
 
+    // Update the lead with qualification results if lead_id provided
+    if (lead_id) {
+      const { error: leadUpdateError } = await supabase
+        .from('leads_fresh')
+        .update({
+          qualified: qualificationResult.qualified,
+          qualification_checked_at: new Date().toISOString(),
+          qualification_result: source,
+          address_line1,
+          address_line2,
+          city,
+          state,
+          zip_code
+        })
+        .eq('id', lead_id)
+
+      if (leadUpdateError) {
+        console.error('Lead update error:', leadUpdateError)
+      } else {
+        console.log('✅ Lead updated with qualification results')
+      }
+    }
+
     console.log('✅ Qualification complete:', {
       qualified: qualificationResult.qualified,
       source: source,
-      anchor_address_id: anchorAddressId
+      anchor_address_id: anchorAddressId,
+      lead_id: lead_id
     })
 
     return new Response(

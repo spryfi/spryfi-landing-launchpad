@@ -53,9 +53,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       // Parse the address
       const parsedAddress = parseAddress(address);
       
-      // Call the FWA check API
+      // Call the FWA check API with lead_id
       const { data, error } = await supabase.functions.invoke('fwa-check', {
         body: {
+          lead_id: state.leadId, // Include lead_id from state
           formatted_address: address,
           address_line1: parsedAddress.addressLine1,
           address_line2: '',
@@ -98,7 +99,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       // Move to next step based on qualification
       if (data.qualified) {
-        updateState({ step: 'contact' });
+        updateState({ step: 'qualification-success' });
       } else {
         updateState({ step: 'not-qualified' });
       }
@@ -117,11 +118,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         <div className="text-6xl mb-4">🏠</div>
         
         <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
-          Let's see if SpryFi works at your address
+          Great {state.contact?.firstName}! Now let's check your address
         </h2>
         
         <p className="text-sm text-gray-500 text-center mb-4">
-          Takes just 30 seconds — no commitments, no spam.
+          We'll see if SpryFi internet is available at your location
         </p>
       </div>
 
@@ -170,6 +171,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             </div>
           )}
         </div>
+
+        {/* Debug info */}
+        {state.leadId && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600 max-w-xl mx-auto">
+            <p>Debug: Lead ID: {state.leadId}</p>
+            <p>Contact: {state.contact?.firstName} {state.contact?.lastName} ({state.contact?.email})</p>
+          </div>
+        )}
       </div>
     </div>
   );

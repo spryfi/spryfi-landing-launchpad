@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { AddressStep } from './steps/AddressStep';
 import { ContactStep } from './steps/ContactStep';
+import { AddressStep } from './steps/AddressStep';
 import { QualificationSuccess } from './steps/QualificationSuccess';
 import { PlanSelection } from './steps/PlanSelection';
 import { RouterOffer } from './steps/RouterOffer';
@@ -26,6 +26,8 @@ export interface CheckoutState {
   contact: {
     email: string;
     phone: string;
+    firstName: string;
+    lastName: string;
   } | null;
   planSelected: string | null;
   routerAdded: boolean;
@@ -45,7 +47,7 @@ interface CheckoutModalProps {
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
   const [state, setState] = useState<CheckoutState>({
-    step: 'address',
+    step: 'contact', // Start with contact step now
     anchorAddressId: null,
     leadId: null,
     address: null,
@@ -63,10 +65,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
 
   const renderStep = () => {
     switch (state.step) {
-      case 'address':
-        return <AddressStep state={state} updateState={updateState} />;
       case 'contact':
         return <ContactStep state={state} updateState={updateState} />;
+      case 'address':
+        return <AddressStep state={state} updateState={updateState} />;
       case 'qualification-success':
         return <QualificationSuccess state={state} updateState={updateState} />;
       case 'plan-selection':
@@ -103,7 +105,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
         <DialogTitle className="sr-only">Check Internet Availability</DialogTitle>
         <DialogDescription className="sr-only">
-          Enter your address to check if SpryFi internet service is available in your area
+          Enter your contact information and address to check if SpryFi internet service is available in your area
         </DialogDescription>
         <div className="bg-white">
           {renderStep()}
