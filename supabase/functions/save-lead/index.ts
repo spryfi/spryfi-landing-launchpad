@@ -19,26 +19,19 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    const body = await req.json()
+    console.log('📥 save-lead input:', body)
+
     const { 
       email, 
       first_name, 
       last_name, 
-      anchor_address_id, 
-      started_at, 
-      status 
-    } = await req.json()
+      anchor_address_id
+    } = body
     
-    console.log('Save lead request:', { 
-      email, 
-      first_name, 
-      last_name, 
-      anchor_address_id, 
-      started_at, 
-      status 
-    })
-
     // Validate required fields
     if (!email || !first_name || !last_name) {
+      console.error('❌ Missing required fields:', { email: !!email, first_name: !!first_name, last_name: !!last_name })
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -54,31 +47,24 @@ serve(async (req) => {
       )
     }
 
-    // Create or update lead in leads_fresh table
+    // Create lead data object with only valid fields
     const leadData: any = {
       email,
       first_name,
       last_name,
-      started_at: started_at || new Date().toISOString(),
-      status: status || 'started',
+      status: 'started',
       lead_type: 'address_check',
       qualified: false
     };
 
-    // Include anchor_address_id reference if provided
+    // Only include anchor_address_id if it's provided
     if (anchor_address_id) {
-      // Update the anchor_address with first_lead_id if not already set
-      const { error: updateError } = await supabase
-        .from('anchor_address')
-        .update({ first_lead_id: null }) // We'll set this after creating the lead
-        .eq('id', anchor_address_id)
-        .is('first_lead_id', null);
-
-      if (updateError) {
-        console.log('Note: Could not update anchor_address first_lead_id (may already be set):', updateError);
-      }
+      leadData.anchor_address_id = anchor_address_id;
     }
 
+    console.log('💾 Inserting lead data:', leadData)
+
+    // Use upsert to handle duplicate emails
     const { data: leadResult, error: leadError } = await supabase
       .from('leads_fresh')
       .upsert(leadData, {
@@ -89,9 +75,11 @@ serve(async (req) => {
       .single()
 
     if (leadError) {
-      console.error('Error saving lead:', leadError)
+      console.error('🔥 Supabase error:', leadError)
       throw leadError
     }
+
+    console.log('✅ Lead saved successfully:', leadResult.id)
 
     // Now update anchor_address with the lead_id if anchor_address_id was provided
     if (anchor_address_id) {
@@ -102,13 +90,11 @@ serve(async (req) => {
         .is('first_lead_id', null); // Only update if not already set
 
       if (linkError) {
-        console.log('Note: Could not link lead to anchor_address (may already be linked):', linkError);
+        console.log('⚠️ Could not link lead to anchor_address (may already be linked):', linkError);
       } else {
-        console.log('✅ Linked lead to anchor_address');
+        console.log('🔗 Linked lead to anchor_address');
       }
     }
-
-    console.log('✅ Lead saved successfully:', leadResult.id)
 
     return new Response(
       JSON.stringify({
@@ -124,12 +110,12 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Save lead error:', error)
+    console.error('🔥 Save lead error:', error)
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message
+        error: error.message || 'Internal server error'
       }),
       { 
         status: 500,
