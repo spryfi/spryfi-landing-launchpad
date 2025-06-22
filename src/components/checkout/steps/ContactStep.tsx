@@ -34,13 +34,15 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
     setLoading(true);
 
     try {
-      // Call the save-lead edge function
+      // Call the save-lead edge function with anchor_address_id
       const { data, error } = await supabase.functions.invoke('save-lead', {
         body: {
           email,
           first_name: firstName,
           last_name: lastName,
-          started_at: new Date().toISOString() // Set started timestamp
+          anchor_address_id: state.anchorAddressId,
+          started_at: new Date().toISOString(),
+          status: 'started'
         }
       });
 
@@ -52,7 +54,7 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
       console.log('✅ Lead saved successfully:', data);
       console.log('✅ Lead ID:', data.lead_id);
 
-      // Update state with contact info and lead ID, then move to address step
+      // Update state with contact info and lead ID, then run qualification
       updateState({
         contact: { 
           email, 
@@ -60,9 +62,11 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
           firstName,
           lastName 
         },
-        leadId: data.lead_id,
-        step: 'address'
+        leadId: data.lead_id
       });
+
+      // Now run the qualification check
+      await runQualificationCheck(data.lead_id);
 
     } catch (error) {
       console.error('Error saving contact info:', error);
@@ -72,16 +76,76 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
     }
   };
 
+  const runQualificationCheck = async (leadId: string) => {
+    if (!state.address || !state.anchorAddressId) return;
+
+    try {
+      console.log('🔍 Starting qualification check...');
+
+      // Call the FWA check API with lead_id and anchor_address_id
+      const { data, error } = await supabase.functions.invoke('fwa-check', {
+        body: {
+          lead_id: leadId,
+          anchor_address_id: state.anchorAddressId,
+          formatted_address: state.address.formattedAddress,
+          address_line1: state.address.addressLine1,
+          address_line2: state.address.addressLine2 || '',
+          city: state.address.city,
+          state: state.address.state,
+          zip_code: state.address.zipCode,
+          latitude: state.address.latitude || 0,
+          longitude: state.address.longitude || 0,
+          google_place_id: state.address.googlePlaceId || ''
+        }
+      });
+
+      if (error) {
+        console.error('FWA check error:', error);
+        alert('Error checking address availability. Please try again.');
+        return;
+      }
+
+      console.log('✅ Qualification check result:', data);
+
+      // Update state with qualification results
+      updateState({
+        qualified: data.qualified,
+        qualificationResult: {
+          source: data.source || 'none',
+          network_type: data.network_type,
+          max_speed_mbps: data.raw_data?.max_speed_mbps
+        }
+      });
+
+      // Move to next step based on qualification
+      if (data.qualified) {
+        updateState({ step: 'qualification-success' });
+      } else {
+        updateState({ step: 'not-qualified' });
+      }
+
+    } catch (error) {
+      console.error('Error during qualification check:', error);
+      alert('Error checking address availability. Please try again.');
+    }
+  };
+
   return (
     <div className="p-8">
       <div className="text-center mb-8">
         <div className="text-6xl mb-4">👋</div>
         <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
-          Let's get you started — just tell us who you are
+          Great! Now tell us who you are
         </h2>
         <p className="text-sm text-gray-500 text-center mb-4">
           We'll use this info to track your order and keep you updated
         </p>
+        {state.address && (
+          <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+            <strong>Service Address:</strong> {state.address.formattedAddress || 
+              `${state.address.addressLine1}, ${state.address.city}, ${state.address.state} ${state.address.zipCode}`}
+          </div>
+        )}
       </div>
 
       <div className="space-y-6 max-w-md mx-auto">
@@ -120,7 +184,7 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
           disabled={!email || !firstName || !lastName || loading}
           className="w-full bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold py-3 px-6 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Saving...' : 'Continue'}
+          {loading ? 'Checking availability...' : 'Continue'}
         </button>
       </div>
     </div>
