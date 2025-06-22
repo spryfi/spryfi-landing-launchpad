@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CheckoutState } from '../CheckoutModal';
 import SimpleAddressInput from '../../SimpleAddressInput';
@@ -130,8 +129,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       <div className="text-center mb-8">
         <div className="text-6xl mb-4">🏠</div>
         
-        <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
-          Where do you need Internet?
+        <h2 className="text-2xl md:text-3xl font-semibold text-center text-gray-900 mb-2">
+          Let's see if we can get you connected
         </h2>
         
         <p className="text-sm text-gray-500 text-center mb-4">
