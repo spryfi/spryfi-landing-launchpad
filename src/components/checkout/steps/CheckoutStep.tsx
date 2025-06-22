@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +23,26 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ state, updateState, 
     cvv: '',
     agreed: false
   });
+
+  // Mark flow as completed when user reaches checkout
+  useEffect(() => {
+    const markFlowCompleted = async () => {
+      if (state.leadId) {
+        try {
+          await supabase
+            .from('leads_fresh')
+            .update({ flow_completed: true })
+            .eq('id', state.leadId);
+          
+          console.log('✅ Flow marked as completed for lead:', state.leadId);
+        } catch (error) {
+          console.error('Error marking flow as completed:', error);
+        }
+      }
+    };
+
+    markFlowCompleted();
+  }, [state.leadId]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));

@@ -19,9 +19,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { email, first_name, last_name } = await req.json()
+    const { email, first_name, last_name, started_at } = await req.json()
     
-    console.log('Save lead request:', { email, first_name, last_name })
+    console.log('Save lead request:', { email, first_name, last_name, started_at })
 
     // Validate required fields
     if (!email || !first_name || !last_name) {
@@ -47,9 +47,11 @@ serve(async (req) => {
         email,
         first_name,
         last_name,
+        started_at: started_at || new Date().toISOString(),
         status: 'new',
         lead_type: 'address_check',
-        qualified: false
+        qualified: false,
+        flow_completed: false
       }, {
         onConflict: 'email',
         ignoreDuplicates: false

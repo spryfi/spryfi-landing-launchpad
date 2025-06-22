@@ -39,7 +39,8 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
         body: {
           email,
           first_name: firstName,
-          last_name: lastName
+          last_name: lastName,
+          started_at: new Date().toISOString() // Set started timestamp
         }
       });
 
