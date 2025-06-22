@@ -158,9 +158,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             <button
               onClick={handleNext}
               disabled={loading}
-              className="bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold py-3 px-8 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-[#0047AB] hover:bg-[#0058CC] text-white font-semibold py-3 px-6 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Takes just 30 seconds →'}
+              {loading ? 'Saving...' : 'Next'}
             </button>
           </div>
         )}
