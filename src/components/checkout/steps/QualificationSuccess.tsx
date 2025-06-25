@@ -2,7 +2,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckoutState } from '../CheckoutModal';
-import { QualificationBadge } from '@/components/QualificationBadge';
 
 interface QualificationSuccessProps {
   state: CheckoutState;
@@ -14,15 +13,16 @@ export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ stat
     updateState({ step: 'plan-selection' });
   };
 
+  // Determine internal qualification code
+  const getQualificationCode = () => {
+    const source = state.qualificationResult?.source;
+    if (source === 'verizon') return 'sapi1';
+    if (source === 'bot') return 'sapi2';
+    return '';
+  };
+
   return (
     <div className="p-8 text-center relative">
-      {/* Qualification Source Badge */}
-      <div className="absolute top-4 right-4">
-        <QualificationBadge 
-          source={state.qualificationResult?.source || 'none'} 
-        />
-      </div>
-
       <div className="text-8xl mb-6">🎉</div>
       <h2 className="text-4xl font-bold text-gray-900 mb-4">
         Great news!
@@ -62,6 +62,11 @@ export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ stat
           <span className="text-green-500 mr-2">✓</span>
           Easy Setup
         </div>
+      </div>
+
+      {/* Internal qualification code */}
+      <div id="qualification-code" className="text-xs text-gray-400 text-center mt-4">
+        {getQualificationCode()}
       </div>
     </div>
   );
