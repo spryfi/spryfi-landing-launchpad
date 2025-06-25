@@ -103,8 +103,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="flex justify-center items-center h-full">
-      <Card className="w-[550px]">
+    <div className="flex justify-center items-start min-h-screen pt-8">
+      <Card className="w-[550px] min-h-[600px]">
         <CardHeader>
           <CardTitle>Check Internet Availability</CardTitle>
           <CardDescription>Enter your address to see if SpryFi is available in your area.</CardDescription>
