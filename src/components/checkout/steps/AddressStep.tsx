@@ -1,9 +1,18 @@
-
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { states } from '@/constants/states';
+import { toast } from "@/components/ui/use-toast"
 import { CheckoutState } from '../CheckoutModal';
-import SimpleAddressInput from '../../SimpleAddressInput';
-import { supabase } from '@/integrations/supabase/client';
-import { Wifi } from 'lucide-react';
 
 interface AddressStepProps {
   state: CheckoutState;
@@ -11,173 +20,169 @@ interface AddressStepProps {
 }
 
 export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) => {
-  const [selectedAddress, setSelectedAddress] = useState<string>('');
-  const [addressSelected, setAddressSelected] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [addressLine1, setAddressLine1] = useState<string>(localStorage.getItem('addressFormData')?.length ? JSON.parse(localStorage.getItem('addressFormData') || '{}').addressLine1 : '');
+  const [addressLine2, setAddressLine2] = useState<string>(localStorage.getItem('addressFormData')?.length ? JSON.parse(localStorage.getItem('addressFormData') || '{}').addressLine2 : '');
+  const [city, setCity] = useState<string>(localStorage.getItem('addressFormData')?.length ? JSON.parse(localStorage.getItem('addressFormData') || '{}').city : '');
+  const [selectedState, setSelectedState] = useState<string>(localStorage.getItem('addressFormData')?.length ? JSON.parse(localStorage.getItem('addressFormData') || '{}').selectedState : '');
+  const [zipCode, setZipCode] = useState<string>(localStorage.getItem('addressFormData')?.length ? JSON.parse(localStorage.getItem('addressFormData') || '{}').zipCode : '');
 
-  // Reset local state when step loads
-  useEffect(() => {
-    console.log('🏠 AddressStep mounted - resetting local state');
-    setSelectedAddress('');
-    setAddressSelected(false);
-    setLoading(false);
-  }, []);
-
-  const parseAddress = (fullAddress: string) => {
-    // Basic address parsing - you might want to enhance this
-    const parts = fullAddress.split(',').map(part => part.trim());
-    
-    if (parts.length >= 4) {
-      const addressLine1 = parts[0];
-      const city = parts[1];
-      const stateZip = parts[2].split(' ');
-      const state = stateZip[0];
-      const zipCode = stateZip[1] || '';
-      
-      return {
-        addressLine1,
-        city,
-        state,
-        zipCode,
-        formattedAddress: fullAddress
-      };
-    }
-    
-    return {
-      addressLine1: fullAddress,
-      city: '',
-      state: '',
-      zipCode: '',
-      formattedAddress: fullAddress
-    };
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAddressLine1(e.target.value);
   };
 
-  // Stable callback to prevent unnecessary re-renders
-  const handleAddressSelected = useCallback(async (address: string) => {
-    console.log('ADDRESS SELECTED:', address);
-    setSelectedAddress(address);
-    setAddressSelected(true);
-    
-    // Parse the address
-    const parsedAddress = parseAddress(address);
-    
-    // Update state with address (but don't run qualification yet)
-    updateState({
-      address: {
-        ...parsedAddress,
-        latitude: 0,
-        longitude: 0,
-        googlePlaceId: ''
-      }
-    });
-  }, [updateState]);
+  const handleAddress2Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAddressLine2(e.target.value);
+  };
 
-  const handleNext = async () => {
-    if (!selectedAddress || !state.address) {
-      alert('Please select an address first');
+  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCity(e.target.value);
+  };
+
+  const handleStateChange = (value: string) => {
+    setSelectedState(value);
+  };
+
+  const handleZipCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setZipCode(e.target.value);
+  };
+
+  const isValidAddress = () => {
+    return addressLine1.trim() !== '' && city.trim() !== '' && selectedState !== '' && zipCode.trim() !== '';
+  };
+
+  const handleQualificationCheck = async () => {
+    if (!isValidAddress()) {
+      toast({
+        title: "Error",
+        description: "Please fill out all required fields.",
+      })
       return;
     }
 
-    setLoading(true);
+    // Save address form data to local storage
+    const addressFormData = {
+      addressLine1,
+      addressLine2,
+      city,
+      selectedState,
+      zipCode,
+    };
+    localStorage.setItem('addressFormData', JSON.stringify(addressFormData));
+
+    // Call the edge function to check qualification
+    const apiUrl = `/api/fwa-check`;
+
+    const payload = {
+      address_line1: addressLine1,
+      address_line2: addressLine2,
+      city: city,
+      state: selectedState,
+      zip_code: zipCode,
+    };
 
     try {
-      // Insert address into anchor_address table (if not already present)
-      const { data: existingAddress, error: checkError } = await supabase
-        .from('anchor_address')
-        .select('id')
-        .eq('address_line1', state.address.addressLine1)
-        .eq('city', state.address.city)
-        .eq('zip_code', state.address.zipCode)
-        .maybeSingle();
-
-      let anchorAddressId: string;
-
-      if (existingAddress) {
-        anchorAddressId = existingAddress.id;
-        console.log('Using existing address:', anchorAddressId);
-      } else {
-        // Insert new address
-        const { data: newAddress, error: insertError } = await supabase
-          .from('anchor_address')
-          .insert({
-            address_line1: state.address.addressLine1,
-            address_line2: state.address.addressLine2 || null,
-            city: state.address.city,
-            state: state.address.state,
-            zip_code: state.address.zipCode,
-            latitude: state.address.latitude || 0,
-            longitude: state.address.longitude || 0,
-            status: 'active'
-          })
-          .select('id')
-          .single();
-
-        if (insertError) {
-          console.error('Address insert error:', insertError);
-          throw new Error('Failed to save address');
-        }
-
-        anchorAddressId = newAddress.id;
-        console.log('Created new address:', anchorAddressId);
-      }
-
-      // Clear any saved form data since we're moving to next step
-      localStorage.removeItem('addressFormData');
-
-      // Update state with anchor address ID and move to contact step
-      updateState({
-        anchorAddressId,
-        step: 'contact'
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
 
+      const data = await response.json();
+
+      if (data.success && data.qualified) {
+        console.log('✅ Qualification check result:', data);
+        updateState({ 
+          qualified: true,
+          qualificationResult: {
+            source: data.source, // Use the source from API response
+            network_type: data.network_type,
+            max_speed_mbps: data.max_speed_mbps || 300
+          },
+          step: 'qualification-success' 
+        });
+      } else {
+        console.log('❌ Address not qualified');
+        updateState({ qualified: false, step: 'not-qualified' });
+      }
     } catch (error) {
-      console.error('Error saving address:', error);
-      alert('Error saving address. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error('Error during qualification check:', error);
+      toast({
+        title: "Error",
+        description: "Failed to check address qualification. Please try again.",
+      })
     }
   };
 
   return (
-    <div className="p-8">
-      <div className="text-center mb-8">
-        <Wifi className="h-10 w-10 text-[#0047AB] mx-auto mb-2" />
-        
-        <h2 className="text-2xl md:text-3xl font-semibold text-center text-gray-900 mb-2">
-          Let's see if we can get you connected
-        </h2>
-        
-        <p className="text-sm text-gray-500 text-center mb-4">
-          We'll check if SpryFi internet is available at your location
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        <div className="w-full max-w-xl mx-auto">
-          <SimpleAddressInput 
-            onAddressSelect={handleAddressSelected}
-            placeholder="Start typing your address..."
-          />
-          
-          {selectedAddress && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Selected: {selectedAddress}</p>
-            </div>
-          )}
-        </div>
-
-        {addressSelected && (
-          <div className="flex justify-center">
-            <button
-              onClick={handleNext}
-              disabled={loading}
-              className="bg-[#0047AB] hover:bg-[#0058CC] text-white font-semibold py-3 px-6 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Saving...' : 'Next'}
-            </button>
+    <div className="flex justify-center items-center h-full">
+      <Card className="w-[550px]">
+        <CardHeader>
+          <CardTitle>Check Internet Availability</CardTitle>
+          <CardDescription>Enter your address to see if SpryFi is available in your area.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              type="text"
+              id="address"
+              placeholder="1234 Main St"
+              value={addressLine1}
+              onChange={handleAddressChange}
+            />
           </div>
-        )}
-      </div>
+          <div className="grid gap-2">
+            <Label htmlFor="address2">Address 2 (Optional)</Label>
+            <Input
+              type="text"
+              id="address2"
+              placeholder="Apartment, suite, unit, building, floor, etc."
+              value={addressLine2}
+              onChange={handleAddress2Change}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="city">City</Label>
+            <Input
+              type="text"
+              id="city"
+              placeholder="New York"
+              value={city}
+              onChange={handleCityChange}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="state">State</Label>
+              <Select onValueChange={handleStateChange} defaultValue={selectedState}>
+                <SelectTrigger id="state">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {states.map((state) => (
+                    <SelectItem key={state.value} value={state.value}>
+                      {state.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="zipcode">Zip Code</Label>
+              <Input
+                type="text"
+                id="zipcode"
+                placeholder="10001"
+                value={zipCode}
+                onChange={handleZipCodeChange}
+              />
+            </div>
+          </div>
+          <Button onClick={handleQualificationCheck} className="w-full">Check Availability</Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };

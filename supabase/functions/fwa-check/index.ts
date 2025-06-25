@@ -156,7 +156,7 @@ serve(async (req) => {
 
       console.log('📡 Verizon API raw response:', JSON.stringify(verizonResponse, null, 2));
 
-      // Fixed: Parse Verizon response correctly - qualified is a string, not boolean
+      // Parse Verizon response correctly - qualified is a string, not boolean
       const isQualified = verizonResponse?.intelligenceResponse?.wirelessCoverages?.fwaCoverage?.[0]?.coverage?.qualified === 'true';
       
       console.log('📡 Verizon qualification result:', { 
