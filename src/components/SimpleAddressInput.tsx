@@ -191,20 +191,6 @@ const SimpleAddressInput: React.FC<Props> = ({
         onSuggestionClick={handleSuggestionClick}
         isVisible={showSuggestions && suggestions.length > 0 && !addressSelected && !error}
       />
-
-      {/* Debug info - visible in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-2 p-2 text-xs text-gray-400 bg-gray-50 rounded">
-          <div>Debug Info:</div>
-          <div>• Input: "{inputValue}" (length: {inputValue.length})</div>
-          <div>• Loading: {isLoading.toString()}</div>
-          <div>• Suggestions: {suggestions.length}</div>
-          <div>• Show dropdown: {showSuggestions.toString()}</div>
-          <div>• Show no results: {showNoResults.toString()}</div>
-          <div>• Error: {error || 'None'}</div>
-          <div>• Selected: {addressSelected.toString()}</div>
-        </div>
-      )}
     </div>
   );
 };
