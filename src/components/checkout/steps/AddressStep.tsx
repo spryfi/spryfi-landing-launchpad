@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { states } from '@/constants/states';
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { CheckoutState } from '../CheckoutModal';
 import SimpleAddressInput from '@/components/SimpleAddressInput';
 
@@ -71,7 +71,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     return addressLine1.trim() !== '' && city.trim() !== '' && selectedState !== '' && zipCode.trim() !== '';
   };
 
-  const handleQualificationCheck = async () => {
+  const handleContinue = () => {
     if (!selectedAddress) {
       toast({
         title: "Error",
@@ -88,61 +88,18 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       return;
     }
 
-    // Save address form data to local storage
-    const addressFormData = {
-      selectedAddress,
-      addressLine1,
-      addressLine2,
-      city,
-      selectedState,
-      zipCode,
-    };
-    localStorage.setItem('addressFormData', JSON.stringify(addressFormData));
-
-    // Call the edge function to check qualification
-    const apiUrl = `/api/fwa-check`;
-
-    const payload = {
-      address_line1: addressLine1,
-      address_line2: addressLine2,
-      city: city,
-      state: selectedState,
-      zip_code: zipCode,
-    };
-
-    try {
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.qualified) {
-        console.log('✅ Qualification check result:', data);
-        updateState({ 
-          qualified: true,
-          qualificationResult: {
-            source: data.source,
-            network_type: data.network_type,
-            max_speed_mbps: data.max_speed_mbps || 300
-          },
-          step: 'qualification-success' 
-        });
-      } else {
-        console.log('❌ Address not qualified');
-        updateState({ qualified: false, step: 'not-qualified' });
-      }
-    } catch (error) {
-      console.error('Error during qualification check:', error);
-      toast({
-        title: "Error",
-        description: "Failed to check address qualification. Please try again.",
-      })
-    }
+    // Save address to state and move to contact step
+    updateState({
+      address: {
+        addressLine1,
+        addressLine2,
+        city,
+        state: selectedState,
+        zipCode,
+        formattedAddress: selectedAddress
+      },
+      step: 'contact'
+    });
   };
 
   return (
@@ -228,7 +185,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
                 </div>
               </div>
               
-              <Button onClick={handleQualificationCheck} className="w-full">
+              <Button onClick={handleContinue} className="w-full">
                 Check Availability
               </Button>
             </>

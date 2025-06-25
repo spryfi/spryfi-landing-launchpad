@@ -34,13 +34,12 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
     setLoading(true);
 
     try {
-      // Call the save-lead edge function with anchor_address_id
+      // Call the save-lead edge function
       const { data, error } = await supabase.functions.invoke('save-lead', {
         body: {
           email,
           first_name: firstName,
           last_name: lastName,
-          anchor_address_id: state.anchorAddressId,
           started_at: new Date().toISOString(),
           status: 'started'
         }
@@ -54,7 +53,7 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
       console.log('✅ Lead saved successfully:', data);
       console.log('✅ Lead ID:', data.lead_id);
 
-      // Update state with contact info and lead ID, then run qualification
+      // Update state with contact info and lead ID
       updateState({
         contact: { 
           email, 
@@ -77,16 +76,15 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
   };
 
   const runQualificationCheck = async (leadId: string) => {
-    if (!state.address || !state.anchorAddressId) return;
+    if (!state.address) return;
 
     try {
       console.log('🔍 Starting qualification check...');
 
-      // Call the FWA check API with lead_id and anchor_address_id
+      // Call the FWA check API with lead_id
       const { data, error } = await supabase.functions.invoke('fwa-check', {
         body: {
           lead_id: leadId,
-          anchor_address_id: state.anchorAddressId,
           formatted_address: state.address.formattedAddress,
           address_line1: state.address.addressLine1,
           address_line2: state.address.addressLine2 || '',
@@ -110,6 +108,7 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
       // Update state with qualification results
       updateState({
         qualified: data.qualified,
+        anchorAddressId: data.anchor_address_id,
         qualificationResult: {
           source: data.source || 'none',
           network_type: data.network_type,
