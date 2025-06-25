@@ -103,15 +103,15 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="flex justify-center items-start min-h-screen pt-8">
-      <Card className="w-[550px] min-h-[600px]">
-        <CardHeader>
-          <CardTitle>Check Internet Availability</CardTitle>
-          <CardDescription>Enter your address to see if SpryFi is available in your area.</CardDescription>
+    <div className="flex justify-center items-start min-h-screen pt-8 pb-8">
+      <Card className="w-[500px] max-h-[80vh] overflow-y-auto">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl">Let's see if we can get you covered! 🎯</CardTitle>
+          <CardDescription>Just enter your address and we'll check if SpryFi is available in your area.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="address-search">Address</Label>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="address-search">Your Address</Label>
             <SimpleAddressInput
               onAddressSelect={handleAddressSelect}
               placeholder="Start typing your address..."
@@ -121,72 +121,78 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           {selectedAddress && (
             <>
               <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
-                Selected: {selectedAddress}
+                ✅ Selected: {selectedAddress}
               </div>
               
-              <div className="grid gap-2">
-                <Label htmlFor="address">Street Address</Label>
-                <Input
-                  type="text"
-                  id="address"
-                  value={addressLine1}
-                  onChange={(e) => setAddressLine1(e.target.value)}
-                  placeholder="1234 Main St"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="address2">Address 2 (Optional)</Label>
-                <Input
-                  type="text"
-                  id="address2"
-                  value={addressLine2}
-                  onChange={(e) => setAddressLine2(e.target.value)}
-                  placeholder="Apartment, suite, unit, building, floor, etc."
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  type="text"
-                  id="city"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="New York"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="state">State</Label>
-                  <Select onValueChange={setSelectedState} value={selectedState}>
-                    <SelectTrigger id="state">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {states.map((state) => (
-                        <SelectItem key={state.value} value={state.value}>
-                          {state.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="zipcode">Zip Code</Label>
+              <div className="grid gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="address" className="text-sm">Street Address</Label>
                   <Input
                     type="text"
-                    id="zipcode"
-                    value={zipCode}
-                    onChange={(e) => setZipCode(e.target.value)}
-                    placeholder="10001"
+                    id="address"
+                    value={addressLine1}
+                    onChange={(e) => setAddressLine1(e.target.value)}
+                    placeholder="1234 Main St"
+                    className="h-9"
                   />
+                </div>
+                
+                <div className="space-y-1">
+                  <Label htmlFor="address2" className="text-sm">Address 2 (Optional)</Label>
+                  <Input
+                    type="text"
+                    id="address2"
+                    value={addressLine2}
+                    onChange={(e) => setAddressLine2(e.target.value)}
+                    placeholder="Apt, suite, etc."
+                    className="h-9"
+                  />
+                </div>
+                
+                <div className="space-y-1">
+                  <Label htmlFor="city" className="text-sm">City</Label>
+                  <Input
+                    type="text"
+                    id="city"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="New York"
+                    className="h-9"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="state" className="text-sm">State</Label>
+                    <Select onValueChange={setSelectedState} value={selectedState}>
+                      <SelectTrigger id="state" className="h-9">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {states.map((state) => (
+                          <SelectItem key={state.value} value={state.value}>
+                            {state.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="zipcode" className="text-sm">Zip Code</Label>
+                    <Input
+                      type="text"
+                      id="zipcode"
+                      value={zipCode}
+                      onChange={(e) => setZipCode(e.target.value)}
+                      placeholder="10001"
+                      className="h-9"
+                    />
+                  </div>
                 </div>
               </div>
               
-              <Button onClick={handleContinue} className="w-full">
-                Check Availability
+              <Button onClick={handleContinue} className="w-full mt-4">
+                Check My Area
               </Button>
             </>
           )}
