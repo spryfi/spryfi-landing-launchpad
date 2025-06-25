@@ -14,13 +14,19 @@ serve(async (req) => {
   }
 
   try {
+    console.log("📬 Received request to /fwa-check");
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    const body = await req.json()
+    console.log("Request body:", body);
+    
     const { 
       lead_id,
+      anchor_address_id,
       google_place_id, 
       formatted_address, 
       address_line1, 
@@ -30,19 +36,136 @@ serve(async (req) => {
       zip_code, 
       latitude, 
       longitude 
-    } = await req.json()
-    
-    console.log('FWA check request:', { 
-      lead_id,
-      google_place_id, 
-      formatted_address, 
-      address_line1, 
-      city, 
-      state, 
-      zip_code, 
-      latitude, 
-      longitude 
-    })
+    } = body
+
+    // Validate required inputs first
+    if (!lead_id && !anchor_address_id) {
+      console.error("❌ Missing both lead_id and anchor_address_id");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Missing lead_id or anchor_address_id" 
+        }),
+        { 
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          }
+        }
+      )
+    }
+
+    let anchorAddressId = anchor_address_id;
+    let addressData: any = null;
+
+    // If we have anchor_address_id, fetch the address data
+    if (anchor_address_id) {
+      const { data: address, error: addressError } = await supabase
+        .from('anchor_address')
+        .select('*')
+        .eq('id', anchor_address_id)
+        .single()
+
+      if (addressError || !address) {
+        console.error("❌ Address lookup failed:", addressError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Anchor address not found" 
+          }),
+          { 
+            status: 400,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            }
+          }
+        )
+      }
+
+      addressData = address;
+      console.log("✅ Found anchor address:", address.id);
+    } else if (address_line1 && city && state && zip_code) {
+      // If no anchor_address_id but we have address fields, create/find the address
+      console.log('📍 Creating/finding address from provided fields');
+      
+      const { data: existingAddress, error: checkError } = await supabase
+        .from('anchor_address')
+        .select('id, qualified_cband, last_qualified_at, qualification_source')
+        .eq('address_line1', address_line1)
+        .eq('city', city)
+        .eq('zip_code', zip_code)
+        .maybeSingle()
+
+      if (checkError) {
+        console.error('Database check error:', checkError)
+      }
+
+      if (existingAddress) {
+        anchorAddressId = existingAddress.id
+        addressData = existingAddress;
+        console.log('Using existing address:', anchorAddressId)
+      } else {
+        // Insert new address
+        const insertData: any = {
+          address_line1,
+          address_line2: address_line2 || null,
+          city,
+          state,
+          zip_code,
+          latitude,
+          longitude,
+          status: 'active'
+        }
+
+        if (lead_id) {
+          insertData.first_lead_id = lead_id
+        }
+
+        const { data: newAddress, error: insertError } = await supabase
+          .from('anchor_address')
+          .insert(insertData)
+          .select('*')
+          .single()
+
+        if (insertError) {
+          console.error('Address insert error:', insertError)
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'Failed to save address' 
+            }),
+            { 
+              status: 500,
+              headers: { 
+                ...corsHeaders, 
+                'Content-Type': 'application/json' 
+              }
+            }
+          )
+        }
+
+        anchorAddressId = newAddress.id
+        addressData = newAddress;
+        console.log('Created new address:', anchorAddressId)
+      }
+    } else {
+      console.error("❌ No anchor_address_id and insufficient address data provided");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Missing address information" 
+        }),
+        { 
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          }
+        }
+      )
+    }
 
     // Verify lead exists if lead_id provided
     if (lead_id) {
@@ -71,73 +194,6 @@ serve(async (req) => {
       console.log('✅ Lead verified:', leadData.id)
     }
 
-    // Check if address already exists in anchor_address table
-    const { data: existingAddress, error: checkError } = await supabase
-      .from('anchor_address')
-      .select('id, qualified_cband, last_qualified_at, qualification_source')
-      .eq('address_line1', address_line1)
-      .eq('city', city)
-      .eq('zip_code', zip_code)
-      .maybeSingle()
-
-    if (checkError) {
-      console.error('Database check error:', checkError)
-    }
-
-    let anchorAddressId: string;
-
-    if (existingAddress) {
-      // Address exists, use existing ID
-      anchorAddressId = existingAddress.id
-      console.log('Using existing address:', anchorAddressId)
-      
-      // Update first_lead_id if provided and not already set
-      if (lead_id) {
-        const { error: updateLeadError } = await supabase
-          .from('anchor_address')
-          .update({ first_lead_id: lead_id })
-          .eq('id', anchorAddressId)
-          .is('first_lead_id', null) // Only update if not already set
-
-        if (updateLeadError) {
-          console.error('Error updating first_lead_id:', updateLeadError)
-        } else {
-          console.log('✅ Updated anchor address with lead ID')
-        }
-      }
-    } else {
-      // Insert new address into anchor_address table
-      const insertData: any = {
-        address_line1,
-        address_line2: address_line2 || null,
-        city,
-        state,
-        zip_code,
-        latitude,
-        longitude,
-        status: 'active'
-      }
-
-      // Set first_lead_id if provided
-      if (lead_id) {
-        insertData.first_lead_id = lead_id
-      }
-
-      const { data: newAddress, error: insertError } = await supabase
-        .from('anchor_address')
-        .insert(insertData)
-        .select('id')
-        .single()
-
-      if (insertError) {
-        console.error('Address insert error:', insertError)
-        throw new Error('Failed to save address')
-      }
-
-      anchorAddressId = newAddress.id
-      console.log('Created new address:', anchorAddressId)
-    }
-
     // Step 1: Try Verizon API first
     let qualificationResult = null;
     let source = 'none';
@@ -146,12 +202,12 @@ serve(async (req) => {
       console.log('📡 Calling Verizon API...')
       
       const verizonResponse = await callVerizonAPI({
-        address_line1,
-        city,
-        state,
-        zip_code,
-        latitude,
-        longitude
+        address_line1: addressData.address_line1,
+        city: addressData.city,
+        state: addressData.state,
+        zip_code: addressData.zip_code,
+        latitude: addressData.latitude,
+        longitude: addressData.longitude
       });
 
       console.log('📡 Verizon API raw response:', JSON.stringify(verizonResponse, null, 2));
@@ -193,12 +249,12 @@ serve(async (req) => {
       
       // Step 2: Fall back to bot logic only if Verizon API failed or returned not qualified
       const botResult = await callBotFallback({
-        address_line1,
-        city,
-        state,
-        zip_code,
-        latitude,
-        longitude
+        address_line1: addressData.address_line1,
+        city: addressData.city,
+        state: addressData.state,
+        zip_code: addressData.zip_code,
+        latitude: addressData.latitude,
+        longitude: addressData.longitude
       });
 
       qualificationResult = {
@@ -245,11 +301,7 @@ serve(async (req) => {
           qualified: qualificationResult.qualified,
           qualification_checked_at: new Date().toISOString(),
           qualification_result: source,
-          address_line1,
-          address_line2,
-          city,
-          state,
-          zip_code
+          anchor_address_id: anchorAddressId
         })
         .eq('id', lead_id)
 
@@ -290,7 +342,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message,
+        error: error.message || 'Unknown error occurred',
         source: 'none'
       }),
       { 

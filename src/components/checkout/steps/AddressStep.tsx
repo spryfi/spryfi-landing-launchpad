@@ -321,21 +321,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const leadId = saveLeadData.lead_id;
       console.log('✅ Lead saved with ID:', leadId);
 
-      // Step 2: Link the lead to the anchor address (update leads_fresh table)
-      console.log('🔗 Linking lead to anchor address...');
-      const { error: linkError } = await supabase
-        .from('leads_fresh')
-        .update({ anchor_address_id: state.anchorAddressId })
-        .eq('id', leadId);
-
-      if (linkError) {
-        console.error('❌ Error linking lead to address:', linkError);
-        throw new Error('Failed to link lead to address');
-      }
-
-      console.log('✅ Lead linked to anchor address successfully');
-
-      // Step 3: Call qualification check only after everything is properly saved and linked
+      // Step 2: Call qualification check with proper error handling
       console.log('🔍 Checking area qualification...');
       const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
         body: {
@@ -346,7 +332,29 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       if (qualificationError) {
         console.error('❌ Qualification check error:', qualificationError);
-        throw new Error('Failed to check area qualification');
+        
+        // Handle different types of errors gracefully
+        if (qualificationError.message?.includes('Edge Function returned a non-2xx status code')) {
+          toast({
+            title: "Coverage Check Unavailable",
+            description: "We couldn't check coverage right now. Please try again in a moment.",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to check area qualification. Please try again.",
+          });
+        }
+        return;
+      }
+
+      if (!qualificationData?.success) {
+        console.error('❌ Qualification failed:', qualificationData);
+        toast({
+          title: "Coverage Check Failed",
+          description: qualificationData?.error || "We couldn't check coverage right now. Please try again.",
+        });
+        return;
       }
 
       console.log('✅ Qualification check complete:', qualificationData);
