@@ -15,6 +15,7 @@ import { states } from '@/constants/states';
 import { toast } from "@/hooks/use-toast"
 import { CheckoutState } from '../CheckoutModal';
 import SimpleAddressInput from '@/components/SimpleAddressInput';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AddressStepProps {
   state: CheckoutState;
@@ -28,6 +29,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [city, setCity] = useState<string>('');
   const [selectedState, setSelectedState] = useState<string>('');
   const [zipCode, setZipCode] = useState<string>('');
+  
+  // Contact information
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  
+  // UI state
+  const [isCheckingQualification, setIsCheckingQualification] = useState(false);
 
   // Parse the selected address and populate individual fields
   const parseAddress = (fullAddress: string) => {
@@ -71,12 +80,16 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     return addressLine1.trim() !== '' && city.trim() !== '' && selectedState !== '' && zipCode.trim() !== '';
   };
 
-  const handleContinue = () => {
+  const isValidContactInfo = () => {
+    return firstName.trim() !== '' && lastName.trim() !== '' && email.trim() !== '' && email.includes('@');
+  };
+
+  const handleCheckArea = async () => {
     if (!selectedAddress) {
       toast({
         title: "Error",
         description: "Please select an address from the suggestions.",
-      })
+      });
       return;
     }
 
@@ -84,22 +97,105 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       toast({
         title: "Error",
         description: "Please ensure all address fields are filled.",
-      })
+      });
       return;
     }
 
-    // Save address to state and move to contact step
-    updateState({
-      address: {
-        addressLine1,
-        addressLine2,
-        city,
-        state: selectedState,
-        zipCode,
-        formattedAddress: selectedAddress
-      },
-      step: 'contact'
-    });
+    if (!isValidContactInfo()) {
+      toast({
+        title: "Error",
+        description: "Please fill in your first name, last name, and email address.",
+      });
+      return;
+    }
+
+    setIsCheckingQualification(true);
+
+    try {
+      // Step 1: Save lead to database
+      console.log('💾 Saving lead to database...');
+      const { data: saveLeadData, error: saveLeadError } = await supabase.functions.invoke('save-lead', {
+        body: {
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          anchor_address_id: null // Will be created by fwa-check
+        }
+      });
+
+      if (saveLeadError || !saveLeadData?.success) {
+        console.error('❌ Save lead error:', saveLeadError);
+        throw new Error('Failed to save lead information');
+      }
+
+      const leadId = saveLeadData.lead_id;
+      console.log('✅ Lead saved with ID:', leadId);
+
+      // Step 2: Check qualification
+      console.log('🔍 Checking area qualification...');
+      const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
+        body: {
+          lead_id: leadId,
+          formatted_address: selectedAddress,
+          address_line1: addressLine1,
+          address_line2: addressLine2 || null,
+          city,
+          state: selectedState,
+          zip_code: zipCode,
+          latitude: null, // Could be enhanced with geocoding
+          longitude: null
+        }
+      });
+
+      if (qualificationError) {
+        console.error('❌ Qualification check error:', qualificationError);
+        throw new Error('Failed to check area qualification');
+      }
+
+      console.log('✅ Qualification check complete:', qualificationData);
+
+      // Update state with results and move to next step
+      updateState({
+        address: {
+          addressLine1,
+          addressLine2,
+          city,
+          state: selectedState,
+          zipCode,
+          formattedAddress: selectedAddress
+        },
+        contact: {
+          firstName,
+          lastName,
+          email
+        },
+        leadId,
+        qualified: qualificationData.qualified,
+        qualificationSource: qualificationData.source,
+        step: qualificationData.qualified ? 'qualification-success' : 'contact'
+      });
+
+      if (qualificationData.qualified) {
+        toast({
+          title: "Great news! 🎉",
+          description: "SpryFi is available in your area!",
+        });
+      } else {
+        toast({
+          title: "Not in your area — yet",
+          description: "We'll notify you when SpryFi becomes available.",
+        });
+      }
+
+    } catch (error) {
+      console.error('🔥 Check area error:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsCheckingQualification(false);
+    }
   };
 
   return (
@@ -110,89 +206,69 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           <CardDescription className="text-center text-sm">Just enter your address and we'll check if SpryFi is available in your area.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="address-search" className="text-sm">Your Address</Label>
-            <SimpleAddressInput
-              onAddressSelect={handleAddressSelect}
-              placeholder="Start typing your address..."
-            />
-          </div>
-          
-          {selectedAddress && (
+          {!selectedAddress ? (
+            <div className="space-y-2">
+              <Label htmlFor="address-search" className="text-sm">Your Address</Label>
+              <SimpleAddressInput
+                onAddressSelect={handleAddressSelect}
+                placeholder="Start typing your address..."
+              />
+            </div>
+          ) : (
             <>
-              <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
-                ✅ Selected: {selectedAddress}
+              <div className="text-xs text-gray-600 bg-green-50 p-2 rounded border-l-4 border-green-500">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500">✅</span>
+                  <span className="font-medium">Address confirmed:</span>
+                </div>
+                <div className="text-gray-700 mt-1">{selectedAddress}</div>
               </div>
               
-              <div className="grid gap-2">
+              <div className="space-y-3 mt-4">
                 <div className="space-y-1">
-                  <Label htmlFor="address" className="text-xs">Street Address</Label>
+                  <Label htmlFor="first-name" className="text-sm">First Name</Label>
                   <Input
                     type="text"
-                    id="address"
-                    value={addressLine1}
-                    onChange={(e) => setAddressLine1(e.target.value)}
-                    placeholder="1234 Main St"
+                    id="first-name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Enter your first name"
+                    className="h-8 text-sm"
+                    autoFocus
+                  />
+                </div>
+                
+                <div className="space-y-1">
+                  <Label htmlFor="last-name" className="text-sm">Last Name</Label>
+                  <Input
+                    type="text"
+                    id="last-name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Enter your last name"
                     className="h-8 text-sm"
                   />
                 </div>
                 
                 <div className="space-y-1">
-                  <Label htmlFor="address2" className="text-xs">Address 2 (Optional)</Label>
+                  <Label htmlFor="email" className="text-sm">Email Address</Label>
                   <Input
-                    type="text"
-                    id="address2"
-                    value={addressLine2}
-                    onChange={(e) => setAddressLine2(e.target.value)}
-                    placeholder="Apt, suite, etc."
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email address"
                     className="h-8 text-sm"
                   />
-                </div>
-                
-                <div className="space-y-1">
-                  <Label htmlFor="city" className="text-xs">City</Label>
-                  <Input
-                    type="text"
-                    id="city"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="New York"
-                    className="h-8 text-sm"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="state" className="text-xs">State</Label>
-                    <Select onValueChange={setSelectedState} value={selectedState}>
-                      <SelectTrigger id="state" className="h-8">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {states.map((state) => (
-                          <SelectItem key={state.value} value={state.value}>
-                            {state.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="zipcode" className="text-xs">Zip Code</Label>
-                    <Input
-                      type="text"
-                      id="zipcode"
-                      value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value)}
-                      placeholder="10001"
-                      className="h-8 text-sm"
-                    />
-                  </div>
                 </div>
               </div>
               
-              <Button onClick={handleContinue} className="w-full h-9 text-sm">
-                Check My Area
+              <Button 
+                onClick={handleCheckArea} 
+                className="w-full h-9 text-sm bg-blue-600 hover:bg-blue-700"
+                disabled={isCheckingQualification || !isValidContactInfo()}
+              >
+                {isCheckingQualification ? 'Checking Your Area...' : 'Check My Area'}
               </Button>
             </>
           )}
