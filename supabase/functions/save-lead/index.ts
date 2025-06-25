@@ -47,12 +47,12 @@ serve(async (req) => {
       )
     }
 
-    // Check if lead already exists
-    const { data: existingLead, error: checkError } = await supabase
+    // Check if lead already exists - use limit(1) to avoid multiple rows error
+    const { data: existingLeads, error: checkError } = await supabase
       .from('leads_fresh')
       .select('id')
       .eq('email', email)
-      .maybeSingle()
+      .limit(1)
 
     if (checkError) {
       console.error('🔥 Check existing lead error:', checkError)
@@ -60,6 +60,7 @@ serve(async (req) => {
     }
 
     let leadResult;
+    const existingLead = existingLeads && existingLeads.length > 0 ? existingLeads[0] : null;
 
     if (existingLead) {
       // Update existing lead
@@ -73,7 +74,7 @@ serve(async (req) => {
         qualified: false
       };
 
-      // Only include anchor_address_id if it's provided and not already set
+      // Only include anchor_address_id if it's provided
       if (anchor_address_id) {
         updateData.anchor_address_id = anchor_address_id;
       }
