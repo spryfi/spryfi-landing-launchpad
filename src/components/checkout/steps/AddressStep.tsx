@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +39,20 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [showContactForm, setShowContactForm] = useState(false);
   const [isProcessingAddress, setIsProcessingAddress] = useState(false);
 
+  // State name to abbreviation mapping
+  const stateNameToAbbrev: { [key: string]: string } = {
+    'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+    'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+    'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+    'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+    'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+    'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+    'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+    'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+    'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+    'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
+  };
+
   // Enhanced address parsing function
   const parseAddress = (fullAddress: string) => {
     console.log('🔍 Parsing address:', fullAddress);
@@ -58,11 +71,51 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       
       // Extract state and zip from last part
       const lastPart = parts[parts.length - 1];
-      const stateZipMatch = lastPart.match(/([A-Z]{2})\s+(\d{5}(?:-\d{4})?)/);
       
-      if (stateZipMatch) {
-        const statePart = stateZipMatch[1];
-        const zipPart = stateZipMatch[2];
+      // Try different patterns for state and ZIP
+      let statePart = '';
+      let zipPart = '';
+      
+      // Pattern 1: State abbreviation + ZIP (e.g., "TX 78610")
+      const stateZipMatch1 = lastPart.match(/([A-Z]{2})\s+(\d{5}(?:-\d{4})?)/);
+      if (stateZipMatch1) {
+        statePart = stateZipMatch1[1];
+        zipPart = stateZipMatch1[2];
+      } else {
+        // Pattern 2: Full state name + ZIP (e.g., "Texas 78610")
+        const stateZipMatch2 = lastPart.match(/([A-Za-z\s]+?)\s+(\d{5}(?:-\d{4})?)$/);
+        if (stateZipMatch2) {
+          const fullStateName = stateZipMatch2[1].trim();
+          zipPart = stateZipMatch2[2];
+          
+          // Convert full state name to abbreviation
+          if (stateNameToAbbrev[fullStateName]) {
+            statePart = stateNameToAbbrev[fullStateName];
+          } else {
+            // If we can't find the full name, check if it's already an abbreviation
+            const upperState = fullStateName.toUpperCase();
+            if (Object.values(stateNameToAbbrev).includes(upperState)) {
+              statePart = upperState;
+            }
+          }
+        } else {
+          // Pattern 3: Try to extract ZIP first, then state
+          const zipMatch = lastPart.match(/(\d{5}(?:-\d{4})?)/);
+          if (zipMatch) {
+            zipPart = zipMatch[1];
+            const stateText = lastPart.replace(zipMatch[0], '').trim();
+            
+            // Check if it's a state abbreviation
+            if (stateText.length === 2 && Object.values(stateNameToAbbrev).includes(stateText.toUpperCase())) {
+              statePart = stateText.toUpperCase();
+            } else if (stateNameToAbbrev[stateText]) {
+              statePart = stateNameToAbbrev[stateText];
+            }
+          }
+        }
+      }
+      
+      if (statePart && zipPart) {
         setSelectedState(statePart);
         setZipCode(zipPart);
         
@@ -85,6 +138,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
     
     console.error('❌ Failed to parse address:', fullAddress);
+    console.error('❌ Address parts:', parts);
     toast({
       title: "Error",
       description: "Could not parse the selected address. Please try selecting a different address from the suggestions.",
