@@ -143,9 +143,8 @@ serve(async (req) => {
     let source = 'none';
 
     try {
-      console.log('📡 Verizon API Called')
+      console.log('📡 Calling Verizon API...')
       
-      // Mock Verizon API call - replace with actual Verizon API integration
       const verizonResponse = await callVerizonAPI({
         address_line1,
         city,
@@ -155,28 +154,32 @@ serve(async (req) => {
         longitude
       });
 
-      console.log('📡 Verizon API result:', verizonResponse);
+      console.log('📡 Verizon API raw response:', JSON.stringify(verizonResponse, null, 2));
 
-      if (verizonResponse.success && verizonResponse.qualified) {
+      // Parse Verizon response correctly
+      const isQualified = verizonResponse?.intelligenceResponse?.wirelessCoverages?.fwaCoverage?.[0]?.coverage?.qualified === 'true';
+      
+      console.log('📡 Verizon qualification result:', { isQualified, qualified: verizonResponse?.intelligenceResponse?.wirelessCoverages?.fwaCoverage?.[0]?.coverage?.qualified });
+
+      if (verizonResponse.success && isQualified) {
         qualificationResult = {
           qualified: true,
-          network_type: verizonResponse.network_type || '5G_HOME',
+          network_type: '5G_HOME',
           coverage_type: 'OUTDOOR',
-          max_speed_mbps: verizonResponse.max_speed_mbps || 300,
+          max_speed_mbps: 300,
           source: 'verizon',
           raw_data: verizonResponse
         };
         source = 'verizon';
-        console.log('✅ Verizon qualification successful')
-        console.log('✅ Qualification source set to:', source);
+        console.log('✅ Verizon qualification successful - qualified')
       } else {
-        console.log('❌ Verizon qualification failed, trying bot fallback')
+        console.log('❌ Verizon qualification failed or unqualified, trying bot fallback')
         throw new Error('Verizon API returned unqualified or failed')
       }
     } catch (verizonError) {
-      console.log('🤖 Bot Fallback Used')
+      console.log('🤖 Verizon failed, using Bot Fallback')
       
-      // Step 2: Fall back to bot logic
+      // Step 2: Fall back to bot logic only if Verizon failed
       const botResult = await callBotFallback({
         address_line1,
         city,
@@ -196,8 +199,9 @@ serve(async (req) => {
       };
       source = 'bot';
       console.log('✅ Bot qualification completed')
-      console.log('✅ Qualification source set to:', source);
     }
+
+    console.log('✅ Final qualification source set to:', source);
 
     // Update the anchor_address with qualification results
     const updateData: any = {
@@ -293,17 +297,27 @@ async function callVerizonAPI(addressData: any) {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1500));
   
-  // Mock response - 60% success rate for demo
-  const success = Math.random() > 0.4;
+  // Mock realistic Verizon API response structure
+  const success = Math.random() > 0.3; // 70% success rate
   
   if (success) {
+    const qualified = Math.random() > 0.4; // 60% qualification rate when API succeeds
+    
     return {
       success: true,
-      qualified: Math.random() > 0.3, // 70% qualification rate
-      network_type: '5G_HOME',
-      max_speed_mbps: 300,
-      coverage_level: 'STRONG',
-      service_availability: true
+      intelligenceResponse: {
+        wirelessCoverages: {
+          fwaCoverage: [{
+            coverage: {
+              qualified: qualified ? 'true' : 'false',
+              networkType: '5G_HOME',
+              maxSpeedMbps: 300,
+              coverageLevel: 'STRONG'
+            }
+          }]
+        }
+      },
+      serviceAvailability: true
     };
   } else {
     throw new Error('Verizon API unavailable');
