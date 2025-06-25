@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +33,7 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
     setLoading(true);
 
     try {
-      // Call the save-lead edge function
+      // Call the save-lead edge function with explicit CORS mode
       const { data, error } = await supabase.functions.invoke('save-lead', {
         body: {
           email,
@@ -68,8 +67,18 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
       await runQualificationCheck(data.lead_id);
 
     } catch (error) {
-      console.error('Error saving contact info:', error);
-      alert('Error saving contact information. Please try again.');
+      console.error('❌ Save lead error:', error);
+      
+      // Check for CORS error specifically
+      if (error?.message?.includes("Access-Control-Allow-Origin") || 
+          error?.message?.includes("CORS") ||
+          error?.message?.includes("cross-origin")) {
+        console.error("❌ CORS error on save-lead function", error);
+        alert("Something's wrong on our end. We're fixing it — try again shortly.");
+      } else {
+        console.error("❌ Save lead error:", error);
+        alert("Something went wrong while saving your details.");
+      }
     } finally {
       setLoading(false);
     }
