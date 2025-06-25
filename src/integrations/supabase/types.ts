@@ -1088,6 +1088,7 @@ export type Database = {
           anchor_address_id: string | null
           city: string | null
           created_at: string | null
+          discounted_price: number | null
           email: string | null
           fallback_used: boolean | null
           first_name: string | null
@@ -1098,6 +1099,9 @@ export type Database = {
           last_name: string | null
           lead_type: string | null
           phone: string | null
+          promo_code: string | null
+          promo_code_discount_percent: number | null
+          promo_code_plan_override: string | null
           qualification_checked_at: string | null
           qualification_result: string | null
           qualified: boolean | null
@@ -1115,6 +1119,7 @@ export type Database = {
           anchor_address_id?: string | null
           city?: string | null
           created_at?: string | null
+          discounted_price?: number | null
           email?: string | null
           fallback_used?: boolean | null
           first_name?: string | null
@@ -1125,6 +1130,9 @@ export type Database = {
           last_name?: string | null
           lead_type?: string | null
           phone?: string | null
+          promo_code?: string | null
+          promo_code_discount_percent?: number | null
+          promo_code_plan_override?: string | null
           qualification_checked_at?: string | null
           qualification_result?: string | null
           qualified?: boolean | null
@@ -1142,6 +1150,7 @@ export type Database = {
           anchor_address_id?: string | null
           city?: string | null
           created_at?: string | null
+          discounted_price?: number | null
           email?: string | null
           fallback_used?: boolean | null
           first_name?: string | null
@@ -1152,6 +1161,9 @@ export type Database = {
           last_name?: string | null
           lead_type?: string | null
           phone?: string | null
+          promo_code?: string | null
+          promo_code_discount_percent?: number | null
+          promo_code_plan_override?: string | null
           qualification_checked_at?: string | null
           qualification_result?: string | null
           qualified?: boolean | null

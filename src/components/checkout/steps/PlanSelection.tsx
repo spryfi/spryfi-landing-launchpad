@@ -20,6 +20,10 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+  const [promoError, setPromoError] = useState('');
+  const [discountedPrices, setDiscountedPrices] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchPlans();
@@ -71,24 +75,125 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
     }
   };
 
+  const validateAndApplyPromoCode = async () => {
+    const code = promoCode.trim().toUpperCase();
+    setPromoError('');
+
+    if (!code) {
+      setPromoApplied(false);
+      setDiscountedPrices({});
+      return;
+    }
+
+    if (!/^[A-Z0-9]{5}$/.test(code)) {
+      setPromoError('Invalid code format. Use 5 characters (A-Z, 0-9).');
+      return;
+    }
+
+    try {
+      const { data: promo, error } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .eq('code', code)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !promo) {
+        setPromoError('This code is invalid or has already been used.');
+        return;
+      }
+
+      // Check if code is expired
+      if (promo.valid_until && new Date(promo.valid_until) < new Date()) {
+        setPromoError('This code has expired.');
+        return;
+      }
+
+      // Check usage limit
+      if (promo.usage_limit && promo.usage_count >= promo.usage_limit) {
+        setPromoError('This code has reached its usage limit.');
+        return;
+      }
+
+      // Apply discount to all plans
+      const newDiscountedPrices: Record<string, number> = {};
+      plans.forEach(plan => {
+        if (promo.plan_override && promo.plan_override !== plan.id) {
+          // If there's a plan override and this isn't the target plan, no discount
+          newDiscountedPrices[plan.id] = plan.retail_price;
+        } else {
+          // Apply discount
+          const discountPercent = promo.discount_percent || 0;
+          newDiscountedPrices[plan.id] = plan.retail_price * (1 - discountPercent / 100);
+        }
+      });
+
+      setDiscountedPrices(newDiscountedPrices);
+      setPromoApplied(true);
+      setPromoError('');
+
+      console.log('✅ Promo code applied:', { code, discount: promo.discount_percent, override: promo.plan_override });
+    } catch (error) {
+      console.error('Error validating promo code:', error);
+      setPromoError('Error validating code. Please try again.');
+    }
+  };
+
   const handlePlanSelect = async (planId: string) => {
     setSelectedPlan(planId);
     setLoading(true);
 
     try {
-      // Update leads_fresh with selected plan (using existing columns)
+      const selectedPlanData = plans.find(p => p.id === planId);
+      if (!selectedPlanData) throw new Error('Plan not found');
+
+      const finalPrice = discountedPrices[planId] || selectedPlanData.retail_price;
+      
+      // Update leads_fresh with selected plan and promo code info
+      const updateData: any = {
+        usage_type: planId,
+        status: 'plan_selected'
+      };
+
+      // If promo code is applied, save promo code details
+      if (promoApplied && promoCode) {
+        const code = promoCode.trim().toUpperCase();
+        
+        // Get promo details for saving
+        const { data: promo } = await supabase
+          .from('promo_codes')
+          .select('*')
+          .eq('code', code)
+          .single();
+
+        if (promo) {
+          updateData.promo_code = code;
+          updateData.promo_code_discount_percent = promo.discount_percent;
+          updateData.promo_code_plan_override = promo.plan_override;
+          updateData.discounted_price = finalPrice;
+
+          // Update promo code usage
+          await supabase
+            .from('promo_codes')
+            .update({
+              usage_count: promo.usage_count + 1,
+              is_active: (promo.usage_count + 1) < (promo.usage_limit || 1)
+            })
+            .eq('code', code);
+
+          console.log('✅ Promo code redeemed and marked as used');
+        }
+      }
+
       await supabase
         .from('leads_fresh')
-        .update({
-          usage_type: planId, // Using existing usage_type field to store plan selection
-          status: 'plan_selected'
-        })
+        .update(updateData)
         .eq('id', state.leadId);
 
       updateState({
         step: 'router-offer',
         planSelected: planId,
-        totalAmount: 0
+        totalAmount: finalPrice
       });
     } catch (error) {
       console.error('Error selecting plan:', error);
@@ -96,6 +201,18 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
     } finally {
       setLoading(false);
     }
+  };
+
+  const getPlanPrice = (plan: Plan) => {
+    return discountedPrices[plan.id] || plan.retail_price;
+  };
+
+  const getOriginalPrice = (plan: Plan) => {
+    return plan.retail_price;
+  };
+
+  const hasDiscount = (plan: Plan) => {
+    return promoApplied && discountedPrices[plan.id] < plan.retail_price;
   };
 
   return (
@@ -107,6 +224,48 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
         <p className="text-gray-600">
           Choose the speed that works for your home
         </p>
+      </div>
+
+      {/* Promo Code Section */}
+      <div className="max-w-md mx-auto mb-8 p-4 bg-gray-50 rounded-lg">
+        <label htmlFor="promo-code" className="block text-sm font-medium text-gray-700 mb-2">
+          Have a promo code?
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="promo-code"
+            type="text"
+            maxLength={5}
+            value={promoCode}
+            onChange={(e) => {
+              setPromoCode(e.target.value.toUpperCase());
+              if (e.target.value.length === 0) {
+                setPromoApplied(false);
+                setDiscountedPrices({});
+                setPromoError('');
+              }
+            }}
+            onBlur={validateAndApplyPromoCode}
+            placeholder="e.g. F4D5C"
+            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm uppercase tracking-widest"
+          />
+          <Button
+            onClick={validateAndApplyPromoCode}
+            variant="outline"
+            size="sm"
+            disabled={!promoCode.trim()}
+          >
+            Apply
+          </Button>
+        </div>
+        
+        {promoError && (
+          <p className="mt-2 text-sm text-red-600">{promoError}</p>
+        )}
+        
+        {promoApplied && !promoError && (
+          <p className="mt-2 text-sm text-green-600">✅ Promo code applied!</p>
+        )}
       </div>
 
       <div className="grid gap-6 max-w-2xl mx-auto">
@@ -124,11 +283,21 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
               <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
               <div className="text-right">
                 <div className="text-2xl font-bold text-gray-900">
-                  ${plan.retail_price}/mo
+                  ${getPlanPrice(plan).toFixed(2)}/mo
+                  {hasDiscount(plan) && (
+                    <span className="ml-2 text-lg line-through text-gray-500">
+                      ${getOriginalPrice(plan).toFixed(2)}
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm text-gray-500">
                   $0 today
                 </div>
+                {hasDiscount(plan) && (
+                  <div className="text-sm text-green-600 font-medium">
+                    Promo applied!
+                  </div>
+                )}
               </div>
             </div>
             <p className="text-gray-600 mb-4">{plan.description}</p>
