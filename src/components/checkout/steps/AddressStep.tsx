@@ -57,8 +57,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const parseAddress = (fullAddress: string) => {
     console.log('🔍 Parsing address:', fullAddress);
     
-    // Split the address by commas
-    const parts = fullAddress.split(',').map(part => part.trim());
+    // Split the address by commas and filter out "United States"
+    const parts = fullAddress.split(',').map(part => part.trim()).filter(part => part !== 'United States');
+    console.log('📍 Address parts after filtering:', parts);
     
     if (parts.length >= 3) {
       // Extract street address (first part)
@@ -71,55 +72,47 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       
       // Extract state and zip from last part
       const lastPart = parts[parts.length - 1];
+      console.log('🏛️ Processing last part:', lastPart);
       
-      // Try different patterns for state and ZIP
       let statePart = '';
       let zipPart = '';
       
-      // Pattern 1: State abbreviation + ZIP (e.g., "TX 78610")
-      const stateZipMatch1 = lastPart.match(/([A-Z]{2})\s+(\d{5}(?:-\d{4})?)/);
-      if (stateZipMatch1) {
-        statePart = stateZipMatch1[1];
-        zipPart = stateZipMatch1[2];
-      } else {
-        // Pattern 2: Full state name + ZIP (e.g., "Texas 78610")
-        const stateZipMatch2 = lastPart.match(/([A-Za-z\s]+?)\s+(\d{5}(?:-\d{4})?)$/);
-        if (stateZipMatch2) {
-          const fullStateName = stateZipMatch2[1].trim();
-          zipPart = stateZipMatch2[2];
-          
-          // Convert full state name to abbreviation
-          if (stateNameToAbbrev[fullStateName]) {
-            statePart = stateNameToAbbrev[fullStateName];
-          } else {
-            // If we can't find the full name, check if it's already an abbreviation
-            const upperState = fullStateName.toUpperCase();
-            if (Object.values(stateNameToAbbrev).includes(upperState)) {
-              statePart = upperState;
-            }
-          }
+      // First, extract ZIP code using a more flexible pattern
+      const zipMatch = lastPart.match(/(\d{5}(?:-\d{4})?)/);
+      if (zipMatch) {
+        zipPart = zipMatch[1];
+        console.log('📮 Found ZIP:', zipPart);
+        
+        // Remove ZIP from string to get state part
+        const stateText = lastPart.replace(zipMatch[0], '').trim();
+        console.log('🏛️ State text after removing ZIP:', stateText);
+        
+        // Check if it's already a 2-letter abbreviation
+        if (stateText.length === 2 && /^[A-Z]{2}$/.test(stateText.toUpperCase())) {
+          statePart = stateText.toUpperCase();
+          console.log('✅ Found state abbreviation:', statePart);
         } else {
-          // Pattern 3: Try to extract ZIP first, then state
-          const zipMatch = lastPart.match(/(\d{5}(?:-\d{4})?)/);
-          if (zipMatch) {
-            zipPart = zipMatch[1];
-            const stateText = lastPart.replace(zipMatch[0], '').trim();
-            
-            // Check if it's a state abbreviation
-            if (stateText.length === 2 && Object.values(stateNameToAbbrev).includes(stateText.toUpperCase())) {
-              statePart = stateText.toUpperCase();
-            } else if (stateNameToAbbrev[stateText]) {
-              statePart = stateNameToAbbrev[stateText];
-            }
+          // Try to find full state name in our mapping
+          const foundState = Object.keys(stateNameToAbbrev).find(stateName => 
+            stateName.toLowerCase() === stateText.toLowerCase()
+          );
+          
+          if (foundState) {
+            statePart = stateNameToAbbrev[foundState];
+            console.log('✅ Converted state name to abbreviation:', stateText, '->', statePart);
+          } else {
+            console.log('❌ Could not find state mapping for:', stateText);
           }
         }
+      } else {
+        console.log('❌ No ZIP code found in:', lastPart);
       }
       
       if (statePart && zipPart) {
         setSelectedState(statePart);
         setZipCode(zipPart);
         
-        console.log('✅ Address parsed:', {
+        console.log('✅ Address parsed successfully:', {
           addressLine1: street,
           city: cityPart,
           state: statePart,
