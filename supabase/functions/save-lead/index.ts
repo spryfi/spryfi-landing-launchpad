@@ -47,36 +47,80 @@ serve(async (req) => {
       )
     }
 
-    // Create lead data object with only valid fields
-    const leadData: any = {
-      email,
-      first_name,
-      last_name,
-      status: 'started',
-      lead_type: 'address_check',
-      qualified: false
-    };
+    // Check if lead already exists
+    const { data: existingLead, error: checkError } = await supabase
+      .from('leads_fresh')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
 
-    // Only include anchor_address_id if it's provided
-    if (anchor_address_id) {
-      leadData.anchor_address_id = anchor_address_id;
+    if (checkError) {
+      console.error('🔥 Check existing lead error:', checkError)
+      throw checkError
     }
 
-    console.log('💾 Inserting lead data:', leadData)
+    let leadResult;
 
-    // Use upsert to handle duplicate emails
-    const { data: leadResult, error: leadError } = await supabase
-      .from('leads_fresh')
-      .upsert(leadData, {
-        onConflict: 'email',
-        ignoreDuplicates: false
-      })
-      .select()
-      .single()
+    if (existingLead) {
+      // Update existing lead
+      console.log('📝 Updating existing lead:', existingLead.id)
+      
+      const updateData: any = {
+        first_name,
+        last_name,
+        status: 'started',
+        lead_type: 'address_check',
+        qualified: false
+      };
 
-    if (leadError) {
-      console.error('🔥 Supabase error:', leadError)
-      throw leadError
+      // Only include anchor_address_id if it's provided and not already set
+      if (anchor_address_id) {
+        updateData.anchor_address_id = anchor_address_id;
+      }
+
+      const { data: updatedLead, error: updateError } = await supabase
+        .from('leads_fresh')
+        .update(updateData)
+        .eq('id', existingLead.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        console.error('🔥 Update lead error:', updateError)
+        throw updateError
+      }
+
+      leadResult = updatedLead;
+    } else {
+      // Create new lead
+      const leadData: any = {
+        email,
+        first_name,
+        last_name,
+        status: 'started',
+        lead_type: 'address_check',
+        qualified: false
+      };
+
+      // Only include anchor_address_id if it's provided
+      if (anchor_address_id) {
+        leadData.anchor_address_id = anchor_address_id;
+      }
+
+      console.log('💾 Inserting new lead data:', leadData)
+
+      const { data: newLead, error: insertError } = await supabase
+        .from('leads_fresh')
+        .insert(leadData)
+        .select()
+        .single()
+
+      if (insertError) {
+        console.error('🔥 Insert lead error:', insertError)
+        throw insertError
+      }
+
+      leadResult = newLead;
     }
 
     console.log('✅ Lead saved successfully:', leadResult.id)
