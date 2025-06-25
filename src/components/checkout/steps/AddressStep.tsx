@@ -103,13 +103,13 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen p-4">
+    <div className="flex justify-center items-start pt-8 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg text-center">Let's see if we can get you covered! 🎯</CardTitle>
           <CardDescription className="text-center text-sm">Just enter your address and we'll check if SpryFi is available in your area.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="address-search" className="text-sm">Your Address</Label>
             <SimpleAddressInput
