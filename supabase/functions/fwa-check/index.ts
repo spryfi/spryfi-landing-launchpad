@@ -156,30 +156,50 @@ serve(async (req) => {
 
       console.log('📡 Verizon API raw response:', JSON.stringify(verizonResponse, null, 2));
 
-      // Parse Verizon response correctly
+      // Fixed: Parse Verizon response correctly - qualified is a string, not boolean
       const isQualified = verizonResponse?.intelligenceResponse?.wirelessCoverages?.fwaCoverage?.[0]?.coverage?.qualified === 'true';
       
-      console.log('📡 Verizon qualification result:', { isQualified, qualified: verizonResponse?.intelligenceResponse?.wirelessCoverages?.fwaCoverage?.[0]?.coverage?.qualified });
+      console.log('📡 Verizon qualification result:', { 
+        isQualified, 
+        qualified: verizonResponse?.intelligenceResponse?.wirelessCoverages?.fwaCoverage?.[0]?.coverage?.qualified,
+        apiSuccess: verizonResponse.success 
+      });
 
-      if (verizonResponse.success && isQualified) {
-        qualificationResult = {
-          qualified: true,
-          network_type: '5G_HOME',
-          coverage_type: 'OUTDOOR',
-          max_speed_mbps: 300,
-          source: 'verizon',
-          raw_data: verizonResponse
-        };
-        source = 'verizon';
-        console.log('✅ Verizon qualification successful - qualified')
+      // Fixed: Only proceed with Verizon result if API call was successful
+      if (verizonResponse.success) {
+        if (isQualified) {
+          // Verizon qualified - use this result and do NOT fall back to bot
+          qualificationResult = {
+            qualified: true,
+            network_type: '5G_HOME',
+            coverage_type: 'OUTDOOR',
+            max_speed_mbps: 300,
+            source: 'verizon',
+            raw_data: verizonResponse
+          };
+          source = 'verizon';
+          console.log('✅ Verizon qualification successful - QUALIFIED')
+        } else {
+          // Verizon explicitly said not qualified - use this result and do NOT fall back to bot
+          qualificationResult = {
+            qualified: false,
+            network_type: '5G_HOME',
+            coverage_type: 'NOT_AVAILABLE',
+            max_speed_mbps: 0,
+            source: 'verizon',
+            raw_data: verizonResponse
+          };
+          source = 'verizon';
+          console.log('❌ Verizon qualification - NOT QUALIFIED (definitive)')
+        }
       } else {
-        console.log('❌ Verizon qualification failed or unqualified, trying bot fallback')
-        throw new Error('Verizon API returned unqualified or failed')
+        console.log('❌ Verizon API failed, trying bot fallback')
+        throw new Error('Verizon API call failed')
       }
     } catch (verizonError) {
-      console.log('🤖 Verizon failed, using Bot Fallback')
+      console.log('🤖 Verizon failed/unavailable, using Bot Fallback')
       
-      // Step 2: Fall back to bot logic only if Verizon failed
+      // Step 2: Fall back to bot logic only if Verizon API failed (not if it returned unqualified)
       const botResult = await callBotFallback({
         address_line1,
         city,
@@ -201,7 +221,7 @@ serve(async (req) => {
       console.log('✅ Bot qualification completed')
     }
 
-    console.log('✅ Final qualification source set to:', source);
+    console.log('📡 Qualification result:', { qualified: qualificationResult.qualified, source });
 
     // Update the anchor_address with qualification results
     const updateData: any = {
