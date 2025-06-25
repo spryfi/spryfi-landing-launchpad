@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,11 +65,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     if (parts.length >= 3) {
       // Extract street address (first part)
       const street = parts[0];
-      setAddressLine1(street);
       
       // Extract city (second to last part)
       const cityPart = parts[parts.length - 2];
-      setCity(cityPart);
       
       // Extract state and zip from last part
       const lastPart = parts[parts.length - 1];
@@ -109,9 +108,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       }
       
       if (statePart && zipPart) {
-        setSelectedState(statePart);
-        setZipCode(zipPart);
-        
         console.log('✅ Address parsed successfully:', {
           addressLine1: street,
           city: cityPart,
@@ -144,30 +140,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     console.log('💾 Saving address to database:', parsedAddress);
     
     try {
-      // Check if address already exists
-      const { data: existingAddress, error: checkError } = await supabase
+      // Use upsert to handle existing addresses
+      const { data: anchor, error: upsertError } = await supabase
         .from('anchor_address')
-        .select('id')
-        .eq('address_line1', parsedAddress.address_line1)
-        .eq('city', parsedAddress.city)
-        .eq('state', parsedAddress.state)
-        .eq('zip_code', parsedAddress.zip_code)
-        .maybeSingle();
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error('❌ Error checking existing address:', checkError);
-        throw checkError;
-      }
-
-      let anchorAddressId: string;
-
-      if (existingAddress) {
-        // Address already exists, use existing ID
-        anchorAddressId = existingAddress.id;
-        console.log('✅ Using existing address ID:', anchorAddressId);
-      } else {
-        // Insert new address
-        const insertData = {
+        .upsert({
           address_line1: parsedAddress.address_line1,
           address_line2: parsedAddress.address_line2 || null,
           city: parsedAddress.city,
@@ -176,25 +152,20 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           latitude: parsedAddress.latitude || null,
           longitude: parsedAddress.longitude || null,
           status: 'pending'
-        };
+        }, { 
+          onConflict: 'address_line1,city,state,zip_code',
+          ignoreDuplicates: false 
+        })
+        .select('id')
+        .single();
 
-        console.log('💾 Inserting new address:', insertData);
-
-        const { data: newAddress, error: insertError } = await supabase
-          .from('anchor_address')
-          .insert(insertData)
-          .select('id')
-          .single();
-
-        if (insertError) {
-          console.error('❌ Error inserting address:', insertError);
-          throw insertError;
-        }
-
-        anchorAddressId = newAddress.id;
-        console.log('✅ Created new address with ID:', anchorAddressId);
+      if (upsertError) {
+        console.error('❌ Error upserting address:', upsertError);
+        throw upsertError;
       }
 
+      const anchorAddressId = anchor.id;
+      console.log('✅ Address saved/found with ID:', anchorAddressId);
       return anchorAddressId;
     } catch (error) {
       console.error('❌ Database error:', error);
@@ -215,10 +186,17 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         return; // Error already shown in parseAddress
       }
 
-      // Save to database
+      // Set the parsed address fields in state
+      setAddressLine1(parsedAddress.address_line1);
+      setAddressLine2(parsedAddress.address_line2);
+      setCity(parsedAddress.city);
+      setSelectedState(parsedAddress.state);
+      setZipCode(parsedAddress.zip_code);
+
+      // Save to database and get the anchor_address_id
       const anchorAddressId = await saveAddressToDatabase(parsedAddress);
       
-      // Update state with address and anchor_address_id
+      // Update checkout state with address and anchor_address_id
       updateState({
         address: {
           addressLine1: parsedAddress.address_line1,
@@ -296,7 +274,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     setIsCheckingQualification(true);
 
     try {
-      // Step 1: Save lead to database
+      // Step 1: Save lead to database with anchor_address_id
       console.log('💾 Saving lead to database...');
       const { data: saveLeadData, error: saveLeadError } = await supabase.functions.invoke('save-lead', {
         body: {
@@ -315,11 +293,12 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const leadId = saveLeadData.lead_id;
       console.log('✅ Lead saved with ID:', leadId);
 
-      // Step 2: Check qualification with complete address data
+      // Step 2: Call qualification check with complete data
       console.log('🔍 Checking area qualification...');
       const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
         body: {
           lead_id: leadId,
+          anchor_address_id: state.anchorAddressId,
           formatted_address: selectedAddress,
           address_line1: addressLine1,
           address_line2: addressLine2 || null,
