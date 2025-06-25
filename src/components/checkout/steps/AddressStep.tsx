@@ -209,9 +209,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="flex justify-center items-start pt-4 px-4">
-      <Card className="w-full max-w-md relative overflow-visible">
-        <CardHeader className="pb-4">
+    <div className="flex justify-center items-start pt-4 px-4" style={{ overflow: 'visible' }}>
+      <Card className="w-full max-w-md relative" style={{ overflow: 'visible', zIndex: 30 }}>
+        <CardHeader className="px-6 pt-4 pb-2">
           <CardTitle className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-2 leading-tight">
             Let's see if we can get you covered! 🎯
           </CardTitle>
@@ -219,11 +219,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             Just enter your address and we'll check if SpryFi is available in your area.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 relative">
+        <CardContent className="px-6 pb-12 space-y-4 relative" style={{ overflow: 'visible' }}>
           {!showContactForm ? (
             <div className="space-y-2">
-              <Label htmlFor="address-search" className="text-sm">Your Address</Label>
-              <div className="relative mb-28 z-30">
+              <Label htmlFor="address-search" className="text-sm font-medium text-gray-700">Your Address</Label>
+              <div className="relative mb-32 z-40" style={{ overflow: 'visible' }}>
                 <SimpleAddressInput
                   onAddressSelect={handleAddressSelect}
                   placeholder="Start typing your address..."
