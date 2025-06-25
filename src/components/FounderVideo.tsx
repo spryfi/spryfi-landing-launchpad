@@ -22,8 +22,7 @@ export const FounderVideo = () => {
         </div>
         
         <blockquote className="text-xl md:text-2xl text-gray-700 mb-6 leading-relaxed">
-          "I've run a successful internet company for 15 years. And I've seen what goes wrong. 
-          SpryFi is different—it's built for people, not cable companies."
+          "I've run a successful internet company for 15 years. I've seen how giant cable companies view customers as revenue streams to milk. SpryFi sees you as a neighbor who deserves better."
         </blockquote>
         
         <div className="text-lg text-gray-600">
