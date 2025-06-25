@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AddressStep } from './steps/AddressStep';
@@ -45,20 +46,76 @@ interface CheckoutModalProps {
   onClose: () => void;
 }
 
+const getInitialState = (): CheckoutState => ({
+  step: 'address',
+  anchorAddressId: null,
+  leadId: null,
+  address: null,
+  contact: null,
+  planSelected: null,
+  routerAdded: false,
+  totalAmount: 0,
+  qualified: false,
+  qualificationResult: null,
+  flow_completed: false
+});
+
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
-  const [state, setState] = useState<CheckoutState>({
-    step: 'address', // Start with address step first
-    anchorAddressId: null,
-    leadId: null,
-    address: null,
-    contact: null,
-    planSelected: null,
-    routerAdded: false,
-    totalAmount: 0,
-    qualified: false,
-    qualificationResult: null,
-    flow_completed: false
-  });
+  const [state, setState] = useState<CheckoutState>(getInitialState());
+
+  // Reset state and clear storage when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔄 CheckoutModal opened - resetting flow state');
+      
+      // Clear any stored session data
+      sessionStorage.removeItem('lead_id');
+      sessionStorage.removeItem('qualified');
+      sessionStorage.removeItem('address_selected');
+      sessionStorage.removeItem('flow_started');
+      sessionStorage.removeItem('anchor_address_id');
+      sessionStorage.removeItem('qualification_result');
+      
+      // Clear address form storage
+      localStorage.removeItem('addressFormData');
+      
+      // Reset to initial state
+      setState(getInitialState());
+      
+      console.log('✅ Flow state reset complete - starting from address step');
+    }
+  }, [isOpen]);
+
+  // Set flow start timestamp when moving past address step
+  useEffect(() => {
+    if (state.step !== 'address' && state.step !== 'not-qualified') {
+      const flowStarted = sessionStorage.getItem('flow_started');
+      if (!flowStarted) {
+        sessionStorage.setItem('flow_started', Date.now().toString());
+        console.log('⏱️ Flow start timestamp set');
+      }
+    }
+  }, [state.step]);
+
+  // Check for flow expiration on component mount
+  useEffect(() => {
+    const checkFlowExpiration = () => {
+      const startedAt = parseInt(sessionStorage.getItem('flow_started') || '0', 10);
+      const expired = startedAt > 0 && Date.now() - startedAt > 5 * 60 * 1000; // 5 minutes
+      
+      if (expired) {
+        console.log('⏰ Flow expired - clearing session data');
+        sessionStorage.clear();
+        localStorage.removeItem('addressFormData');
+        
+        if (isOpen) {
+          setState(getInitialState());
+        }
+      }
+    };
+
+    checkFlowExpiration();
+  }, [isOpen]);
 
   const updateState = (updates: Partial<CheckoutState>) => {
     setState(prev => ({ ...prev, ...updates }));

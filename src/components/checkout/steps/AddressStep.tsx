@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { CheckoutState } from '../CheckoutModal';
 import SimpleAddressInput from '../../SimpleAddressInput';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [addressSelected, setAddressSelected] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Reset local state when step loads
+  useEffect(() => {
+    console.log('🏠 AddressStep mounted - resetting local state');
+    setSelectedAddress('');
+    setAddressSelected(false);
+    setLoading(false);
+  }, []);
 
   const parseAddress = (fullAddress: string) => {
     // Basic address parsing - you might want to enhance this
