@@ -13,7 +13,7 @@ export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ stat
     updateState({ step: 'plan-selection' });
   };
 
-  // Determine internal qualification code
+  // Determine internal qualification code based on source
   const getQualificationCode = () => {
     const source = state.qualificationResult?.source;
     if (source === 'verizon') return 'sapi1';

@@ -165,7 +165,7 @@ serve(async (req) => {
         apiSuccess: verizonResponse.success 
       });
 
-      // Fixed: Only proceed with Verizon result if API call was successful
+      // Only proceed with Verizon result if API call was successful
       if (verizonResponse.success) {
         if (isQualified) {
           // Verizon qualified - use this result and do NOT fall back to bot
@@ -178,19 +178,11 @@ serve(async (req) => {
             raw_data: verizonResponse
           };
           source = 'verizon';
-          console.log('✅ Verizon qualification successful - QUALIFIED')
+          console.log('✅ Verizon qualification successful - QUALIFIED (sapi1)')
         } else {
-          // Verizon explicitly said not qualified - use this result and do NOT fall back to bot
-          qualificationResult = {
-            qualified: false,
-            network_type: '5G_HOME',
-            coverage_type: 'NOT_AVAILABLE',
-            max_speed_mbps: 0,
-            source: 'verizon',
-            raw_data: verizonResponse
-          };
-          source = 'verizon';
-          console.log('❌ Verizon qualification - NOT QUALIFIED (definitive)')
+          // Verizon explicitly said not qualified - fallback to bot
+          console.log('❌ Verizon said not qualified, trying bot fallback')
+          throw new Error('Verizon said not qualified, trying bot')
         }
       } else {
         console.log('❌ Verizon API failed, trying bot fallback')
@@ -199,7 +191,7 @@ serve(async (req) => {
     } catch (verizonError) {
       console.log('🤖 Verizon failed/unavailable, using Bot Fallback')
       
-      // Step 2: Fall back to bot logic only if Verizon API failed (not if it returned unqualified)
+      // Step 2: Fall back to bot logic only if Verizon API failed or returned not qualified
       const botResult = await callBotFallback({
         address_line1,
         city,
@@ -218,10 +210,10 @@ serve(async (req) => {
         raw_data: botResult
       };
       source = 'bot';
-      console.log('✅ Bot qualification completed')
+      console.log('✅ Bot qualification completed (sapi2)')
     }
 
-    console.log('📡 Qualification result:', { qualified: qualificationResult.qualified, source });
+    console.log('📡 Final qualification result:', { qualified: qualificationResult.qualified, source });
 
     // Update the anchor_address with qualification results
     const updateData: any = {
