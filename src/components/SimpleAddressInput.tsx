@@ -55,8 +55,8 @@ const SimpleAddressInput: React.FC<Props> = ({
       console.log('🔄 Triggering search and showing suggestions for:', inputValue);
       debouncedSearch(inputValue);
       setShowSuggestions(true);
-    } else {
-      console.log('🔄 Clearing suggestions - input too short or address selected');
+    } else if (inputValue.length <= 2) {
+      console.log('🔄 Clearing suggestions - input too short');
       clearSuggestions();
       setShowSuggestions(false);
     }
@@ -94,14 +94,9 @@ const SimpleAddressInput: React.FC<Props> = ({
     
     setInputValue(suggestion.formatted);
     setAddressSelected(true);
-    
-    if (inputRef.current) {
-      inputRef.current.value = suggestion.formatted;
-      inputRef.current.blur();
-    }
+    setShowSuggestions(false);
     
     // Clear suggestions and localStorage since address is selected
-    setShowSuggestions(false);
     clearSuggestions();
     clearAddressFromStorage();
     
@@ -124,21 +119,27 @@ const SimpleAddressInput: React.FC<Props> = ({
     });
     
     // Show suggestions if we have input and haven't selected an address
-    if (inputValue.length > 2 && !addressSelected) {
+    if (inputValue.length > 2 && !addressSelected && suggestions.length > 0) {
       console.log('🎯 Showing suggestions on focus');
       setShowSuggestions(true);
-      // Re-trigger search in case it was cleared
-      debouncedSearch(inputValue);
     }
   };
 
+  // Show suggestions when we have them and meet conditions
+  useEffect(() => {
+    if (suggestions.length > 0 && inputValue.length > 2 && !addressSelected && !error) {
+      console.log('📋 Auto-showing suggestions, count:', suggestions.length);
+      setShowSuggestions(true);
+    }
+  }, [suggestions, inputValue.length, addressSelected, error]);
+
   // Fixed logic for showing no results
-  const showNoResults = showSuggestions && 
+  const showNoResults = inputValue.length > 2 && 
                        suggestions.length === 0 && 
                        !isLoading && 
-                       inputValue.length > 2 && 
                        !addressSelected && 
-                       !error;
+                       !error &&
+                       showSuggestions;
 
   console.log('🔍 Render state:', {
     inputValue: inputValue.substring(0, 20) + (inputValue.length > 20 ? '...' : ''),

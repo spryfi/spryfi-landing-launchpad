@@ -12,33 +12,21 @@ export const useAddressSearch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const mountedRef = useRef(true);
 
   // Use environment variable or fallback token
   const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoicGRtY2tuaWdodCIsImEiOiJjbWM1bmp3MGcwcmpxMnJvaXNqeW15cDNqIn0._jS8MsELPUKSxU7ys6cxdg';
 
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
   const searchAddresses = useCallback(async (query: string) => {
     console.log('🚀 searchAddresses called with query:', query, 'length:', query.length);
     
-    if (!mountedRef.current) {
-      console.log('❌ Component unmounted, aborting search');
-      return;
-    }
-    
     if (query.length <= 2) {
       console.log('❌ Query too short, aborting search');
+      setSuggestions([]);
       return;
     }
 
     console.log('🔍 Starting address search for:', query);
     console.log('🔑 Mapbox token available:', MAPBOX_TOKEN ? 'YES' : 'NO');
-    console.log('🔑 Token preview:', MAPBOX_TOKEN ? MAPBOX_TOKEN.substring(0, 20) + '...' : 'No token');
     
     setIsLoading(true);
     setError('');
@@ -48,20 +36,17 @@ export const useAddressSearch = () => {
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
         `access_token=${MAPBOX_TOKEN}&` +
         `country=US&` +
-        `types=address&` +
+        `types=address,poi&` +
         `autocomplete=true&` +
-        `limit=10&` +
-        `bbox=-179,-85,179,85`;
+        `limit=8`;
       
       console.log('📡 Making API request to:', url.substring(0, 100) + '...');
-      console.log('📡 Full URL (check network tab):', url);
       
       const response = await fetch(url);
       
       console.log('📊 Response received:');
       console.log('📊 Status:', response.status);
       console.log('📊 Status Text:', response.statusText);
-      console.log('📊 Headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -79,7 +64,7 @@ export const useAddressSearch = () => {
       const data = await response.json();
       console.log('📨 Full API Response:', JSON.stringify(data, null, 2));
       
-      if (mountedRef.current && data.features && Array.isArray(data.features)) {
+      if (data.features && Array.isArray(data.features)) {
         const addressOptions: AddressOption[] = data.features.map((feature: any) => ({
           display_name: feature.place_name,
           formatted: feature.place_name,
@@ -100,20 +85,14 @@ export const useAddressSearch = () => {
       }
     } catch (error) {
       console.error('❌ Fetch error details:', error);
-      console.error('❌ Error name:', error instanceof Error ? error.name : 'Unknown');
       console.error('❌ Error message:', error instanceof Error ? error.message : 'Unknown error');
-      console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack');
       
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch suggestions';
       setError(errorMessage);
-      if (mountedRef.current) {
-        setSuggestions([]);
-      }
+      setSuggestions([]);
     } finally {
-      if (mountedRef.current) {
-        console.log('🏁 Search completed, setting loading to false');
-        setIsLoading(false);
-      }
+      console.log('🏁 Search completed, setting loading to false');
+      setIsLoading(false);
     }
   }, [MAPBOX_TOKEN]);
 
