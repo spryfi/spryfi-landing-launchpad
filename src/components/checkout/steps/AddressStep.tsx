@@ -75,6 +75,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         
         return {
           address_line1: street,
+          address_line2: '', // Always include this field
           city: cityPart,
           state: statePart,
           zip_code: zipPart,
@@ -84,6 +85,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
     
     console.error('❌ Failed to parse address:', fullAddress);
+    toast({
+      title: "Error",
+      description: "Could not parse the selected address. Please try selecting a different address from the suggestions.",
+    });
     return null;
   };
 
@@ -126,6 +131,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           status: 'pending'
         };
 
+        console.log('💾 Inserting new address:', insertData);
+
         const { data: newAddress, error: insertError } = await supabase
           .from('anchor_address')
           .insert(insertData)
@@ -158,11 +165,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const parsedAddress = parseAddress(address);
       
       if (!parsedAddress) {
-        toast({
-          title: "Error",
-          description: "Could not parse the selected address. Please try selecting again.",
-        });
-        return;
+        return; // Error already shown in parseAddress
       }
 
       // Save to database
@@ -172,7 +175,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       updateState({
         address: {
           addressLine1: parsedAddress.address_line1,
-          addressLine2: parsedAddress.address_line2 || '',
+          addressLine2: parsedAddress.address_line2,
           city: parsedAddress.city,
           state: parsedAddress.state,
           zipCode: parsedAddress.zip_code,
@@ -185,6 +188,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       setTimeout(() => {
         setShowContactForm(true);
       }, 300);
+      
+      toast({
+        title: "Address confirmed! ✅",
+        description: "Now please enter your contact information.",
+      });
       
     } catch (error) {
       console.error('🔥 Error processing address:', error);
