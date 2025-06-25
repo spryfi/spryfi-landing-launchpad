@@ -54,7 +54,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
   };
 
-  // Enhanced address parsing function
+  // Enhanced address parsing function with better validation
   const parseAddress = (fullAddress: string) => {
     console.log('🔍 Parsing address:', fullAddress);
     
@@ -62,84 +62,101 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     const parts = fullAddress.split(',').map(part => part.trim()).filter(part => part !== 'United States');
     console.log('📍 Address parts after filtering:', parts);
     
-    if (parts.length >= 3) {
-      // Extract street address (first part)
-      const street = parts[0];
-      
-      // Extract city (second to last part)
-      const cityPart = parts[parts.length - 2];
-      
-      // Extract state and zip from last part
-      const lastPart = parts[parts.length - 1];
-      console.log('🏛️ Processing last part:', lastPart);
-      
-      let statePart = '';
-      let zipPart = '';
-      
-      // First, extract ZIP code using a more flexible pattern
-      const zipMatch = lastPart.match(/(\d{5}(?:-\d{4})?)/);
-      if (zipMatch) {
-        zipPart = zipMatch[1];
-        console.log('📮 Found ZIP:', zipPart);
-        
-        // Remove ZIP from string to get state part
-        const stateText = lastPart.replace(zipMatch[0], '').trim();
-        console.log('🏛️ State text after removing ZIP:', stateText);
-        
-        // Check if it's already a 2-letter abbreviation
-        if (stateText.length === 2 && /^[A-Z]{2}$/.test(stateText.toUpperCase())) {
-          statePart = stateText.toUpperCase();
-          console.log('✅ Found state abbreviation:', statePart);
-        } else {
-          // Try to find full state name in our mapping
-          const foundState = Object.keys(stateNameToAbbrev).find(stateName => 
-            stateName.toLowerCase() === stateText.toLowerCase()
-          );
-          
-          if (foundState) {
-            statePart = stateNameToAbbrev[foundState];
-            console.log('✅ Converted state name to abbreviation:', stateText, '->', statePart);
-          } else {
-            console.log('❌ Could not find state mapping for:', stateText);
-          }
-        }
-      } else {
-        console.log('❌ No ZIP code found in:', lastPart);
-      }
-      
-      if (statePart && zipPart) {
-        console.log('✅ Address parsed successfully:', {
-          addressLine1: street,
-          city: cityPart,
-          state: statePart,
-          zipCode: zipPart
-        });
-        
-        return {
-          address_line1: street,
-          address_line2: '', // Always include this field
-          city: cityPart,
-          state: statePart,
-          zip_code: zipPart,
-          formatted_address: fullAddress
-        };
-      }
+    if (parts.length < 3) {
+      console.error('❌ Address has insufficient parts:', parts.length);
+      return null;
+    }
+
+    // Extract street address (first part)
+    const street = parts[0];
+    if (!street || street.trim() === '') {
+      console.error('❌ Missing street address');
+      return null;
     }
     
-    console.error('❌ Failed to parse address:', fullAddress);
-    console.error('❌ Address parts:', parts);
-    toast({
-      title: "Error",
-      description: "Could not parse the selected address. Please try selecting a different address from the suggestions.",
-    });
-    return null;
+    // Extract city (second to last part)
+    const cityPart = parts[parts.length - 2];
+    if (!cityPart || cityPart.trim() === '') {
+      console.error('❌ Missing city');
+      return null;
+    }
+    
+    // Extract state and zip from last part
+    const lastPart = parts[parts.length - 1];
+    console.log('🏛️ Processing last part:', lastPart);
+    
+    let statePart = '';
+    let zipPart = '';
+    
+    // Extract ZIP code using flexible pattern (5 digits or 5+4 format)
+    const zipMatch = lastPart.match(/(\d{5}(?:-\d{4})?)/);
+    if (zipMatch) {
+      zipPart = zipMatch[1];
+      console.log('📮 Found ZIP:', zipPart);
+      
+      // Remove ZIP from string to get state part
+      const stateText = lastPart.replace(zipMatch[0], '').trim();
+      console.log('🏛️ State text after removing ZIP:', stateText);
+      
+      // Check if it's already a 2-letter abbreviation
+      if (stateText.length === 2 && /^[A-Z]{2}$/i.test(stateText)) {
+        statePart = stateText.toUpperCase();
+        console.log('✅ Found state abbreviation:', statePart);
+      } else {
+        // Try to find full state name in our mapping
+        const foundState = Object.keys(stateNameToAbbrev).find(stateName => 
+          stateName.toLowerCase() === stateText.toLowerCase()
+        );
+        
+        if (foundState) {
+          statePart = stateNameToAbbrev[foundState];
+          console.log('✅ Converted state name to abbreviation:', stateText, '->', statePart);
+        } else {
+          console.log('❌ Could not find state mapping for:', stateText);
+          return null;
+        }
+      }
+    } else {
+      console.log('❌ No ZIP code found in:', lastPart);
+      return null;
+    }
+    
+    // Validate all required fields are present
+    if (!street || !cityPart || !statePart || !zipPart) {
+      console.error('❌ Missing required address fields:', {
+        street: !!street,
+        city: !!cityPart,
+        state: !!statePart,
+        zip: !!zipPart
+      });
+      return null;
+    }
+
+    const payload = {
+      address_line1: street,
+      address_line2: '', // Always include this field
+      city: cityPart,
+      state: statePart,
+      zip_code: zipPart,
+      formatted_address: fullAddress,
+      latitude: null, // Will be set if available from geocoding
+      longitude: null // Will be set if available from geocoding
+    };
+
+    console.log('✅ Address parsed successfully:', payload);
+    return payload;
   };
 
-  // Save address to anchor_address table
+  // Save address to anchor_address table with proper error handling
   const saveAddressToDatabase = async (parsedAddress: any) => {
     console.log('💾 Saving address to database:', parsedAddress);
     
     try {
+      // Validate payload before saving
+      if (!parsedAddress.address_line1 || !parsedAddress.city || !parsedAddress.state || !parsedAddress.zip_code) {
+        throw new Error('Missing required address fields');
+      }
+
       // Use upsert to handle existing addresses
       const { data: anchor, error: upsertError } = await supabase
         .from('anchor_address')
@@ -161,7 +178,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       if (upsertError) {
         console.error('❌ Error upserting address:', upsertError);
-        throw upsertError;
+        throw new Error(`Failed to save address: ${upsertError.message}`);
+      }
+
+      if (!anchor || !anchor.id) {
+        throw new Error('Address saved but no ID returned');
       }
 
       const anchorAddressId = anchor.id;
@@ -179,24 +200,31 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     setIsProcessingAddress(true);
     
     try {
-      // Parse the address
+      // Step 1: Parse the address with validation
       const parsedAddress = parseAddress(address);
       
       if (!parsedAddress) {
-        return; // Error already shown in parseAddress
+        toast({
+          title: "Address Error",
+          description: "We couldn't process your address — please re-enter it or try a different address.",
+        });
+        return;
       }
 
-      // Set the parsed address fields in state
+      console.log('📬 Address parsed and saved:', parsedAddress);
+
+      // Step 2: Set the parsed address fields in state
       setAddressLine1(parsedAddress.address_line1);
       setAddressLine2(parsedAddress.address_line2);
       setCity(parsedAddress.city);
       setSelectedState(parsedAddress.state);
       setZipCode(parsedAddress.zip_code);
 
-      // Save to database and get the anchor_address_id
+      // Step 3: Save to database and get the anchor_address_id
       const anchorAddressId = await saveAddressToDatabase(parsedAddress);
+      console.log('🔗 Linked lead to address:', anchorAddressId);
       
-      // Update checkout state with address and anchor_address_id
+      // Step 4: Update checkout state with address and anchor_address_id
       updateState({
         address: {
           addressLine1: parsedAddress.address_line1,
@@ -209,7 +237,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         anchorAddressId
       });
       
-      // Automatically transition to contact form
+      // Step 5: Automatically transition to contact form
       setTimeout(() => {
         setShowContactForm(true);
       }, 300);
@@ -222,8 +250,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     } catch (error) {
       console.error('🔥 Error processing address:', error);
       toast({
-        title: "Error",
-        description: "Failed to process the selected address. Please try again.",
+        title: "Address Processing Error",
+        description: error instanceof Error ? error.message : "We couldn't process your address — please re-enter it.",
       });
     } finally {
       setIsProcessingAddress(false);
@@ -265,7 +293,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
     if (!state.anchorAddressId) {
       toast({
-        title: "Error",
+        title: "Address Error",
         description: "Address information is not properly saved. Please reselect your address.",
       });
       return;
@@ -293,20 +321,26 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const leadId = saveLeadData.lead_id;
       console.log('✅ Lead saved with ID:', leadId);
 
-      // Step 2: Call qualification check with complete data
+      // Step 2: Link the lead to the anchor address (update leads_fresh table)
+      console.log('🔗 Linking lead to anchor address...');
+      const { error: linkError } = await supabase
+        .from('leads_fresh')
+        .update({ anchor_address_id: state.anchorAddressId })
+        .eq('id', leadId);
+
+      if (linkError) {
+        console.error('❌ Error linking lead to address:', linkError);
+        throw new Error('Failed to link lead to address');
+      }
+
+      console.log('✅ Lead linked to anchor address successfully');
+
+      // Step 3: Call qualification check only after everything is properly saved and linked
       console.log('🔍 Checking area qualification...');
       const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
         body: {
           lead_id: leadId,
-          anchor_address_id: state.anchorAddressId,
-          formatted_address: selectedAddress,
-          address_line1: addressLine1,
-          address_line2: addressLine2 || null,
-          city,
-          state: selectedState,
-          zip_code: zipCode,
-          latitude: state.address?.latitude || null,
-          longitude: state.address?.longitude || null
+          anchor_address_id: state.anchorAddressId
         }
       });
 
