@@ -52,9 +52,11 @@ const SimpleAddressInput: React.FC<Props> = ({
     });
     
     if (inputValue.length > 2 && !addressSelected) {
+      console.log('🔄 Triggering search and showing suggestions for:', inputValue);
       debouncedSearch(inputValue);
       setShowSuggestions(true);
     } else {
+      console.log('🔄 Clearing suggestions - input too short or address selected');
       clearSuggestions();
       setShowSuggestions(false);
     }
@@ -109,29 +111,40 @@ const SimpleAddressInput: React.FC<Props> = ({
   const handleInputBlur = () => {
     // Delay hiding suggestions to allow for clicks
     setTimeout(() => {
+      console.log('👋 Input blurred - hiding suggestions after delay');
       setShowSuggestions(false);
     }, 200);
   };
 
   const handleInputFocus = () => {
-    console.log('🎯 Input focused, suggestions available:', suggestions.length);
-    if (suggestions.length > 0 && !addressSelected) {
-      setShowSuggestions(true);
-    }
-    // Trigger search if there's existing input
+    console.log('🎯 Input focused, current state:', {
+      inputLength: inputValue.length,
+      suggestionsCount: suggestions.length,
+      addressSelected
+    });
+    
+    // Show suggestions if we have input and haven't selected an address
     if (inputValue.length > 2 && !addressSelected) {
-      debouncedSearch(inputValue);
+      console.log('🎯 Showing suggestions on focus');
       setShowSuggestions(true);
+      // Re-trigger search in case it was cleared
+      debouncedSearch(inputValue);
     }
   };
 
-  const showNoResults = showSuggestions && suggestions.length === 0 && !isLoading && 
-                       inputValue.length > 2 && !addressSelected && !error;
+  // Fixed logic for showing no results
+  const showNoResults = showSuggestions && 
+                       suggestions.length === 0 && 
+                       !isLoading && 
+                       inputValue.length > 2 && 
+                       !addressSelected && 
+                       !error;
 
   console.log('🔍 Render state:', {
     inputValue: inputValue.substring(0, 20) + (inputValue.length > 20 ? '...' : ''),
     suggestionsCount: suggestions.length,
     showSuggestions,
+    showNoResults,
     isLoading,
     error: error ? 'Present' : 'None',
     addressSelected
@@ -175,7 +188,7 @@ const SimpleAddressInput: React.FC<Props> = ({
       <AddressSuggestions
         suggestions={suggestions}
         onSuggestionClick={handleSuggestionClick}
-        isVisible={showSuggestions && !addressSelected && !error}
+        isVisible={showSuggestions && suggestions.length > 0 && !addressSelected && !error}
       />
 
       {/* Debug info - visible in development */}
@@ -186,6 +199,7 @@ const SimpleAddressInput: React.FC<Props> = ({
           <div>• Loading: {isLoading.toString()}</div>
           <div>• Suggestions: {suggestions.length}</div>
           <div>• Show dropdown: {showSuggestions.toString()}</div>
+          <div>• Show no results: {showNoResults.toString()}</div>
           <div>• Error: {error || 'None'}</div>
           <div>• Selected: {addressSelected.toString()}</div>
         </div>

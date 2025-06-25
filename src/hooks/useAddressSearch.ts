@@ -44,12 +44,14 @@ export const useAddressSearch = () => {
     setError('');
     
     try {
+      // Improved URL with more specific parameters for better address matching
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
         `access_token=${MAPBOX_TOKEN}&` +
         `country=US&` +
-        `types=address,poi&` +
+        `types=address&` +
         `autocomplete=true&` +
-        `limit=5`;
+        `limit=10&` +
+        `bbox=-179,-85,179,85`;
       
       console.log('📡 Making API request to:', url.substring(0, 100) + '...');
       console.log('📡 Full URL (check network tab):', url);
@@ -90,6 +92,7 @@ export const useAddressSearch = () => {
         
         if (addressOptions.length === 0) {
           console.log('⚠️ No suggestions found for query:', query);
+          console.log('💡 Try a more specific address like "123 Main St" or "1361 Market Street"');
         }
       } else {
         console.log('⚠️ Invalid API response structure:', data);
