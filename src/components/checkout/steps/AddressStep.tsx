@@ -178,7 +178,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         },
         leadId,
         qualified: qualificationData.qualified,
-        qualificationSource: qualificationData.source,
+        qualificationResult: {
+          source: qualificationData.source,
+          network_type: qualificationData.network_type,
+          max_speed_mbps: qualificationData.raw_data?.max_speed_mbps
+        },
         step: qualificationData.qualified ? 'qualification-success' : 'contact'
       });
 
