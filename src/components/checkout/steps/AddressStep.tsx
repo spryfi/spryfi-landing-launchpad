@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -211,7 +210,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
   return (
     <div className="flex justify-center items-start pt-4 px-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md relative overflow-visible">
         <CardHeader className="pb-4">
           <CardTitle className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-2 leading-tight">
             Let's see if we can get you covered! 🎯
@@ -220,11 +219,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             Just enter your address and we'll check if SpryFi is available in your area.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 relative">
           {!showContactForm ? (
             <div className="space-y-2">
               <Label htmlFor="address-search" className="text-sm">Your Address</Label>
-              <div className="relative mb-10 z-20">
+              <div className="relative mb-28 z-30">
                 <SimpleAddressInput
                   onAddressSelect={handleAddressSelect}
                   placeholder="Start typing your address..."
