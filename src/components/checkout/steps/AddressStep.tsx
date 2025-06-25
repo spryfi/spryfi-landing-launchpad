@@ -37,6 +37,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   
   // UI state
   const [isCheckingQualification, setIsCheckingQualification] = useState(false);
+  const [showContactForm, setShowContactForm] = useState(false);
 
   // Parse the selected address and populate individual fields
   const parseAddress = (fullAddress: string) => {
@@ -74,6 +75,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     console.log('🎯 Address selected:', address);
     setSelectedAddress(address);
     parseAddress(address);
+    
+    // Automatically transition to contact form
+    setTimeout(() => {
+      setShowContactForm(true);
+    }, 300);
   };
 
   const isValidAddress = () => {
@@ -167,7 +173,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         contact: {
           firstName,
           lastName,
-          email
+          email,
+          phone: '' // Add empty phone to satisfy interface
         },
         leadId,
         qualified: qualificationData.qualified,
@@ -199,24 +206,30 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="flex justify-center items-start pt-8 px-4">
+    <div className="flex justify-center items-start pt-4 px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg text-center">Let's see if we can get you covered! 🎯</CardTitle>
-          <CardDescription className="text-center text-sm">Just enter your address and we'll check if SpryFi is available in your area.</CardDescription>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-2 leading-tight">
+            Let's see if we can get you covered! 🎯
+          </CardTitle>
+          <CardDescription className="text-center text-sm">
+            Just enter your address and we'll check if SpryFi is available in your area.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {!selectedAddress ? (
+        <CardContent className="space-y-4">
+          {!showContactForm ? (
             <div className="space-y-2">
               <Label htmlFor="address-search" className="text-sm">Your Address</Label>
-              <SimpleAddressInput
-                onAddressSelect={handleAddressSelect}
-                placeholder="Start typing your address..."
-              />
+              <div className="relative mb-10 z-20">
+                <SimpleAddressInput
+                  onAddressSelect={handleAddressSelect}
+                  placeholder="Start typing your address..."
+                />
+              </div>
             </div>
           ) : (
             <>
-              <div className="text-xs text-gray-600 bg-green-50 p-2 rounded border-l-4 border-green-500">
+              <div className="text-xs text-gray-600 bg-green-50 p-3 rounded border-l-4 border-green-500">
                 <div className="flex items-center gap-2">
                   <span className="text-green-500">✅</span>
                   <span className="font-medium">Address confirmed:</span>
@@ -224,48 +237,51 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
                 <div className="text-gray-700 mt-1">{selectedAddress}</div>
               </div>
               
-              <div className="space-y-3 mt-4">
-                <div className="space-y-1">
+              <div className="space-y-4 mt-6" id="contact-info-form">
+                <div className="space-y-2">
                   <Label htmlFor="first-name" className="text-sm">First Name</Label>
                   <Input
                     type="text"
                     id="first-name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Enter your first name"
-                    className="h-8 text-sm"
+                    placeholder="First name"
+                    className="h-9 text-sm"
                     autoFocus
+                    required
                   />
                 </div>
                 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <Label htmlFor="last-name" className="text-sm">Last Name</Label>
                   <Input
                     type="text"
                     id="last-name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Enter your last name"
-                    className="h-8 text-sm"
+                    placeholder="Last name"
+                    className="h-9 text-sm"
+                    required
                   />
                 </div>
                 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm">Email Address</Label>
                   <Input
                     type="email"
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    className="h-8 text-sm"
+                    placeholder="Email address"
+                    className="h-9 text-sm"
+                    required
                   />
                 </div>
               </div>
               
               <Button 
                 onClick={handleCheckArea} 
-                className="w-full h-9 text-sm bg-blue-600 hover:bg-blue-700"
+                className="w-full h-10 text-sm bg-blue-600 hover:bg-blue-700 font-semibold"
                 disabled={isCheckingQualification || !isValidContactInfo()}
               >
                 {isCheckingQualification ? 'Checking Your Area...' : 'Check My Area'}
