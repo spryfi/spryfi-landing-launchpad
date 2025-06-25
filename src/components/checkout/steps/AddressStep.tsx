@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,8 +38,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   // UI state
   const [isCheckingQualification, setIsCheckingQualification] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
+  const [isProcessingAddress, setIsProcessingAddress] = useState(false);
 
-  // Parse the selected address and populate individual fields
+  // Enhanced address parsing function
   const parseAddress = (fullAddress: string) => {
     console.log('🔍 Parsing address:', fullAddress);
     
@@ -47,38 +49,152 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     
     if (parts.length >= 3) {
       // Extract street address (first part)
-      setAddressLine1(parts[0]);
+      const street = parts[0];
+      setAddressLine1(street);
       
       // Extract city (second to last part)
-      setCity(parts[parts.length - 2]);
+      const cityPart = parts[parts.length - 2];
+      setCity(cityPart);
       
       // Extract state and zip from last part
       const lastPart = parts[parts.length - 1];
       const stateZipMatch = lastPart.match(/([A-Z]{2})\s+(\d{5}(?:-\d{4})?)/);
       
       if (stateZipMatch) {
-        setSelectedState(stateZipMatch[1]);
-        setZipCode(stateZipMatch[2]);
+        const statePart = stateZipMatch[1];
+        const zipPart = stateZipMatch[2];
+        setSelectedState(statePart);
+        setZipCode(zipPart);
+        
+        console.log('✅ Address parsed:', {
+          addressLine1: street,
+          city: cityPart,
+          state: statePart,
+          zipCode: zipPart
+        });
+        
+        return {
+          address_line1: street,
+          city: cityPart,
+          state: statePart,
+          zip_code: zipPart,
+          formatted_address: fullAddress
+        };
       }
-      
-      console.log('✅ Address parsed:', {
-        addressLine1: parts[0],
-        city: parts[parts.length - 2],
-        state: stateZipMatch?.[1],
-        zipCode: stateZipMatch?.[2]
-      });
+    }
+    
+    console.error('❌ Failed to parse address:', fullAddress);
+    return null;
+  };
+
+  // Save address to anchor_address table
+  const saveAddressToDatabase = async (parsedAddress: any) => {
+    console.log('💾 Saving address to database:', parsedAddress);
+    
+    try {
+      // Check if address already exists
+      const { data: existingAddress, error: checkError } = await supabase
+        .from('anchor_address')
+        .select('id')
+        .eq('address_line1', parsedAddress.address_line1)
+        .eq('city', parsedAddress.city)
+        .eq('state', parsedAddress.state)
+        .eq('zip_code', parsedAddress.zip_code)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('❌ Error checking existing address:', checkError);
+        throw checkError;
+      }
+
+      let anchorAddressId: string;
+
+      if (existingAddress) {
+        // Address already exists, use existing ID
+        anchorAddressId = existingAddress.id;
+        console.log('✅ Using existing address ID:', anchorAddressId);
+      } else {
+        // Insert new address
+        const insertData = {
+          address_line1: parsedAddress.address_line1,
+          address_line2: parsedAddress.address_line2 || null,
+          city: parsedAddress.city,
+          state: parsedAddress.state,
+          zip_code: parsedAddress.zip_code,
+          latitude: parsedAddress.latitude || null,
+          longitude: parsedAddress.longitude || null,
+          status: 'pending'
+        };
+
+        const { data: newAddress, error: insertError } = await supabase
+          .from('anchor_address')
+          .insert(insertData)
+          .select('id')
+          .single();
+
+        if (insertError) {
+          console.error('❌ Error inserting address:', insertError);
+          throw insertError;
+        }
+
+        anchorAddressId = newAddress.id;
+        console.log('✅ Created new address with ID:', anchorAddressId);
+      }
+
+      return anchorAddressId;
+    } catch (error) {
+      console.error('❌ Database error:', error);
+      throw error;
     }
   };
 
-  const handleAddressSelect = (address: string) => {
+  const handleAddressSelect = async (address: string) => {
     console.log('🎯 Address selected:', address);
     setSelectedAddress(address);
-    parseAddress(address);
+    setIsProcessingAddress(true);
     
-    // Automatically transition to contact form
-    setTimeout(() => {
-      setShowContactForm(true);
-    }, 300);
+    try {
+      // Parse the address
+      const parsedAddress = parseAddress(address);
+      
+      if (!parsedAddress) {
+        toast({
+          title: "Error",
+          description: "Could not parse the selected address. Please try selecting again.",
+        });
+        return;
+      }
+
+      // Save to database
+      const anchorAddressId = await saveAddressToDatabase(parsedAddress);
+      
+      // Update state with address and anchor_address_id
+      updateState({
+        address: {
+          addressLine1: parsedAddress.address_line1,
+          addressLine2: parsedAddress.address_line2 || '',
+          city: parsedAddress.city,
+          state: parsedAddress.state,
+          zipCode: parsedAddress.zip_code,
+          formattedAddress: address
+        },
+        anchorAddressId
+      });
+      
+      // Automatically transition to contact form
+      setTimeout(() => {
+        setShowContactForm(true);
+      }, 300);
+      
+    } catch (error) {
+      console.error('🔥 Error processing address:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process the selected address. Please try again.",
+      });
+    } finally {
+      setIsProcessingAddress(false);
+    }
   };
 
   const isValidAddress = () => {
@@ -114,6 +230,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       return;
     }
 
+    if (!state.anchorAddressId) {
+      toast({
+        title: "Error",
+        description: "Address information is not properly saved. Please reselect your address.",
+      });
+      return;
+    }
+
     setIsCheckingQualification(true);
 
     try {
@@ -124,7 +248,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           email,
           first_name: firstName,
           last_name: lastName,
-          anchor_address_id: null // Will be created by fwa-check
+          anchor_address_id: state.anchorAddressId
         }
       });
 
@@ -136,7 +260,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const leadId = saveLeadData.lead_id;
       console.log('✅ Lead saved with ID:', leadId);
 
-      // Step 2: Check qualification
+      // Step 2: Check qualification with complete address data
       console.log('🔍 Checking area qualification...');
       const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
         body: {
@@ -147,8 +271,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           city,
           state: selectedState,
           zip_code: zipCode,
-          latitude: null, // Could be enhanced with geocoding
-          longitude: null
+          latitude: state.address?.latitude || null,
+          longitude: state.address?.longitude || null
         }
       });
 
@@ -173,7 +297,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           firstName,
           lastName,
           email,
-          phone: '' // Add empty phone to satisfy interface
+          phone: ''
         },
         leadId,
         qualified: qualificationData.qualified,
@@ -228,6 +352,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
                   onAddressSelect={handleAddressSelect}
                   placeholder="Start typing your address..."
                 />
+                {isProcessingAddress && (
+                  <div className="absolute top-full left-0 right-0 mt-2 text-center">
+                    <span className="text-sm text-gray-500">Processing address...</span>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -285,7 +414,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
               <Button 
                 onClick={handleCheckArea} 
                 className="w-full h-10 text-sm bg-blue-600 hover:bg-blue-700 font-semibold"
-                disabled={isCheckingQualification || !isValidContactInfo()}
+                disabled={isCheckingQualification || !isValidContactInfo() || !state.anchorAddressId}
               >
                 {isCheckingQualification ? 'Checking Your Area...' : 'Check My Area'}
               </Button>
