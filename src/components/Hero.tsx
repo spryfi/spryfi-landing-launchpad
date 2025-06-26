@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckoutModal } from '@/components/checkout/CheckoutModal';
@@ -113,10 +114,15 @@ export const Hero = () => {
         </div>
       </section>
 
-      {/* Blue Address Modal with Mapbox Autocomplete */}
+      {/* Enhanced 3D Blue Address Modal with Mapbox Autocomplete */}
       {showAddressModal && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)'
+          }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowAddressModal(false);
@@ -124,58 +130,115 @@ export const Hero = () => {
           }}
         >
           <div 
-            className="relative rounded-xl overflow-hidden shadow-2xl"
+            className="relative rounded-xl overflow-hidden"
             style={{
               width: '480px',
               height: '320px',
-              backgroundColor: '#0047AB'
+              backgroundColor: '#0047AB',
+              transform: 'perspective(1000px) rotateY(-5deg)',
+              boxShadow: `
+                0 25px 50px rgba(0, 0, 0, 0.6),
+                0 12px 24px rgba(0, 0, 0, 0.4),
+                0 6px 12px rgba(0, 0, 0, 0.3)
+              `,
+              filter: 'drop-shadow(0 0 20px rgba(0, 71, 171, 0.3))',
+              transformStyle: 'preserve-3d'
             }}
           >
-            {/* Close X */}
+            {/* Enhanced 3D depth layer */}
+            <div 
+              className="absolute inset-0 rounded-xl"
+              style={{
+                backgroundColor: '#003a94',
+                transform: 'translateZ(-8px)',
+                zIndex: -1
+              }}
+            />
+            
+            {/* Close X with enhanced hover effect */}
             <button
               onClick={() => setShowAddressModal(false)}
-              className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10"
+              className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10 transition-all duration-200 hover:scale-110"
+              style={{
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+              }}
             >
               ×
             </button>
 
-            {/* Content */}
-            <div className="px-6 py-6 h-full flex flex-col justify-center text-center">
-              {/* Logo */}
-              <div className="text-white text-lg font-normal mb-6">
+            {/* Content with enhanced depth */}
+            <div 
+              className="px-6 py-6 h-full flex flex-col justify-center text-center relative"
+              style={{
+                transform: 'translateZ(4px)'
+              }}
+            >
+              {/* Logo with glow effect */}
+              <div 
+                className="text-white text-lg font-normal mb-6"
+                style={{
+                  textShadow: '0 0 10px rgba(255, 255, 255, 0.3)'
+                }}
+              >
                 SpryFi
               </div>
 
-              {/* Headline */}
-              <h2 className="text-white text-xl font-bold mb-2 leading-tight">
+              {/* Headline with enhanced text shadow */}
+              <h2 
+                className="text-white text-xl font-bold mb-2 leading-tight"
+                style={{
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)'
+                }}
+              >
                 See if our award-winning internet has arrived<br />
                 in your neighborhood
               </h2>
 
               {/* Subheadline */}
-              <p className="text-blue-100 text-base mb-6">
+              <p 
+                className="text-blue-100 text-base mb-6"
+                style={{
+                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
+                }}
+              >
                 Simple internet, no runaround
               </p>
 
-              {/* Address Input with Mapbox Autocomplete */}
-              <div className="relative z-40 mb-4" style={{ overflow: 'visible' }}>
+              {/* Address Input with enhanced 3D effect */}
+              <div 
+                className="relative z-40 mb-4" 
+                style={{ 
+                  overflow: 'visible',
+                  transform: 'translateZ(2px)'
+                }}
+              >
                 <SimpleAddressInput
                   onAddressSelect={handleAddressSelect}
                   placeholder="Enter your street address"
                 />
               </div>
 
-              {/* Button */}
+              {/* Button with 3D depth */}
               <button
                 onClick={handleCheckAddress}
                 disabled={!selectedAddress.trim()}
-                className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-all duration-200 mb-4 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
+                style={{
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                  transform: 'translateZ(2px)',
+                  transformStyle: 'preserve-3d'
+                }}
               >
                 Check my address
               </button>
 
-              {/* Footer */}
-              <p className="text-blue-100 text-sm">
+              {/* Footer with subtle shadow */}
+              <p 
+                className="text-blue-100 text-sm"
+                style={{
+                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
+                }}
+              >
                 Results in 10 seconds
               </p>
             </div>
