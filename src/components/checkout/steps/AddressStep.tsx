@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -194,6 +193,52 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   };
 
+  // Poll Verizon API status
+  const pollVerizonStatus = async (requestId: string, maxAttempts: number = 20): Promise<any> => {
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      try {
+        console.log(`📡 Polling Verizon status (attempt ${attempts + 1}/${maxAttempts})`);
+        
+        const statusResponse = await fetch(`https://fwa.spry.network/api/fwa-status/${requestId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (!statusResponse.ok) {
+          console.error('❌ Status polling failed:', statusResponse.status);
+          throw new Error('Status polling failed');
+        }
+
+        const statusData = await statusResponse.json();
+        console.log('📡 Verizon status response:', statusData);
+
+        if (statusData.status === 'complete') {
+          console.log('✅ Verizon qualification complete');
+          return statusData;
+        }
+
+        if (statusData.status === 'failed') {
+          console.log('❌ Verizon qualification failed');
+          throw new Error('Verizon qualification failed');
+        }
+
+        // Still pending, wait 3 seconds before next poll
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        attempts++;
+
+      } catch (error) {
+        console.error('❌ Error polling status:', error);
+        throw error;
+      }
+    }
+
+    throw new Error('Verizon API timeout - exceeded maximum polling attempts');
+  };
+
   const handleAddressSelect = async (address: string) => {
     console.log('🎯 Address selected:', address);
     setSelectedAddress(address);
@@ -321,8 +366,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const leadId = saveLeadData.lead_id;
       console.log('✅ Lead saved with ID:', leadId);
 
-      // Step 2: Call Verizon API first (working API on port 9001)
-      console.log('📡 Calling Verizon API on port 9001...');
+      // Step 2: Call Verizon API
+      console.log('📡 Calling Verizon API...');
       
       const verizonPayload = {
         address_line1: addressLine1,
@@ -346,11 +391,60 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       }
 
       const verizonData = await verizonResponse.json();
-      console.log('📡 Verizon API response:', verizonData);
+      console.log('📡 Verizon API initial response:', verizonData);
 
-      if (verizonData.qualified === true) {
-        // Verizon qualified - sapi1
-        console.log('✅ Verizon qualification successful - sapi1');
+      // Step 3: Handle Verizon response based on status
+      if (verizonData.status === 'pending' && verizonData.request_id) {
+        // Poll for completion
+        console.log('⏳ Verizon response pending, starting polling...');
+        
+        try {
+          const finalVerizonResult = await pollVerizonStatus(verizonData.request_id);
+          
+          if (finalVerizonResult.qualified === true) {
+            // Verizon qualified - sapi1
+            console.log('✅ Verizon qualification successful - sapi1');
+            
+            updateState({
+              address: {
+                addressLine1,
+                addressLine2,
+                city,
+                state: selectedState,
+                zipCode,
+                formattedAddress: selectedAddress
+              },
+              contact: {
+                firstName,
+                lastName,
+                email,
+                phone: ''
+              },
+              leadId,
+              qualified: true,
+              qualificationResult: {
+                source: 'verizon',
+                network_type: finalVerizonResult.network_type || 'C-BAND',
+                max_speed_mbps: 300
+              },
+              step: 'qualification-success'
+            });
+
+            toast({
+              title: "Great news! 🎉",
+              description: "SpryFi is available in your area!",
+            });
+            return;
+          } else {
+            // Verizon said not qualified, try bot fallback
+            console.log('❌ Verizon not qualified after polling, trying bot fallback...');
+          }
+        } catch (pollError) {
+          console.log('❌ Verizon polling failed, trying bot fallback...', pollError);
+        }
+      } else if (verizonData.qualified === true) {
+        // Immediate qualification
+        console.log('✅ Verizon qualification successful (immediate) - sapi1');
         
         updateState({
           address: {
@@ -384,7 +478,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         return;
       }
 
-      // Step 3: Verizon said no, try bot fallback
+      // Step 4: Verizon failed/not qualified, try bot fallback
       console.log('❌ Verizon not qualified, trying bot fallback...');
       
       const botResponse = await fetch('https://fwa.spry.network/api/bot-check', {
