@@ -1,17 +1,22 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckoutModal } from '@/components/checkout/CheckoutModal';
 import { useCheckoutModal } from '@/hooks/useCheckoutModal';
 import { useRotatingHook } from '@/hooks/useRotatingHook';
 import SimpleAddressInput from '@/components/SimpleAddressInput';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Hero = () => {
   // Call all hooks at the top level - this is critical
   const { isOpen, openModal, closeModal } = useCheckoutModal();
   const { currentHook, isVisible } = useRotatingHook();
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
     // Core home internet usage: work, streaming, gaming
@@ -58,23 +63,100 @@ export const Hero = () => {
     };
   }, []); // Empty dependency array
 
-  const handleAddressSubmit = (address: string) => {
-    console.log('Address submitted:', address);
-    setShowAddressModal(false);
-    // Optionally open the full checkout modal
-    openModal();
-  };
-
   const handleAddressSelect = (address: string) => {
     console.log('Address selected from autocomplete:', address);
     setSelectedAddress(address);
+    // Automatically transition to contact form
+    setShowAddressModal(false);
+    setShowContactModal(true);
   };
 
-  const handleCheckAddress = () => {
-    if (selectedAddress.trim()) {
-      handleAddressSubmit(selectedAddress);
+  const handleContactSubmit = async () => {
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Save to leads_fresh table
+      const { data, error } = await supabase.functions.invoke('save-lead', {
+        body: {
+          email: email.trim(),
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          anchor_address_id: null,
+          address_line1: selectedAddress,
+          status: 'started',
+          lead_type: 'address_check'
+        }
+      });
+
+      if (error) {
+        console.error('Error saving lead:', error);
+        throw error;
+      }
+
+      console.log('✅ Lead saved successfully:', data);
+      
+      // Close modal and show success
+      setShowContactModal(false);
+      alert('Thank you! We\'ll check availability and be in touch soon.');
+      
+      // Reset form
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setSelectedAddress('');
+
+    } catch (error) {
+      console.error('❌ Save lead error:', error);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const renderModal3D = (children: React.ReactNode) => (
+    <div 
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)'
+      }}
+    >
+      <div 
+        className="relative rounded-xl overflow-hidden"
+        style={{
+          width: '480px',
+          height: '320px',
+          backgroundColor: '#0047AB',
+          transform: 'perspective(1000px) rotateY(-5deg)',
+          boxShadow: `
+            0 25px 50px rgba(0, 0, 0, 0.6),
+            0 12px 24px rgba(0, 0, 0, 0.4),
+            0 6px 12px rgba(0, 0, 0, 0.3)
+          `,
+          filter: 'drop-shadow(0 0 20px rgba(0, 71, 171, 0.3))',
+          transformStyle: 'preserve-3d'
+        }}
+      >
+        {/* Enhanced 3D depth layer */}
+        <div 
+          className="absolute inset-0 rounded-xl"
+          style={{
+            backgroundColor: '#003a94',
+            transform: 'translateZ(-8px)',
+            zIndex: -1
+          }}
+        />
+        
+        {children}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -114,136 +196,176 @@ export const Hero = () => {
         </div>
       </section>
 
-      {/* Enhanced 3D Blue Address Modal with Mapbox Autocomplete */}
-      {showAddressModal && (
-        <div 
-          className="fixed inset-0 flex items-center justify-center z-50"
-          style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)'
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowAddressModal(false);
-            }
-          }}
-        >
-          <div 
-            className="relative rounded-xl overflow-hidden"
+      {/* Address Modal */}
+      {showAddressModal && renderModal3D(
+        <>
+          {/* Close X with enhanced hover effect */}
+          <button
+            onClick={() => setShowAddressModal(false)}
+            className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10 transition-all duration-200 hover:scale-110"
             style={{
-              width: '480px',
-              height: '320px',
-              backgroundColor: '#0047AB',
-              transform: 'perspective(1000px) rotateY(-5deg)',
-              boxShadow: `
-                0 25px 50px rgba(0, 0, 0, 0.6),
-                0 12px 24px rgba(0, 0, 0, 0.4),
-                0 6px 12px rgba(0, 0, 0, 0.3)
-              `,
-              filter: 'drop-shadow(0 0 20px rgba(0, 71, 171, 0.3))',
-              transformStyle: 'preserve-3d'
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
             }}
           >
-            {/* Enhanced 3D depth layer */}
+            ×
+          </button>
+
+          {/* Content with enhanced depth */}
+          <div 
+            className="px-6 py-6 h-full flex flex-col justify-center text-center relative"
+            style={{
+              transform: 'translateZ(4px)'
+            }}
+          >
+            {/* Logo with glow effect */}
             <div 
-              className="absolute inset-0 rounded-xl"
+              className="text-white text-lg font-normal mb-6"
               style={{
-                backgroundColor: '#003a94',
-                transform: 'translateZ(-8px)',
-                zIndex: -1
-              }}
-            />
-            
-            {/* Close X with enhanced hover effect */}
-            <button
-              onClick={() => setShowAddressModal(false)}
-              className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10 transition-all duration-200 hover:scale-110"
-              style={{
-                textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+                textShadow: '0 0 10px rgba(255, 255, 255, 0.3)'
               }}
             >
-              ×
-            </button>
-
-            {/* Content with enhanced depth */}
-            <div 
-              className="px-6 py-6 h-full flex flex-col justify-center text-center relative"
-              style={{
-                transform: 'translateZ(4px)'
-              }}
-            >
-              {/* Logo with glow effect */}
-              <div 
-                className="text-white text-lg font-normal mb-6"
-                style={{
-                  textShadow: '0 0 10px rgba(255, 255, 255, 0.3)'
-                }}
-              >
-                SpryFi
-              </div>
-
-              {/* Headline with enhanced text shadow */}
-              <h2 
-                className="text-white text-xl font-bold mb-2 leading-tight"
-                style={{
-                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)'
-                }}
-              >
-                See if our award-winning internet has arrived<br />
-                in your neighborhood
-              </h2>
-
-              {/* Subheadline */}
-              <p 
-                className="text-blue-100 text-base mb-6"
-                style={{
-                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
-                }}
-              >
-                Simple internet, no runaround
-              </p>
-
-              {/* Address Input with enhanced 3D effect */}
-              <div 
-                className="relative z-40 mb-4" 
-                style={{ 
-                  overflow: 'visible',
-                  transform: 'translateZ(2px)'
-                }}
-              >
-                <SimpleAddressInput
-                  onAddressSelect={handleAddressSelect}
-                  placeholder="Enter your street address"
-                />
-              </div>
-
-              {/* Button with 3D depth */}
-              <button
-                onClick={handleCheckAddress}
-                disabled={!selectedAddress.trim()}
-                className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-all duration-200 mb-4 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
-                style={{
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                  transform: 'translateZ(2px)',
-                  transformStyle: 'preserve-3d'
-                }}
-              >
-                Check my address
-              </button>
-
-              {/* Footer with subtle shadow */}
-              <p 
-                className="text-blue-100 text-sm"
-                style={{
-                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
-                }}
-              >
-                Results in 10 seconds
-              </p>
+              SpryFi
             </div>
+
+            {/* Headline with enhanced text shadow */}
+            <h2 
+              className="text-white text-xl font-bold mb-2 leading-tight"
+              style={{
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)'
+              }}
+            >
+              See if our award-winning internet has arrived<br />
+              in your neighborhood
+            </h2>
+
+            {/* Subheadline */}
+            <p 
+              className="text-blue-100 text-base mb-6"
+              style={{
+                textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
+              }}
+            >
+              Simple internet, no runaround
+            </p>
+
+            {/* Address Input with enhanced 3D effect */}
+            <div 
+              className="relative z-40 mb-4" 
+              style={{ 
+                overflow: 'visible',
+                transform: 'translateZ(2px)'
+              }}
+            >
+              <SimpleAddressInput
+                onAddressSelect={handleAddressSelect}
+                placeholder="Enter your street address"
+              />
+            </div>
+
+            {/* Footer with subtle shadow */}
+            <p 
+              className="text-blue-100 text-sm"
+              style={{
+                textShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
+              }}
+            >
+              Results in 10 seconds
+            </p>
           </div>
-        </div>
+        </>
+      )}
+
+      {/* Contact Modal */}
+      {showContactModal && renderModal3D(
+        <>
+          {/* Close X */}
+          <button
+            onClick={() => setShowContactModal(false)}
+            className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10 transition-all duration-200 hover:scale-110"
+            style={{
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            ×
+          </button>
+
+          {/* Content */}
+          <div 
+            className="px-6 py-6 h-full flex flex-col justify-center text-center relative"
+            style={{
+              transform: 'translateZ(4px)'
+            }}
+          >
+            {/* Logo */}
+            <div 
+              className="text-white text-lg font-normal mb-4"
+              style={{
+                textShadow: '0 0 10px rgba(255, 255, 255, 0.3)'
+              }}
+            >
+              SpryFi
+            </div>
+
+            {/* Headline */}
+            <h2 
+              className="text-white text-xl font-bold mb-2 leading-tight"
+              style={{
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)'
+              }}
+            >
+              Let's get your results
+            </h2>
+
+            {/* Subheadline */}
+            <p 
+              className="text-blue-100 text-sm mb-4"
+              style={{
+                textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
+              }}
+            >
+              We'll check availability and send details to your email
+            </p>
+
+            {/* Form Inputs */}
+            <div className="space-y-3 mb-4">
+              <input
+                type="text"
+                placeholder="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg text-gray-800 text-base placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+              <input
+                type="text"
+                placeholder="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg text-gray-800 text-base placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg text-gray-800 text-base placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={handleContactSubmit}
+              disabled={isSubmitting}
+              className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                transform: 'translateZ(2px)',
+                transformStyle: 'preserve-3d'
+              }}
+            >
+              {isSubmitting ? 'Saving...' : 'Get My Results'}
+            </button>
+          </div>
+        </>
       )}
 
       <CheckoutModal isOpen={isOpen} onClose={closeModal} />
