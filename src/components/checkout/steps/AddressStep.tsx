@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -579,22 +578,22 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
   return (
     <div className="flex justify-center items-center min-h-[600px] bg-white p-4">
-      <div className="w-full max-w-[420px] h-[300px]">
+      <div className="w-full max-w-[480px] h-[320px]">
         {!showContactForm ? (
-          <div className="bg-[#0047AB] p-5 h-full flex flex-col justify-between rounded-lg">
-            {/* SpryFi Logo */}
-            <div>
-              <div className="text-sm font-light text-white tracking-wider mb-4">SpryFi</div>
+          <div className="bg-[#0047AB] p-6 h-full flex flex-col justify-between rounded-lg">
+            {/* SpryFi Logo - Centered */}
+            <div className="text-center">
+              <div className="text-base font-light text-white tracking-wider mb-6">SpryFi</div>
             </div>
 
             {/* Content Section */}
-            <div className="flex-1 space-y-3">
-              {/* Headlines */}
-              <div className="space-y-1.5">
-                <h1 className="text-lg font-bold text-white leading-tight">
-                  Check SpryFi availability
+            <div className="flex-1 space-y-4">
+              {/* Headlines - Centered */}
+              <div className="space-y-2 text-center">
+                <h1 className="text-xl font-bold text-white leading-tight">
+                  See if our award-winning internet has arrived in your neighborhood
                 </h1>
-                <p className="text-sm text-[#B3D9FF]">
+                <p className="text-base text-[#B3D9FF]">
                   Simple internet, no runaround
                 </p>
               </div>
@@ -615,9 +614,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
               </div>
 
               {/* Check Button */}
-              <div className="pt-3">
+              <div className="pt-2">
                 <button 
-                  className="w-full bg-white text-[#0047AB] py-2.5 px-4 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="w-full bg-white text-[#0047AB] py-3 px-4 rounded-lg font-medium text-base hover:bg-gray-50 transition-colors disabled:opacity-50"
                   disabled={!selectedAddress || isProcessingAddress}
                   onClick={() => {
                     if (selectedAddress) {
@@ -630,9 +629,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
               </div>
             </div>
 
-            {/* Footer */}
+            {/* Footer - Centered */}
             <div className="text-center">
-              <p className="text-xs text-[#B3D9FF]">
+              <p className="text-sm text-[#B3D9FF]">
                 Results in 10 seconds
               </p>
             </div>
