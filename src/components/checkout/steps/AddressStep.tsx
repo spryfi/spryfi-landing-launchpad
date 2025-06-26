@@ -578,43 +578,45 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
   return (
     <div className="flex justify-center items-center min-h-[600px] bg-white p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-[400px]">
         {!showContactForm ? (
-          <div className="text-center space-y-6">
+          <div className="bg-white p-8 space-y-6">
             {/* SpryFi Logo */}
-            <div className="mb-8">
-              <div className="text-2xl font-light text-[#0047AB] tracking-wider">SpryFi</div>
+            <div className="mb-6">
+              <div className="text-lg font-light text-[#0047AB] tracking-wider">SpryFi</div>
             </div>
 
-            {/* Main Headline */}
+            {/* Primary Headline */}
             <div className="space-y-2">
-              <h1 className="text-2xl font-semibold text-gray-900">
-                Check SpryFi availability
+              <h1 className="text-2xl font-bold text-[#333333] leading-tight">
+                Let's see if SpryFi is available at your address
               </h1>
-              <p className="text-gray-600">
-                Enter your address to see if we serve your area yet.
+              <p className="text-base text-[#666666]">
+                Simple, reliable internet without the runaround
               </p>
             </div>
 
-            {/* Address Input - The Star of the Show */}
+            {/* Address Input */}
             <div className="space-y-4 relative z-40" style={{ overflow: 'visible' }}>
               <div className="relative mb-32" style={{ overflow: 'visible' }}>
                 <SimpleAddressInput
                   onAddressSelect={handleAddressSelect}
-                  placeholder="1234 Main Street, Austin, TX 78701"
+                  placeholder="Enter your street address"
                 />
                 {isProcessingAddress && (
                   <div className="absolute top-full left-0 right-0 mt-2 text-center">
-                    <span className="text-sm text-gray-500">Processing address...</span>
+                    <span className="text-sm text-[#666666]">Processing address...</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Trust Message */}
-            <p className="text-sm text-gray-500">
-              We'll let you know in seconds.
-            </p>
+            {/* Footer Message */}
+            <div className="text-center">
+              <p className="text-sm text-[#666666]">
+                We'll let you know in 10 seconds
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-6">
