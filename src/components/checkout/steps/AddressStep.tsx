@@ -577,24 +577,36 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="flex justify-center items-start pt-4 px-4" style={{ overflow: 'visible' }}>
-      <Card className="w-full max-w-md relative" style={{ overflow: 'visible', zIndex: 30 }}>
-        <CardHeader className="px-6 pt-4 pb-2">
-          <CardTitle className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-2 leading-tight">
-            Let's see if we can get you covered! 🎯
-          </CardTitle>
-          <CardDescription className="text-center text-sm">
-            Just enter your address and we'll check if SpryFi is available in your area.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-6 pb-12 space-y-4 relative" style={{ overflow: 'visible' }}>
-          {!showContactForm ? (
-            <div className="space-y-2">
-              <Label htmlFor="address-search" className="text-sm font-medium text-gray-700">Your Address</Label>
-              <div className="relative mb-32 z-40" style={{ overflow: 'visible' }}>
+    <div className="flex min-h-[600px] bg-white" style={{ overflow: 'visible' }}>
+      {/* Left Content Section */}
+      <div className="flex-1 p-12 flex flex-col justify-center max-w-[55%]">
+        {/* Small SpryFi Logo */}
+        <div className="mb-8">
+          <div className="text-2xl font-light text-[#0047AB] tracking-wider">SpryFi</div>
+        </div>
+
+        {!showContactForm ? (
+          <>
+            {/* Main Headline */}
+            <h1 className="text-4xl font-light text-gray-900 mb-6 leading-tight">
+              SpryFi is coming to your area
+            </h1>
+
+            {/* Subheadline */}
+            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+              We're bringing simple, reliable internet to neighborhoods tired of the big guys.
+            </p>
+
+            <p className="text-lg text-gray-600 mb-10">
+              Enter your address to see if we're ready to connect you.
+            </p>
+
+            {/* Address Input */}
+            <div className="space-y-4 mb-8 relative z-40" style={{ overflow: 'visible' }}>
+              <div className="relative mb-32" style={{ overflow: 'visible' }}>
                 <SimpleAddressInput
                   onAddressSelect={handleAddressSelect}
-                  placeholder="Start typing your address..."
+                  placeholder="1234 Main Street, Austin, TX"
                 />
                 {isProcessingAddress && (
                   <div className="absolute top-full left-0 right-0 mt-2 text-center">
@@ -603,69 +615,114 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
                 )}
               </div>
             </div>
-          ) : (
-            <>
-              <div className="text-xs text-gray-600 bg-green-50 p-3 rounded border-l-4 border-green-500">
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✅</span>
-                  <span className="font-medium">Address confirmed:</span>
-                </div>
-                <div className="text-gray-700 mt-1">{selectedAddress}</div>
+
+            {/* Trust Message */}
+            <div className="text-sm text-gray-500 leading-relaxed">
+              <p className="mb-1">No sales calls. No hidden fees.</p>
+              <p>Just honest internet.</p>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Address Confirmed State */}
+            <div className="text-sm text-gray-600 bg-green-50 p-4 rounded-lg border-l-4 border-green-500 mb-8">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-green-500">✅</span>
+                <span className="font-medium">Address confirmed:</span>
               </div>
-              
-              <div className="space-y-4 mt-6" id="contact-info-form">
+              <div className="text-gray-700">{selectedAddress}</div>
+            </div>
+
+            {/* Contact Form Headline */}
+            <h2 className="text-3xl font-light text-gray-900 mb-6">
+              Almost there
+            </h2>
+
+            <p className="text-lg text-gray-600 mb-8">
+              Just need a few quick details to check your area.
+            </p>
+
+            {/* Contact Form */}
+            <div className="space-y-6 mb-8">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="first-name" className="text-sm">First Name</Label>
+                  <Label htmlFor="first-name" className="text-sm font-medium text-gray-700">First Name</Label>
                   <Input
                     type="text"
                     id="first-name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="First name"
-                    className="h-9 text-sm"
+                    className="h-11 text-base border-gray-200 focus:border-[#0047AB] focus:ring-[#0047AB]"
                     autoFocus
                     required
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="last-name" className="text-sm">Last Name</Label>
+                  <Label htmlFor="last-name" className="text-sm font-medium text-gray-700">Last Name</Label>
                   <Input
                     type="text"
                     id="last-name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Last name"
-                    className="h-9 text-sm"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm">Email Address</Label>
-                  <Input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email address"
-                    className="h-9 text-sm"
+                    className="h-11 text-base border-gray-200 focus:border-[#0047AB] focus:ring-[#0047AB]"
                     required
                   />
                 </div>
               </div>
               
-              <Button 
-                onClick={handleCheckArea} 
-                className="w-full h-10 text-sm bg-blue-600 hover:bg-blue-700 font-semibold"
-                disabled={isCheckingQualification || !isValidContactInfo() || !state.anchorAddressId}
-              >
-                {isCheckingQualification ? 'Checking Your Area...' : 'Check My Area'}
-              </Button>
-            </>
-          )}
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address</Label>
+                <Input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="h-11 text-base border-gray-200 focus:border-[#0047AB] focus:ring-[#0047AB]"
+                  required
+                />
+              </div>
+            </div>
+            
+            <Button 
+              onClick={handleCheckArea} 
+              className="bg-[#0047AB] hover:bg-[#003a94] text-white px-8 py-4 text-lg font-medium rounded-lg border-none shadow-sm transition-all duration-200 hover:shadow-md mb-6"
+              disabled={isCheckingQualification || !isValidContactInfo() || !state.anchorAddressId}
+            >
+              {isCheckingQualification ? 'Checking your area...' : 'Check availability'}
+            </Button>
+
+            <div className="text-xs text-gray-400">
+              Checking takes 10 seconds
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Right Visual Section */}
+      <div className="w-[45%] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center p-8">
+          {/* Placeholder for clean illustration/photo */}
+          <div className="w-full h-80 bg-gradient-to-br from-[#0047AB]/10 to-[#0047AB]/5 rounded-2xl flex items-center justify-center mb-6 border border-[#0047AB]/10">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#0047AB]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="text-2xl text-[#0047AB]">🏠</div>
+              </div>
+              <p className="text-sm text-gray-500 max-w-[200px]">
+                Simple internet for your neighborhood
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 italic leading-relaxed">
+            Clean illustration or photo:<br />
+            Minimalist home with internet connectivity<br />
+            Apple-style product photography
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
