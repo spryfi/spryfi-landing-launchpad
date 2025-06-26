@@ -577,65 +577,75 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="flex justify-center items-center min-h-[600px] bg-white p-0">
-      <div className="w-full max-w-[480px] h-[320px] bg-[#0047AB] rounded-lg overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div 
+        className="relative rounded-xl overflow-hidden"
+        style={{
+          width: '480px',
+          height: '320px',
+          backgroundColor: '#0047AB'
+        }}
+      >
         {!showContactForm ? (
-          <div className="h-full flex flex-col justify-between p-6">
-            {/* SpryFi Logo - Centered */}
-            <div className="text-center">
-              <div className="text-base font-light text-white tracking-wider mb-6">SpryFi</div>
-            </div>
+          <>
+            {/* Close button */}
+            <button
+              onClick={() => {}} // Will be handled by parent modal
+              className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10"
+            >
+              ×
+            </button>
 
-            {/* Content Section */}
-            <div className="flex-1 space-y-4">
-              {/* Headlines - Centered */}
-              <div className="space-y-2 text-center">
-                <h1 className="text-xl font-bold text-white leading-tight">
-                  See if our award-winning internet has arrived in your neighborhood
-                </h1>
-                <p className="text-base text-[#B3D9FF]">
-                  Simple internet, no runaround
-                </p>
+            {/* Content */}
+            <div className="px-6 py-6 h-full flex flex-col justify-center text-center">
+              {/* Logo */}
+              <div className="text-white text-lg font-normal mb-6">
+                SpryFi
               </div>
 
-              {/* Address Input */}
-              <div className="relative z-40" style={{ overflow: 'visible' }}>
-                <div className="relative" style={{ overflow: 'visible' }}>
-                  <SimpleAddressInput
-                    onAddressSelect={handleAddressSelect}
-                    placeholder="Enter your street address"
-                  />
-                  {isProcessingAddress && (
-                    <div className="absolute top-full left-0 right-0 mt-1 text-center">
-                      <span className="text-xs text-[#B3D9FF]">Processing...</span>
-                    </div>
-                  )}
-                </div>
+              {/* Headline */}
+              <h2 className="text-white text-xl font-bold mb-2 leading-tight">
+                See if our award-winning internet has arrived<br />
+                in your neighborhood
+              </h2>
+
+              {/* Subheadline */}
+              <p className="text-blue-100 text-base mb-6">
+                Simple internet, no runaround
+              </p>
+
+              {/* Input with SimpleAddressInput functionality */}
+              <div className="relative z-40 mb-4" style={{ overflow: 'visible' }}>
+                <SimpleAddressInput
+                  onAddressSelect={handleAddressSelect}
+                  placeholder="Enter your street address"
+                />
+                {isProcessingAddress && (
+                  <div className="absolute top-full left-0 right-0 mt-1 text-center">
+                    <span className="text-xs text-blue-100">Processing...</span>
+                  </div>
+                )}
               </div>
 
-              {/* Check Button */}
-              <div className="pt-2">
-                <button 
-                  className="w-full bg-white text-[#0047AB] py-3 px-4 rounded-lg font-medium text-base hover:bg-gray-50 transition-colors disabled:opacity-50"
-                  disabled={!selectedAddress || isProcessingAddress}
-                  onClick={() => {
-                    if (selectedAddress) {
-                      setShowContactForm(true);
-                    }
-                  }}
-                >
-                  Check my address
-                </button>
-              </div>
-            </div>
+              {/* Button */}
+              <button
+                onClick={() => {
+                  if (selectedAddress) {
+                    setShowContactForm(true);
+                  }
+                }}
+                disabled={!selectedAddress || isProcessingAddress}
+                className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors mb-4 disabled:opacity-50"
+              >
+                Check my address
+              </button>
 
-            {/* Footer - Centered */}
-            <div className="text-center">
-              <p className="text-sm text-[#B3D9FF]">
+              {/* Footer */}
+              <p className="text-blue-100 text-sm">
                 Results in 10 seconds
               </p>
             </div>
-          </div>
+          </>
         ) : (
           <div className="h-full bg-white rounded-lg p-6 space-y-6">
             {/* Address Confirmed State */}
