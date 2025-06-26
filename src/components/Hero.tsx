@@ -131,7 +131,7 @@ export const Hero = () => {
         className="relative rounded-xl overflow-hidden"
         style={{
           width: '480px',
-          height: '320px',
+          height: showContactModal ? '380px' : '320px', // Increased height for contact modal
           backgroundColor: '#0047AB',
           transform: 'perspective(1000px) rotateY(-5deg)',
           boxShadow: `
@@ -214,7 +214,7 @@ export const Hero = () => {
           <div 
             className="px-6 py-6 h-full flex flex-col justify-center text-center relative"
             style={{
-              transform: 'translateZ(4px)'
+              transform: 'translateZ(2px)'
             }}
           >
             {/* Logo with glow effect */}
@@ -316,18 +316,18 @@ export const Hero = () => {
               Let's get your results
             </h2>
 
-            {/* Subheadline */}
+            {/* Updated Subheadline */}
             <p 
-              className="text-blue-100 text-sm mb-4"
+              className="text-blue-100 text-sm mb-6"
               style={{
                 textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
               }}
             >
-              We'll check availability and send details to your email
+              We'll check availability and show your results immediately
             </p>
 
-            {/* Form Inputs */}
-            <div className="space-y-3 mb-4">
+            {/* Form Inputs with increased spacing */}
+            <div className="space-y-4 mb-6">
               <input
                 type="text"
                 placeholder="First Name"
@@ -351,7 +351,7 @@ export const Hero = () => {
               />
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button with updated text */}
             <button
               onClick={handleContactSubmit}
               disabled={isSubmitting}
@@ -362,7 +362,7 @@ export const Hero = () => {
                 transformStyle: 'preserve-3d'
               }}
             >
-              {isSubmitting ? 'Saving...' : 'Get My Results'}
+              {isSubmitting ? 'Saving...' : 'Check my address'}
             </button>
           </div>
         </>
