@@ -12,11 +12,17 @@ export const Hero = () => {
   const { currentHook, isVisible } = useRotatingHook();
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [qualificationResult, setQualificationResult] = useState<{
+    qualified: boolean;
+    source: string;
+    network_type?: string;
+  } | null>(null);
 
   React.useEffect(() => {
     // Core home internet usage: work, streaming, gaming
@@ -81,7 +87,7 @@ export const Hero = () => {
 
     try {
       // Save to leads_fresh table
-      const { data, error } = await supabase.functions.invoke('save-lead', {
+      const { data: leadData, error: leadError } = await supabase.functions.invoke('save-lead', {
         body: {
           email: email.trim(),
           first_name: firstName.trim(),
@@ -93,29 +99,61 @@ export const Hero = () => {
         }
       });
 
-      if (error) {
-        console.error('Error saving lead:', error);
-        throw error;
+      if (leadError) {
+        console.error('Error saving lead:', leadError);
+        throw leadError;
       }
 
-      console.log('✅ Lead saved successfully:', data);
+      console.log('✅ Lead saved successfully:', leadData);
       
-      // Close modal and show success
+      // Now call the FWA check API
+      const { data: fwaData, error: fwaError } = await supabase.functions.invoke('fwa-check', {
+        body: {
+          lead_id: leadData.lead_id,
+          address_line1: selectedAddress,
+          city: '', // We'll parse from selectedAddress if needed
+          state: '',
+          zip_code: '',
+          latitude: null,
+          longitude: null
+        }
+      });
+
+      if (fwaError) {
+        console.error('Error checking availability:', fwaError);
+        throw fwaError;
+      }
+
+      console.log('✅ FWA check result:', fwaData);
+
+      // Set qualification results
+      setQualificationResult({
+        qualified: fwaData.qualified,
+        source: fwaData.source,
+        network_type: fwaData.network_type
+      });
+
+      // Close contact modal and show results
       setShowContactModal(false);
-      alert('Thank you! We\'ll check availability and be in touch soon.');
+      setShowResultsModal(true);
       
       // Reset form
       setFirstName('');
       setLastName('');
       setEmail('');
-      setSelectedAddress('');
 
     } catch (error) {
-      console.error('❌ Save lead error:', error);
+      console.error('❌ Error during submission:', error);
       alert('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCloseResults = () => {
+    setShowResultsModal(false);
+    setSelectedAddress('');
+    setQualificationResult(null);
   };
 
   const renderModal3D = (children: React.ReactNode) => (
@@ -131,7 +169,7 @@ export const Hero = () => {
         className="relative rounded-xl overflow-hidden"
         style={{
           width: '480px',
-          height: showContactModal ? '380px' : '320px', // Increased height for contact modal
+          height: showContactModal ? '380px' : showResultsModal ? '400px' : '320px',
           backgroundColor: '#0047AB',
           transform: 'perspective(1000px) rotateY(-5deg)',
           boxShadow: `
@@ -293,7 +331,7 @@ export const Hero = () => {
           <div 
             className="px-6 py-6 h-full flex flex-col justify-center text-center relative"
             style={{
-              transform: 'translateZ(4px)'
+              transform: 'translateZ(2px)'
             }}
           >
             {/* Logo */}
@@ -362,8 +400,108 @@ export const Hero = () => {
                 transformStyle: 'preserve-3d'
               }}
             >
-              {isSubmitting ? 'Saving...' : 'Check my address'}
+              {isSubmitting ? 'Checking availability...' : 'Check my address'}
             </button>
+          </div>
+        </>
+      )}
+
+      {/* Results Modal */}
+      {showResultsModal && renderModal3D(
+        <>
+          {/* Close X */}
+          <button
+            onClick={handleCloseResults}
+            className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10 transition-all duration-200 hover:scale-110"
+            style={{
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            ×
+          </button>
+
+          {/* Content */}
+          <div 
+            className="px-6 py-6 h-full flex flex-col justify-center text-center relative"
+            style={{
+              transform: 'translateZ(2px)'
+            }}
+          >
+            {/* Logo */}
+            <div 
+              className="text-white text-lg font-normal mb-4"
+              style={{
+                textShadow: '0 0 10px rgba(255, 255, 255, 0.3)'
+              }}
+            >
+              SpryFi
+            </div>
+
+            {qualificationResult?.qualified ? (
+              <>
+                {/* Success Message */}
+                <div className="text-4xl mb-4">🎉</div>
+                <h2 
+                  className="text-white text-xl font-bold mb-2 leading-tight"
+                  style={{
+                    textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)'
+                  }}
+                >
+                  Great news! SpryFi is available
+                </h2>
+                <p 
+                  className="text-blue-100 text-sm mb-6"
+                  style={{
+                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
+                  }}
+                >
+                  We found {qualificationResult.source === 'verizon' ? 'excellent' : 'good'} coverage at your address
+                </p>
+                <button
+                  onClick={openModal}
+                  className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors"
+                  style={{
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                    transform: 'translateZ(2px)',
+                    transformStyle: 'preserve-3d'
+                  }}
+                >
+                  Get Started
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Not Available Message */}
+                <div className="text-4xl mb-4">📍</div>
+                <h2 
+                  className="text-white text-xl font-bold mb-2 leading-tight"
+                  style={{
+                    textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)'
+                  }}
+                >
+                  Not quite there yet
+                </h2>
+                <p 
+                  className="text-blue-100 text-sm mb-6"
+                  style={{
+                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
+                  }}
+                >
+                  We're working to expand coverage to your area. We'll notify you as soon as we're available.
+                </p>
+                <button
+                  onClick={handleCloseResults}
+                  className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors"
+                  style={{
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                    transform: 'translateZ(2px)',
+                    transformStyle: 'preserve-3d'
+                  }}
+                >
+                  Got it
+                </button>
+              </>
+            )}
           </div>
         </>
       )}
