@@ -1,15 +1,16 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckoutModal } from '@/components/checkout/CheckoutModal';
 import { useCheckoutModal } from '@/hooks/useCheckoutModal';
 import { useRotatingHook } from '@/hooks/useRotatingHook';
+import SimpleAddressInput from '@/components/SimpleAddressInput';
 
 export const Hero = () => {
   // Call all hooks at the top level - this is critical
   const { isOpen, openModal, closeModal } = useCheckoutModal();
   const { currentHook, isVisible } = useRotatingHook();
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState('');
 
   React.useEffect(() => {
     // Core home internet usage: work, streaming, gaming
@@ -63,6 +64,17 @@ export const Hero = () => {
     openModal();
   };
 
+  const handleAddressSelect = (address: string) => {
+    console.log('Address selected from autocomplete:', address);
+    setSelectedAddress(address);
+  };
+
+  const handleCheckAddress = () => {
+    if (selectedAddress.trim()) {
+      handleAddressSubmit(selectedAddress);
+    }
+  };
+
   return (
     <>
       <section className="relative w-full h-[80vh] overflow-hidden">
@@ -101,7 +113,7 @@ export const Hero = () => {
         </div>
       </section>
 
-      {/* Blue Address Modal */}
+      {/* Blue Address Modal with Mapbox Autocomplete */}
       {showAddressModal && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
@@ -145,31 +157,19 @@ export const Hero = () => {
                 Simple internet, no runaround
               </p>
 
-              {/* Input */}
-              <input
-                type="text"
-                placeholder="Enter your street address"
-                className="w-full px-4 py-3 rounded-lg text-gray-800 text-base placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300 mb-4"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    const address = (e.target as HTMLInputElement).value;
-                    if (address.trim()) {
-                      handleAddressSubmit(address);
-                    }
-                  }
-                }}
-              />
+              {/* Address Input with Mapbox Autocomplete */}
+              <div className="relative z-40 mb-4" style={{ overflow: 'visible' }}>
+                <SimpleAddressInput
+                  onAddressSelect={handleAddressSelect}
+                  placeholder="Enter your street address"
+                />
+              </div>
 
               {/* Button */}
               <button
-                onClick={() => {
-                  const input = document.querySelector('input[type="text"]') as HTMLInputElement;
-                  const address = input?.value || '';
-                  if (address.trim()) {
-                    handleAddressSubmit(address);
-                  }
-                }}
-                className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors mb-4"
+                onClick={handleCheckAddress}
+                disabled={!selectedAddress.trim()}
+                className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Check my address
               </button>

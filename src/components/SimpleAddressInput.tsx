@@ -79,6 +79,11 @@ const SimpleAddressInput: React.FC<Props> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       console.log('⚠️ Enter key pressed - prevented form submission');
+      
+      // If there's exactly one suggestion, select it
+      if (suggestions.length === 1) {
+        handleSuggestionClick(suggestions[0]);
+      }
     }
   };
 
@@ -162,12 +167,12 @@ const SimpleAddressInput: React.FC<Props> = ({
         onBlur={handleInputBlur}
         onFocus={handleInputFocus}
         placeholder={placeholder}
-        className={`w-full px-4 py-3 text-lg border-2 rounded-lg focus:outline-none transition-colors ${
+        className={`w-full px-4 py-3 rounded-lg text-gray-800 text-base placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300 ${
           addressSelected 
-            ? 'border-green-500 bg-green-50' 
+            ? 'bg-green-50 ring-2 ring-green-300' 
             : error
-            ? 'border-red-500 bg-red-50'
-            : 'border-gray-300 focus:border-blue-500'
+            ? 'bg-red-50 ring-2 ring-red-300'
+            : 'bg-white'
         }`}
         autoComplete="off"
         spellCheck="false"
