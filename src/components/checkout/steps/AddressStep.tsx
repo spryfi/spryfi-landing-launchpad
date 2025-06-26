@@ -577,36 +577,31 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="flex min-h-[600px] bg-white" style={{ overflow: 'visible' }}>
-      {/* Left Content Section */}
-      <div className="flex-1 p-12 flex flex-col justify-center max-w-[55%]">
-        {/* Small SpryFi Logo */}
-        <div className="mb-8">
-          <div className="text-2xl font-light text-[#0047AB] tracking-wider">SpryFi</div>
-        </div>
-
+    <div className="flex justify-center items-center min-h-[600px] bg-white p-4">
+      <div className="w-full max-w-md">
         {!showContactForm ? (
-          <>
+          <div className="text-center space-y-6">
+            {/* SpryFi Logo */}
+            <div className="mb-8">
+              <div className="text-2xl font-light text-[#0047AB] tracking-wider">SpryFi</div>
+            </div>
+
             {/* Main Headline */}
-            <h1 className="text-4xl font-light text-gray-900 mb-6 leading-tight">
-              SpryFi is coming to your area
-            </h1>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Check SpryFi availability
+              </h1>
+              <p className="text-gray-600">
+                Enter your address to see if we serve your area yet.
+              </p>
+            </div>
 
-            {/* Subheadline */}
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              We're bringing simple, reliable internet to neighborhoods tired of the big guys.
-            </p>
-
-            <p className="text-lg text-gray-600 mb-10">
-              Enter your address to see if we're ready to connect you.
-            </p>
-
-            {/* Address Input */}
-            <div className="space-y-4 mb-8 relative z-40" style={{ overflow: 'visible' }}>
+            {/* Address Input - The Star of the Show */}
+            <div className="space-y-4 relative z-40" style={{ overflow: 'visible' }}>
               <div className="relative mb-32" style={{ overflow: 'visible' }}>
                 <SimpleAddressInput
                   onAddressSelect={handleAddressSelect}
-                  placeholder="1234 Main Street, Austin, TX"
+                  placeholder="1234 Main Street, Austin, TX 78701"
                 />
                 {isProcessingAddress && (
                   <div className="absolute top-full left-0 right-0 mt-2 text-center">
@@ -617,34 +612,34 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             </div>
 
             {/* Trust Message */}
-            <div className="text-sm text-gray-500 leading-relaxed">
-              <p className="mb-1">No sales calls. No hidden fees.</p>
-              <p>Just honest internet.</p>
-            </div>
-          </>
+            <p className="text-sm text-gray-500">
+              We'll let you know in seconds.
+            </p>
+          </div>
         ) : (
-          <>
+          <div className="space-y-6">
             {/* Address Confirmed State */}
-            <div className="text-sm text-gray-600 bg-green-50 p-4 rounded-lg border-l-4 border-green-500 mb-8">
+            <div className="text-sm text-gray-600 bg-green-50 p-4 rounded-lg border-l-4 border-green-500 mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-green-500">✅</span>
                 <span className="font-medium">Address confirmed:</span>
               </div>
-              <div className="text-gray-700">{selectedAddress}</div>
+              <div className="text-gray-700 text-xs">{selectedAddress}</div>
             </div>
 
             {/* Contact Form Headline */}
-            <h2 className="text-3xl font-light text-gray-900 mb-6">
-              Almost there
-            </h2>
-
-            <p className="text-lg text-gray-600 mb-8">
-              Just need a few quick details to check your area.
-            </p>
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-semibold text-gray-900">
+                Almost there
+              </h2>
+              <p className="text-gray-600">
+                Just need a few quick details to check your area.
+              </p>
+            </div>
 
             {/* Contact Form */}
-            <div className="space-y-6 mb-8">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="first-name" className="text-sm font-medium text-gray-700">First Name</Label>
                   <Input
@@ -689,39 +684,17 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             
             <Button 
               onClick={handleCheckArea} 
-              className="bg-[#0047AB] hover:bg-[#003a94] text-white px-8 py-4 text-lg font-medium rounded-lg border-none shadow-sm transition-all duration-200 hover:shadow-md mb-6"
+              className="w-full bg-[#0047AB] hover:bg-[#003a94] text-white px-8 py-4 text-lg font-medium rounded-lg border-none shadow-sm transition-all duration-200 hover:shadow-md mb-4"
               disabled={isCheckingQualification || !isValidContactInfo() || !state.anchorAddressId}
             >
               {isCheckingQualification ? 'Checking your area...' : 'Check availability'}
             </Button>
 
-            <div className="text-xs text-gray-400">
+            <div className="text-center text-xs text-gray-400">
               Checking takes 10 seconds
             </div>
-          </>
-        )}
-      </div>
-
-      {/* Right Visual Section */}
-      <div className="w-[45%] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center p-8">
-          {/* Placeholder for clean illustration/photo */}
-          <div className="w-full h-80 bg-gradient-to-br from-[#0047AB]/10 to-[#0047AB]/5 rounded-2xl flex items-center justify-center mb-6 border border-[#0047AB]/10">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#0047AB]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <div className="text-2xl text-[#0047AB]">🏠</div>
-              </div>
-              <p className="text-sm text-gray-500 max-w-[200px]">
-                Simple internet for your neighborhood
-              </p>
-            </div>
           </div>
-          <p className="text-xs text-gray-400 italic leading-relaxed">
-            Clean illustration or photo:<br />
-            Minimalist home with internet connectivity<br />
-            Apple-style product photography
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );
