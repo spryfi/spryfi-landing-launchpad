@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -578,22 +579,22 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
   return (
     <div className="flex justify-center items-center min-h-[600px] bg-white p-4">
-      <div className="w-full max-w-[480px] h-[280px]">
+      <div className="w-full max-w-[420px] h-[300px]">
         {!showContactForm ? (
-          <div className="bg-white p-6 space-y-4 h-full flex flex-col justify-between">
+          <div className="bg-[#0047AB] p-5 h-full flex flex-col justify-between rounded-lg">
             {/* SpryFi Logo */}
             <div>
-              <div className="text-base font-light text-[#0047AB] tracking-wider mb-5">SpryFi</div>
+              <div className="text-sm font-light text-white tracking-wider mb-4">SpryFi</div>
             </div>
 
             {/* Content Section */}
-            <div className="flex-1 space-y-4">
-              {/* Compact Headlines */}
-              <div className="space-y-2">
-                <h1 className="text-xl font-bold text-[#333333] leading-tight">
+            <div className="flex-1 space-y-3">
+              {/* Headlines */}
+              <div className="space-y-1.5">
+                <h1 className="text-lg font-bold text-white leading-tight">
                   Check SpryFi availability
                 </h1>
-                <p className="text-sm text-[#666666]">
+                <p className="text-sm text-[#B3D9FF]">
                   Simple internet, no runaround
                 </p>
               </div>
@@ -607,16 +608,31 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
                   />
                   {isProcessingAddress && (
                     <div className="absolute top-full left-0 right-0 mt-1 text-center">
-                      <span className="text-xs text-[#666666]">Processing...</span>
+                      <span className="text-xs text-[#B3D9FF]">Processing...</span>
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Check Button */}
+              <div className="pt-3">
+                <button 
+                  className="w-full bg-white text-[#0047AB] py-2.5 px-4 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  disabled={!selectedAddress || isProcessingAddress}
+                  onClick={() => {
+                    if (selectedAddress) {
+                      setShowContactForm(true);
+                    }
+                  }}
+                >
+                  Check my address
+                </button>
               </div>
             </div>
 
             {/* Footer */}
             <div className="text-center">
-              <p className="text-xs text-[#666666]">
+              <p className="text-xs text-[#B3D9FF]">
                 Results in 10 seconds
               </p>
             </div>
