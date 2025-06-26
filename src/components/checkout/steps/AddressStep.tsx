@@ -577,10 +577,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="flex justify-center items-center min-h-[600px] bg-white p-4">
-      <div className="w-full max-w-[480px] h-[320px]">
+    <div className="flex justify-center items-center min-h-[600px] bg-white p-0">
+      <div className="w-full max-w-[480px] h-[320px] bg-[#0047AB] rounded-lg overflow-hidden">
         {!showContactForm ? (
-          <div className="bg-[#0047AB] p-6 h-full flex flex-col justify-between rounded-lg">
+          <div className="h-full flex flex-col justify-between p-6">
             {/* SpryFi Logo - Centered */}
             <div className="text-center">
               <div className="text-base font-light text-white tracking-wider mb-6">SpryFi</div>
@@ -637,7 +637,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="h-full bg-white rounded-lg p-6 space-y-6">
             {/* Address Confirmed State */}
             <div className="text-sm text-gray-600 bg-green-50 p-4 rounded-lg border-l-4 border-green-500 mb-6">
               <div className="flex items-center gap-2 mb-2">
