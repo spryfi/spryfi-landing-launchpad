@@ -578,43 +578,46 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
   return (
     <div className="flex justify-center items-center min-h-[600px] bg-white p-4">
-      <div className="w-full max-w-[400px]">
+      <div className="w-full max-w-[480px] h-[280px]">
         {!showContactForm ? (
-          <div className="bg-white p-8 space-y-6">
+          <div className="bg-white p-6 space-y-4 h-full flex flex-col justify-between">
             {/* SpryFi Logo */}
-            <div className="mb-6">
-              <div className="text-lg font-light text-[#0047AB] tracking-wider">SpryFi</div>
+            <div>
+              <div className="text-base font-light text-[#0047AB] tracking-wider mb-5">SpryFi</div>
             </div>
 
-            {/* Primary Headline */}
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-[#333333] leading-tight">
-                Let's see if SpryFi is available at your address
-              </h1>
-              <p className="text-base text-[#666666]">
-                Simple, reliable internet without the runaround
-              </p>
-            </div>
+            {/* Content Section */}
+            <div className="flex-1 space-y-4">
+              {/* Compact Headlines */}
+              <div className="space-y-2">
+                <h1 className="text-xl font-bold text-[#333333] leading-tight">
+                  Check SpryFi availability
+                </h1>
+                <p className="text-sm text-[#666666]">
+                  Simple internet, no runaround
+                </p>
+              </div>
 
-            {/* Address Input */}
-            <div className="space-y-4 relative z-40" style={{ overflow: 'visible' }}>
-              <div className="relative mb-32" style={{ overflow: 'visible' }}>
-                <SimpleAddressInput
-                  onAddressSelect={handleAddressSelect}
-                  placeholder="Enter your street address"
-                />
-                {isProcessingAddress && (
-                  <div className="absolute top-full left-0 right-0 mt-2 text-center">
-                    <span className="text-sm text-[#666666]">Processing address...</span>
-                  </div>
-                )}
+              {/* Address Input */}
+              <div className="relative z-40" style={{ overflow: 'visible' }}>
+                <div className="relative" style={{ overflow: 'visible' }}>
+                  <SimpleAddressInput
+                    onAddressSelect={handleAddressSelect}
+                    placeholder="Enter your street address"
+                  />
+                  {isProcessingAddress && (
+                    <div className="absolute top-full left-0 right-0 mt-1 text-center">
+                      <span className="text-xs text-[#666666]">Processing...</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Footer Message */}
+            {/* Footer */}
             <div className="text-center">
-              <p className="text-sm text-[#666666]">
-                We'll let you know in 10 seconds
+              <p className="text-xs text-[#666666]">
+                Results in 10 seconds
               </p>
             </div>
           </div>
