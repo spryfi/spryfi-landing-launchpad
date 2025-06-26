@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckoutModal } from '@/components/checkout/CheckoutModal';
 import { useCheckoutModal } from '@/hooks/useCheckoutModal';
@@ -9,6 +9,7 @@ export const Hero = () => {
   // Call all hooks at the top level - this is critical
   const { isOpen, openModal, closeModal } = useCheckoutModal();
   const { currentHook, isVisible } = useRotatingHook();
+  const [showAddressModal, setShowAddressModal] = useState(false);
 
   React.useEffect(() => {
     // Core home internet usage: work, streaming, gaming
@@ -55,6 +56,13 @@ export const Hero = () => {
     };
   }, []); // Empty dependency array
 
+  const handleAddressSubmit = (address: string) => {
+    console.log('Address submitted:', address);
+    setShowAddressModal(false);
+    // Optionally open the full checkout modal
+    openModal();
+  };
+
   return (
     <>
       <section className="relative w-full h-[80vh] overflow-hidden">
@@ -84,14 +92,96 @@ export const Hero = () => {
             Takes just 30 seconds.
           </p>
 
-          <Button
-            onClick={openModal}
+          <button
+            onClick={() => setShowAddressModal(true)}
             className="bg-[#0047AB] hover:bg-[#0060D4] text-white font-semibold px-8 py-4 rounded-full text-base shadow-lg transition-all duration-200 mt-4 min-w-[220px]"
           >
             Check Availability
-          </Button>
+          </button>
         </div>
       </section>
+
+      {/* Blue Address Modal */}
+      {showAddressModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAddressModal(false);
+            }
+          }}
+        >
+          <div 
+            className="relative rounded-xl overflow-hidden shadow-2xl"
+            style={{
+              width: '480px',
+              height: '320px',
+              backgroundColor: '#0047AB'
+            }}
+          >
+            {/* Close X */}
+            <button
+              onClick={() => setShowAddressModal(false)}
+              className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10"
+            >
+              ×
+            </button>
+
+            {/* Content */}
+            <div className="px-6 py-6 h-full flex flex-col justify-center text-center">
+              {/* Logo */}
+              <div className="text-white text-lg font-normal mb-6">
+                SpryFi
+              </div>
+
+              {/* Headline */}
+              <h2 className="text-white text-xl font-bold mb-2 leading-tight">
+                See if our award-winning internet has arrived<br />
+                in your neighborhood
+              </h2>
+
+              {/* Subheadline */}
+              <p className="text-blue-100 text-base mb-6">
+                Simple internet, no runaround
+              </p>
+
+              {/* Input */}
+              <input
+                type="text"
+                placeholder="Enter your street address"
+                className="w-full px-4 py-3 rounded-lg text-gray-800 text-base placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300 mb-4"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    const address = (e.target as HTMLInputElement).value;
+                    if (address.trim()) {
+                      handleAddressSubmit(address);
+                    }
+                  }
+                }}
+              />
+
+              {/* Button */}
+              <button
+                onClick={() => {
+                  const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+                  const address = input?.value || '';
+                  if (address.trim()) {
+                    handleAddressSubmit(address);
+                  }
+                }}
+                className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors mb-4"
+              >
+                Check my address
+              </button>
+
+              {/* Footer */}
+              <p className="text-blue-100 text-sm">
+                Results in 10 seconds
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CheckoutModal isOpen={isOpen} onClose={closeModal} />
     </>
