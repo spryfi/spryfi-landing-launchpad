@@ -22,51 +22,78 @@ export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ stat
   };
 
   return (
-    <div className="p-8 text-center relative">
-      <div className="text-8xl mb-6">🎉</div>
-      <h2 className="text-4xl font-bold text-gray-900 mb-4">
-        Great news!
-      </h2>
-      <p className="text-xl text-gray-700 mb-2">
-        SpryFi Home is available at
-      </p>
-      <p className="text-lg font-semibold text-blue-600 mb-6">
-        {state.address?.formattedAddress}
-      </p>
-      <p className="text-lg text-gray-600 mb-8">
-        Say goodbye to complicated installs. Say hello to simple internet that just works.
-      </p>
-      
-      <Button
-        onClick={handleContinue}
-        className="px-8 py-4 text-lg font-semibold rounded-lg"
-        style={{
-          background: 'linear-gradient(90deg, #D72638 0%, #8B0000 100%)',
-          color: 'white',
-          border: 'none'
-        }}
-      >
-        Customize Your Setup
-      </Button>
+    <div className="flex min-h-[500px] bg-white">
+      {/* Left Content Section */}
+      <div className="flex-1 p-12 flex flex-col justify-center max-w-[60%]">
+        {/* Small SpryFi Logo */}
+        <div className="mb-8">
+          <div className="text-2xl font-light text-[#0047AB] tracking-wider">SpryFi</div>
+        </div>
 
-      <div className="mt-8 flex justify-center space-x-8 text-sm text-gray-500">
-        <div className="flex items-center">
-          <span className="text-green-500 mr-2">✓</span>
-          No Contracts
+        {/* Main Headline */}
+        <h1 className="text-4xl font-light text-gray-900 mb-6 leading-tight">
+          Welcome to internet<br />
+          that actually works
+        </h1>
+
+        {/* Address Confirmation */}
+        <div className="mb-8">
+          <p className="text-lg text-gray-600 mb-2">You're qualified for SpryFi Home at:</p>
+          <p className="text-lg font-medium text-[#0047AB]">
+            {state.address?.formattedAddress}
+          </p>
         </div>
-        <div className="flex items-center">
-          <span className="text-green-500 mr-2">✓</span>
-          14-Day Guarantee
+
+        {/* Benefits List */}
+        <div className="space-y-4 mb-10">
+          <div className="flex items-center">
+            <div className="w-5 h-5 rounded-full bg-[#0047AB] flex items-center justify-center mr-4 flex-shrink-0">
+              <span className="text-white text-xs">✓</span>
+            </div>
+            <span className="text-gray-800">Real person support (not a call center)</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-5 h-5 rounded-full bg-[#0047AB] flex items-center justify-center mr-4 flex-shrink-0">
+              <span className="text-white text-xs">✓</span>
+            </div>
+            <span className="text-gray-800">Installation in 2-3 days</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-5 h-5 rounded-full bg-[#0047AB] flex items-center justify-center mr-4 flex-shrink-0">
+              <span className="text-white text-xs">✓</span>
+            </div>
+            <span className="text-gray-800">No annual contracts or surprises</span>
+          </div>
         </div>
-        <div className="flex items-center">
-          <span className="text-green-500 mr-2">✓</span>
-          Easy Setup
+
+        {/* CTA Button */}
+        <div className="mb-8">
+          <Button
+            onClick={handleContinue}
+            className="bg-[#0047AB] hover:bg-[#003a94] text-white px-8 py-4 text-lg font-medium rounded-lg border-none shadow-sm transition-all duration-200 hover:shadow-md"
+          >
+            Let's get you connected
+          </Button>
+        </div>
+
+        {/* Internal qualification code */}
+        <div className="text-xs text-gray-400 font-mono">
+          {getQualificationCode()}
         </div>
       </div>
 
-      {/* Internal qualification code */}
-      <div id="qualification-code" className="text-xs text-gray-400 text-center mt-4">
-        {getQualificationCode()}
+      {/* Right Visual Section */}
+      <div className="w-[40%] bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-8">
+          {/* Placeholder for hero image */}
+          <div className="w-full h-80 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mb-4">
+            <div className="text-6xl opacity-30">📶</div>
+          </div>
+          <p className="text-sm text-gray-500 italic">
+            High-quality lifestyle image<br />
+            (Family using internet at home)
+          </p>
+        </div>
       </div>
     </div>
   );
