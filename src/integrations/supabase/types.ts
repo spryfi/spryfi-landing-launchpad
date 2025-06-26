@@ -1792,6 +1792,9 @@ export type Database = {
           created_at: string | null
           extended_search_started: boolean | null
           form_data: Json | null
+          network_type: string | null
+          qualification_status: string | null
+          qualified: boolean | null
           request_id: string
           source: string | null
           verizon_request_id: string | null
@@ -1801,6 +1804,9 @@ export type Database = {
           created_at?: string | null
           extended_search_started?: boolean | null
           form_data?: Json | null
+          network_type?: string | null
+          qualification_status?: string | null
+          qualified?: boolean | null
           request_id: string
           source?: string | null
           verizon_request_id?: string | null
@@ -1810,6 +1816,9 @@ export type Database = {
           created_at?: string | null
           extended_search_started?: boolean | null
           form_data?: Json | null
+          network_type?: string | null
+          qualification_status?: string | null
+          qualified?: boolean | null
           request_id?: string
           source?: string | null
           verizon_request_id?: string | null

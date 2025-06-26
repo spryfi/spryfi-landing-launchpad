@@ -321,45 +321,126 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const leadId = saveLeadData.lead_id;
       console.log('✅ Lead saved with ID:', leadId);
 
-      // Step 2: Call qualification check with proper error handling
-      console.log('🔍 Checking area qualification...');
-      const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
-        body: {
-          lead_id: leadId,
-          anchor_address_id: state.anchorAddressId
-        }
+      // Step 2: Call Verizon API first (working API on port 9001)
+      console.log('📡 Calling Verizon API on port 9001...');
+      
+      const verizonPayload = {
+        address_line1: addressLine1,
+        address_line2: addressLine2 || '',
+        city: city,
+        state: selectedState,
+        zip_code: zipCode,
+        formatted_address: selectedAddress
+      };
+
+      const verizonResponse = await fetch('https://fwa.spry.network/api/fwa-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(verizonPayload)
       });
 
-      if (qualificationError) {
-        console.error('❌ Qualification check error:', qualificationError);
-        
-        // Handle different types of errors gracefully
-        if (qualificationError.message?.includes('Edge Function returned a non-2xx status code')) {
-          toast({
-            title: "Coverage Check Unavailable",
-            description: "We couldn't check coverage right now. Please try again in a moment.",
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: "Failed to check area qualification. Please try again.",
-          });
-        }
-        return;
+      if (!verizonResponse.ok) {
+        throw new Error('Verizon API call failed');
       }
 
-      if (!qualificationData?.success) {
-        console.error('❌ Qualification failed:', qualificationData);
+      const verizonData = await verizonResponse.json();
+      console.log('📡 Verizon API response:', verizonData);
+
+      if (verizonData.qualified === true) {
+        // Verizon qualified - sapi1
+        console.log('✅ Verizon qualification successful - sapi1');
+        
+        updateState({
+          address: {
+            addressLine1,
+            addressLine2,
+            city,
+            state: selectedState,
+            zipCode,
+            formattedAddress: selectedAddress
+          },
+          contact: {
+            firstName,
+            lastName,
+            email,
+            phone: ''
+          },
+          leadId,
+          qualified: true,
+          qualificationResult: {
+            source: 'verizon',
+            network_type: verizonData.network_type || 'C-BAND',
+            max_speed_mbps: 300
+          },
+          step: 'qualification-success'
+        });
+
         toast({
-          title: "Coverage Check Failed",
-          description: qualificationData?.error || "We couldn't check coverage right now. Please try again.",
+          title: "Great news! 🎉",
+          description: "SpryFi is available in your area!",
         });
         return;
       }
 
-      console.log('✅ Qualification check complete:', qualificationData);
+      // Step 3: Verizon said no, try bot fallback
+      console.log('❌ Verizon not qualified, trying bot fallback...');
+      
+      const botResponse = await fetch('https://fwa.spry.network/api/bot-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(verizonPayload)
+      });
 
-      // Update state with results and move to next step
+      if (!botResponse.ok) {
+        throw new Error('Bot API call failed');
+      }
+
+      const botData = await botResponse.json();
+      console.log('🤖 Bot API response:', botData);
+
+      if (botData.qualified === true) {
+        // Bot qualified - sapi2
+        console.log('✅ Bot qualification successful - sapi2');
+        
+        updateState({
+          address: {
+            addressLine1,
+            addressLine2,
+            city,
+            state: selectedState,
+            zipCode,
+            formattedAddress: selectedAddress
+          },
+          contact: {
+            firstName,
+            lastName,
+            email,
+            phone: ''
+          },
+          leadId,
+          qualified: true,
+          qualificationResult: {
+            source: 'bot',
+            network_type: botData.network_type || '5G_HOME',
+            max_speed_mbps: botData.max_speed_mbps || 200
+          },
+          step: 'qualification-success'
+        });
+
+        toast({
+          title: "Great news! 🎉",
+          description: "SpryFi is available in your area!",
+        });
+        return;
+      }
+
+      // Both failed - not qualified
+      console.log('❌ Both Verizon and Bot said not qualified');
+      
       updateState({
         address: {
           addressLine1,
@@ -376,26 +457,19 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           phone: ''
         },
         leadId,
-        qualified: qualificationData.qualified,
+        qualified: false,
         qualificationResult: {
-          source: qualificationData.source,
-          network_type: qualificationData.network_type,
-          max_speed_mbps: qualificationData.raw_data?.max_speed_mbps
+          source: 'none',
+          network_type: '',
+          max_speed_mbps: 0
         },
-        step: qualificationData.qualified ? 'qualification-success' : 'contact'
+        step: 'contact'
       });
 
-      if (qualificationData.qualified) {
-        toast({
-          title: "Great news! 🎉",
-          description: "SpryFi is available in your area!",
-        });
-      } else {
-        toast({
-          title: "Not in your area — yet",
-          description: "We'll notify you when SpryFi becomes available.",
-        });
-      }
+      toast({
+        title: "Not in your area — yet",
+        description: "We'll notify you when SpryFi becomes available.",
+      });
 
     } catch (error) {
       console.error('🔥 Check area error:', error);
