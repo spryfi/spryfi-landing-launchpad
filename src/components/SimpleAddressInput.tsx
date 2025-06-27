@@ -9,10 +9,20 @@ interface AddressOption {
   display_name: string;
   formatted: string;
   place_name: string;
+  properties?: any;
+  context?: any[];
+}
+
+interface ParsedAddress {
+  address_line1: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  full_address: string;
 }
 
 interface Props {
-  onAddressSelect?: (address: string) => void;
+  onAddressSelect?: (address: string, parsedAddress: ParsedAddress) => void;
   placeholder?: string;
 }
 
@@ -74,6 +84,63 @@ const SimpleAddressInput: React.FC<Props> = ({
     }
   };
 
+  // Parse Mapbox address response into components
+  const parseMapboxAddress = (suggestion: AddressOption): ParsedAddress => {
+    console.log('🔍 Parsing Mapbox address:', suggestion);
+    
+    const fullAddress = suggestion.place_name || suggestion.formatted;
+    const addressParts = fullAddress.split(',');
+    
+    // Extract address_line1 (first part before comma)
+    const address_line1 = addressParts[0]?.trim() || '';
+    
+    // Extract city from context or fallback to parsing
+    let city = '';
+    let state = '';
+    let zip_code = '';
+    
+    if (suggestion.context && Array.isArray(suggestion.context)) {
+      // Find city (place)
+      const placeContext = suggestion.context.find(c => c.id && c.id.includes('place'));
+      city = placeContext?.text || '';
+      
+      // Find state (region)
+      const regionContext = suggestion.context.find(c => c.id && c.id.includes('region'));
+      state = regionContext?.short_code || regionContext?.text || '';
+      
+      // Find zip code (postcode)
+      const postcodeContext = suggestion.context.find(c => c.id && c.id.includes('postcode'));
+      zip_code = postcodeContext?.text || '';
+    }
+    
+    // Fallback parsing if context is not available
+    if (!city || !state || !zip_code) {
+      // Try to parse from address parts: "Street, City, State ZIP"
+      if (addressParts.length >= 3) {
+        city = city || addressParts[1]?.trim() || '';
+        
+        const lastPart = addressParts[addressParts.length - 1]?.trim() || '';
+        const stateZipMatch = lastPart.match(/^([A-Z]{2})\s+(\d{5}(-\d{4})?)$/);
+        
+        if (stateZipMatch) {
+          state = state || stateZipMatch[1];
+          zip_code = zip_code || stateZipMatch[2];
+        }
+      }
+    }
+    
+    const parsed = {
+      address_line1,
+      city,
+      state,
+      zip_code,
+      full_address: fullAddress
+    };
+    
+    console.log('✅ Parsed address components:', parsed);
+    return parsed;
+  };
+
   // Prevent form submission on Enter key
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -88,16 +155,19 @@ const SimpleAddressInput: React.FC<Props> = ({
   };
 
   // Stable callback to prevent unnecessary re-renders
-  const stableOnAddressSelect = useCallback((address: string) => {
+  const stableOnAddressSelect = useCallback((address: string, parsedAddress: ParsedAddress) => {
     if (onAddressSelect) {
-      onAddressSelect(address);
+      onAddressSelect(address, parsedAddress);
     }
   }, [onAddressSelect]);
 
   const handleSuggestionClick = (suggestion: AddressOption) => {
     console.log('🎯 Address selected:', suggestion.formatted);
     
-    setInputValue(suggestion.formatted);
+    const fullAddress = suggestion.place_name || suggestion.formatted;
+    const parsedAddress = parseMapboxAddress(suggestion);
+    
+    setInputValue(fullAddress);
     setAddressSelected(true);
     setShowSuggestions(false);
     
@@ -105,7 +175,7 @@ const SimpleAddressInput: React.FC<Props> = ({
     clearSuggestions();
     clearAddressFromStorage();
     
-    stableOnAddressSelect(suggestion.formatted);
+    stableOnAddressSelect(fullAddress, parsedAddress);
   };
 
   const handleInputBlur = () => {

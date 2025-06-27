@@ -6,6 +6,14 @@ import { useRotatingHook } from '@/hooks/useRotatingHook';
 import SimpleAddressInput from '@/components/SimpleAddressInput';
 import { supabase } from '@/integrations/supabase/client';
 
+interface ParsedAddress {
+  address_line1: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  full_address: string;
+}
+
 export const Hero = () => {
   // Call all hooks at the top level - this is critical
   const { isOpen, openModal, closeModal } = useCheckoutModal();
@@ -14,6 +22,7 @@ export const Hero = () => {
   const [showContactModal, setShowContactModal] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
+  const [parsedAddressData, setParsedAddressData] = useState<ParsedAddress | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -69,9 +78,11 @@ export const Hero = () => {
     };
   }, []); // Empty dependency array
 
-  const handleAddressSelect = (address: string) => {
+  const handleAddressSelect = (address: string, parsedAddress: ParsedAddress) => {
     console.log('Address selected from autocomplete:', address);
+    console.log('Parsed address data:', parsedAddress);
     setSelectedAddress(address);
+    setParsedAddressData(parsedAddress);
     // Automatically transition to contact form
     setShowAddressModal(false);
     setShowContactModal(true);
@@ -80,6 +91,11 @@ export const Hero = () => {
   const handleContactSubmit = async () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim()) {
       alert('Please fill in all fields');
+      return;
+    }
+
+    if (!parsedAddressData) {
+      alert('Please select a valid address');
       return;
     }
 
@@ -93,7 +109,11 @@ export const Hero = () => {
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           anchor_address_id: null,
-          address_line1: selectedAddress,
+          address_line1: parsedAddressData.address_line1,
+          address_line2: null,
+          city: parsedAddressData.city,
+          state: parsedAddressData.state,
+          zip_code: parsedAddressData.zip_code,
           status: 'started',
           lead_type: 'address_check'
         }
@@ -106,14 +126,14 @@ export const Hero = () => {
 
       console.log('✅ Lead saved successfully:', leadData);
       
-      // Now call the FWA check API
+      // Now call the FWA check API with parsed address components
       const { data: fwaData, error: fwaError } = await supabase.functions.invoke('fwa-check', {
         body: {
           lead_id: leadData.lead_id,
-          address_line1: selectedAddress,
-          city: '', // We'll parse from selectedAddress if needed
-          state: '',
-          zip_code: '',
+          address_line1: parsedAddressData.address_line1,
+          city: parsedAddressData.city,
+          state: parsedAddressData.state,
+          zip_code: parsedAddressData.zip_code,
           latitude: null,
           longitude: null
         }
@@ -153,6 +173,7 @@ export const Hero = () => {
   const handleCloseResults = () => {
     setShowResultsModal(false);
     setSelectedAddress('');
+    setParsedAddressData(null);
     setQualificationResult(null);
   };
 
