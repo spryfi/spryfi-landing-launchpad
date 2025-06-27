@@ -32,6 +32,17 @@ export const Hero = () => {
     network_type?: string;
   } | null>(null);
 
+  // Clear address input and reset state when modal opens
+  React.useEffect(() => {
+    if (showAddressModal) {
+      console.log('🔄 Address modal opened - clearing all address data');
+      setSelectedAddress('');
+      setParsedAddressData(null);
+      setShowContactModal(false);
+      setShowResultsModal(false);
+    }
+  }, [showAddressModal]);
+
   React.useEffect(() => {
     // Core home internet usage: work, streaming, gaming
     const heroImages = [
@@ -351,6 +362,7 @@ export const Hero = () => {
               }}
             >
               <SimpleAddressInput
+                key={showAddressModal ? 'fresh' : 'stale'} // Force fresh component
                 onAddressSelect={(address) => handleAddressSelect(address)}
                 placeholder="Enter your street address"
               />

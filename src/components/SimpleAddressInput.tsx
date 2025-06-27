@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAddressSearch } from '@/hooks/useAddressSearch';
 import { AddressSuggestions } from './AddressSuggestions';
@@ -22,28 +21,29 @@ const SimpleAddressInput: React.FC<Props> = ({
   onAddressSelect, 
   placeholder = "Enter your address..." 
 }) => {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState(''); // Always start empty
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [addressSelected, setAddressSelected] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { suggestions, isLoading, error, debouncedSearch, clearSuggestions } = useAddressSearch();
 
-  // Form persistence - save input to localStorage
+  // Clear any stored address data on mount to ensure fresh start
+  useEffect(() => {
+    console.log('🔄 SimpleAddressInput mounted - clearing storage for fresh start');
+    clearAddressFromStorage();
+    setInputValue(''); // Ensure input starts empty
+    setAddressSelected(false);
+    setShowSuggestions(false);
+    clearSuggestions();
+  }, [clearSuggestions]);
+
+  // Form persistence - save input to localStorage (but don't restore on mount)
   useEffect(() => {
     if (inputValue && !addressSelected) {
       saveAddressToStorage(inputValue);
     }
   }, [inputValue, addressSelected]);
-
-  // Restore form data on mount
-  useEffect(() => {
-    const savedAddress = loadAddressFromStorage();
-    if (savedAddress) {
-      console.log('🔄 Restored address from storage:', savedAddress);
-      setInputValue(savedAddress);
-    }
-  }, []);
 
   // Handle search with debouncing
   useEffect(() => {
