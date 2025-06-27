@@ -78,13 +78,18 @@ export const Hero = () => {
   }, []); // Empty dependency array
 
   const handleAddressSelect = (address: string, parsedAddress: ParsedAddress) => {
-    console.log('Address selected from autocomplete:', address);
-    console.log('Parsed address data:', parsedAddress);
-    setSelectedAddress(address);
+    console.log('🎯 Address selected from autocomplete:', address);
+    console.log('📝 Parsed address data:', parsedAddress);
+    
+    // Store both the full address string and parsed components
+    setSelectedAddress(address); // This is the full Mapbox place_name
     setParsedAddressData(parsedAddress);
-    // Automatically transition to contact form
+    
+    // Automatically transition to contact form - smooth flow!
     setShowAddressModal(false);
     setShowContactModal(true);
+    
+    console.log('✅ Auto-advanced to contact form with address:', address);
   };
 
   const handleContactSubmit = async () => {
@@ -345,6 +350,14 @@ export const Hero = () => {
             >
               SpryFi
             </div>
+
+            {/* Show selected address for confirmation */}
+            {selectedAddress && (
+              <div className="mb-4 p-3 bg-blue-800/30 rounded-lg border border-blue-400/30">
+                <p className="text-blue-100 text-sm mb-1">Selected Address:</p>
+                <p className="text-white text-sm font-medium">{selectedAddress}</p>
+              </div>
+            )}
 
             {/* Headline */}
             <h2 
