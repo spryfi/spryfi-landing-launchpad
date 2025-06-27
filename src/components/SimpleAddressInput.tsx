@@ -94,7 +94,7 @@ const SimpleAddressInput: React.FC<Props> = ({
     // Extract address_line1 (first part before comma)
     const address_line1 = addressParts[0]?.trim() || '';
     
-    // Extract city from context or fallback to parsing
+    // Extract city, state, and zip code from context
     let city = '';
     let state = '';
     let zip_code = '';
@@ -104,27 +104,40 @@ const SimpleAddressInput: React.FC<Props> = ({
       const placeContext = suggestion.context.find(c => c.id && c.id.includes('place'));
       city = placeContext?.text || '';
       
-      // Find state (region)
+      // Find state (region) - use short_code for abbreviation like "TX"
       const regionContext = suggestion.context.find(c => c.id && c.id.includes('region'));
       state = regionContext?.short_code || regionContext?.text || '';
+      
+      // Remove "US-" prefix if present (e.g., "US-TX" becomes "TX")
+      if (state && state.startsWith('US-')) {
+        state = state.substring(3);
+      }
       
       // Find zip code (postcode)
       const postcodeContext = suggestion.context.find(c => c.id && c.id.includes('postcode'));
       zip_code = postcodeContext?.text || '';
     }
     
-    // Fallback parsing if context is not available
+    // Fallback parsing if context is not available or incomplete
     if (!city || !state || !zip_code) {
+      console.log('⚠️ Context incomplete, attempting fallback parsing');
+      
       // Try to parse from address parts: "Street, City, State ZIP"
       if (addressParts.length >= 3) {
-        city = city || addressParts[1]?.trim() || '';
+        if (!city) {
+          city = addressParts[1]?.trim() || '';
+        }
         
         const lastPart = addressParts[addressParts.length - 1]?.trim() || '';
         const stateZipMatch = lastPart.match(/^([A-Z]{2})\s+(\d{5}(-\d{4})?)$/);
         
         if (stateZipMatch) {
-          state = state || stateZipMatch[1];
-          zip_code = zip_code || stateZipMatch[2];
+          if (!state) {
+            state = stateZipMatch[1];
+          }
+          if (!zip_code) {
+            zip_code = stateZipMatch[2];
+          }
         }
       }
     }

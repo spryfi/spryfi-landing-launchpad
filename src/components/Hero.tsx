@@ -101,10 +101,10 @@ export const Hero = () => {
     setIsSubmitting(true);
 
     try {
-      console.log('📤 Submitting to EC2 API...');
+      console.log('📤 Submitting to HTTPS API...');
       
-      // Use direct fetch to EC2 API
-      const response = await fetch('http://18.118.188.71:9001/api/fwa-check', {
+      // Use HTTPS endpoint
+      const response = await fetch('https://fwa.spry.network/api/fwa-check', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
