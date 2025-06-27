@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckoutModal } from '@/components/checkout/CheckoutModal';
@@ -578,8 +577,22 @@ export const Hero = () => {
 
             {qualificationResult?.qualified ? (
               <>
-                {/* Success Message */}
-                <div className="text-4xl mb-4">🎉</div>
+                {/* Success Icon - WiFi with Checkmark */}
+                <div className="mb-6">
+                  <div className="w-16 h-16 mx-auto bg-green-500 rounded-full flex items-center justify-center shadow-lg relative">
+                    {/* Main WiFi signal icon */}
+                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.07 2.93 1 9zm8 8l3 3 3-3c-1.65-1.65-4.35-1.65-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.86 9.14 5 13z"/>
+                    </svg>
+                    
+                    {/* Small checkmark badge in top-right corner */}
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md">
+                      <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
                 <h2 
                   className="text-white text-xl font-bold mb-2 leading-tight"
                   style={{
