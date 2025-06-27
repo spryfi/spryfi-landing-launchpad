@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckoutModal } from '@/components/checkout/CheckoutModal';
@@ -223,32 +224,38 @@ export const Hero = () => {
       const data = await response.json();
       console.log('✅ API Response:', data);
 
+      // Since we successfully called the EC2 API, this is always sapi1 (Verizon)
+      // sapi2 would only be used for bot fallback, which doesn't happen here
+      let finalResults = data;
+      let qualificationSource = 'verizon'; // Default to Verizon since we called the EC2 API
+
       // Check if we got a pending status and need to poll
       if (data.status === 'pending' && data.request_id) {
         console.log('🔄 Status is pending, starting polling...');
         
         // Poll for final results
-        const finalData = await pollForResults(data.request_id);
+        const polledData = await pollForResults(data.request_id);
         
-        if (finalData.status === 'timeout') {
+        if (polledData.status === 'timeout') {
           alert('Request timed out. Please try again.');
           return;
         }
         
-        // Use the final results
-        setQualificationResult({
-          qualified: finalData.qualified || false,
-          source: finalData.source || 'unknown',
-          network_type: finalData.network_type
-        });
-      } else {
-        // Set qualification results based on immediate API response
-        setQualificationResult({
-          qualified: data.qualified || false,
-          source: data.source || 'unknown',
-          network_type: data.network_type
-        });
+        finalResults = polledData;
       }
+
+      // Use the source from API response if available, otherwise default to 'verizon'
+      // since we successfully called the EC2 Verizon API endpoint
+      if (finalResults.source) {
+        qualificationSource = finalResults.source;
+      }
+
+      // Set qualification results
+      setQualificationResult({
+        qualified: finalResults.qualified || false,
+        source: qualificationSource,
+        network_type: finalResults.network_type
+      });
 
       // Close contact modal and show results
       setShowContactModal(false);
@@ -287,7 +294,7 @@ export const Hero = () => {
         className="relative rounded-xl overflow-hidden"
         style={{
           width: '480px',
-          height: showContactModal ? '450px' : showResultsModal ? '400px' : '320px',
+          height: showContactModal ? '500px' : showResultsModal ? '500px' : '320px',
           backgroundColor: '#0047AB',
           transform: 'perspective(1000px) rotateY(-5deg)',
           boxShadow: `
@@ -547,7 +554,7 @@ export const Hero = () => {
             ×
           </button>
 
-          {/* Qualification method indicator */}
+          {/* Qualification method indicator - Fixed logic */}
           <div 
             className="absolute bottom-3 left-3 text-xs text-blue-200 opacity-70"
             style={{
