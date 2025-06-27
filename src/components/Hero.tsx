@@ -4,7 +4,6 @@ import { CheckoutModal } from '@/components/checkout/CheckoutModal';
 import { useCheckoutModal } from '@/hooks/useCheckoutModal';
 import { useRotatingHook } from '@/hooks/useRotatingHook';
 import SimpleAddressInput from '@/components/SimpleAddressInput';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ParsedAddress {
   address_line1: string;
@@ -102,55 +101,37 @@ export const Hero = () => {
     setIsSubmitting(true);
 
     try {
-      // Save to leads_fresh table
-      const { data: leadData, error: leadError } = await supabase.functions.invoke('save-lead', {
-        body: {
-          email: email.trim(),
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          anchor_address_id: null,
-          address_line1: parsedAddressData.address_line1,
-          address_line2: null,
-          city: parsedAddressData.city,
-          state: parsedAddressData.state,
-          zip_code: parsedAddressData.zip_code,
-          status: 'started',
-          lead_type: 'address_check'
-        }
-      });
-
-      if (leadError) {
-        console.error('Error saving lead:', leadError);
-        throw leadError;
-      }
-
-      console.log('✅ Lead saved successfully:', leadData);
+      console.log('📤 Submitting to EC2 API...');
       
-      // Now call the FWA check API with parsed address components
-      const { data: fwaData, error: fwaError } = await supabase.functions.invoke('fwa-check', {
-        body: {
-          lead_id: leadData.lead_id,
+      // Use direct fetch to EC2 API
+      const response = await fetch('http://18.118.188.71:9001/api/fwa-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           address_line1: parsedAddressData.address_line1,
           city: parsedAddressData.city,
           state: parsedAddressData.state,
           zip_code: parsedAddressData.zip_code,
-          latitude: null,
-          longitude: null
-        }
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim()
+        })
       });
 
-      if (fwaError) {
-        console.error('Error checking availability:', fwaError);
-        throw fwaError;
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
       }
 
-      console.log('✅ FWA check result:', fwaData);
+      const data = await response.json();
+      console.log('✅ API Response:', data);
 
-      // Set qualification results
+      // Set qualification results based on API response
       setQualificationResult({
-        qualified: fwaData.qualified,
-        source: fwaData.source,
-        network_type: fwaData.network_type
+        qualified: data.qualified || false,
+        source: data.source || 'unknown',
+        network_type: data.network_type
       });
 
       // Close contact modal and show results
@@ -163,8 +144,8 @@ export const Hero = () => {
       setEmail('');
 
     } catch (error) {
-      console.error('❌ Error during submission:', error);
-      alert('Something went wrong. Please try again.');
+      console.error('❌ API Error:', error);
+      alert('Something went wrong checking availability. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
