@@ -10,7 +10,7 @@ export const PlansSection = () => {
 
   const plans = [
     {
-      name: "SpryFi Basic",
+      name: "SpryFi Essential",
       price: "$99.95/mo",
       speed: "100+ Mbps",
       description: "Stream shows, browse freely",
