@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAddressSearch } from '@/hooks/useAddressSearch';
 import { AddressSuggestions } from './AddressSuggestions';
@@ -90,87 +89,39 @@ const SimpleAddressInput: React.FC<Props> = ({
     
     const fullAddress = suggestion.place_name || suggestion.formatted;
     const parts = fullAddress.split(', ');
+    // Example: "1355 Rich Lane, Buda, Texas 78610, United States"
+    // parts = ['1355 Rich Lane', 'Buda', 'Texas 78610', 'United States']
     
     console.log('📝 Address parts:', parts);
     
-    // Initialize components
-    let address_line1 = '';
-    let city = '';
-    let state = '';
-    let zip_code = '';
+    // Extract state and zip from "Texas 78610" 
+    const stateZipPart = parts[2] || ''; // "Texas 78610"
+    const stateZipMatch = stateZipPart.match(/^(\w+)\s+(\d{5})$/);
     
-    // Try context-based parsing first (more reliable)
-    if (suggestion.context && Array.isArray(suggestion.context)) {
-      // Extract address_line1 (first part before comma)
-      address_line1 = parts[0]?.trim() || '';
-      
-      // Find city (place)
-      const placeContext = suggestion.context.find(c => c.id && c.id.includes('place'));
-      city = placeContext?.text || '';
-      
-      // Find state (region) - use short_code for abbreviation like "TX"
-      const regionContext = suggestion.context.find(c => c.id && c.id.includes('region'));
-      state = regionContext?.short_code || regionContext?.text || '';
-      
-      // Remove "US-" prefix if present (e.g., "US-TX" becomes "TX")
-      if (state && state.startsWith('US-')) {
-        state = state.substring(3);
-      }
-      
-      // Find zip code (postcode)
-      const postcodeContext = suggestion.context.find(c => c.id && c.id.includes('postcode'));
-      zip_code = postcodeContext?.text || '';
-    }
+    const state = stateZipMatch ? stateZipMatch[1] : '';
+    const zipCode = stateZipMatch ? stateZipMatch[2] : '';
     
-    // Fallback parsing for format: "1355 Rich Lane, Buda, Texas 78610, United States"
-    if (!address_line1 || !city || !state || !zip_code) {
-      console.log('⚠️ Context incomplete, attempting fallback parsing');
-      
-      if (parts.length >= 3) {
-        // Extract address_line1
-        if (!address_line1) {
-          address_line1 = parts[0]?.trim() || '';
-        }
-        
-        // Extract city
-        if (!city) {
-          city = parts[1]?.trim() || '';
-        }
-        
-        // Extract state and zip from "Texas 78610" format
-        const stateZipPart = parts[2]?.trim() || '';
-        const stateZipMatch = stateZipPart.match(/^(\w+)\s+(\d{5}(-\d{4})?)$/);
-        
-        if (stateZipMatch) {
-          if (!state) {
-            const stateName = stateZipMatch[1];
-            // Convert common state names to abbreviations
-            const stateAbbreviations: { [key: string]: string } = {
-              'Texas': 'TX',
-              'California': 'CA',
-              'Florida': 'FL',
-              'NewYork': 'NY',
-              'Illinois': 'IL',
-              'Pennsylvania': 'PA',
-              'Ohio': 'OH',
-              'Georgia': 'GA',
-              'NorthCarolina': 'NC',
-              'Michigan': 'MI'
-            };
-            state = stateAbbreviations[stateName] || stateName;
-          }
-          if (!zip_code) {
-            zip_code = stateZipMatch[2];
-          }
-        }
-      }
-    }
+    // Convert state name to abbreviation
+    const stateMap: { [key: string]: string } = {
+      'Texas': 'TX',
+      'California': 'CA', 
+      'Florida': 'FL',
+      'New York': 'NY',
+      'Illinois': 'IL',
+      'Pennsylvania': 'PA',
+      'Ohio': 'OH',
+      'Georgia': 'GA',
+      'North Carolina': 'NC',
+      'Michigan': 'MI'
+    };
+    
+    const stateAbbr = stateMap[state] || state;
     
     const parsed = {
-      address_line1,
-      city,
-      state,
-      zip_code,
+      address_line1: parts[0] || '',
+      city: parts[1] || '',
+      state: stateAbbr,
+      zip_code: zipCode,
       full_address: fullAddress
     };
     
