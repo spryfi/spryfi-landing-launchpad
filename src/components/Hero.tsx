@@ -1,8 +1,6 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckoutModal } from '@/components/checkout/CheckoutModal';
-import { useCheckoutModal } from '@/hooks/useCheckoutModal';
+import { PricingModal } from '@/components/PricingModal';
 import { useRotatingHook } from '@/hooks/useRotatingHook';
 import SimpleAddressInput from '@/components/SimpleAddressInput';
 
@@ -16,11 +14,11 @@ interface ParsedAddress {
 
 export const Hero = () => {
   // Call all hooks at the top level - this is critical
-  const { isOpen, openModal, closeModal } = useCheckoutModal();
   const { currentHook, isVisible } = useRotatingHook();
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
   const [parsedAddressData, setParsedAddressData] = useState<ParsedAddress | null>(null);
   const [firstName, setFirstName] = useState('');
@@ -279,6 +277,10 @@ export const Hero = () => {
     setSelectedAddress('');
     setParsedAddressData(null);
     setQualificationResult(null);
+  };
+
+  const handleGetStarted = () => {
+    setShowPricingModal(true);
   };
 
   const renderModal3D = (children: React.ReactNode) => (
@@ -617,7 +619,7 @@ export const Hero = () => {
                   We found {qualificationResult.source === 'verizon' ? 'excellent' : 'good'} coverage at your address
                 </p>
                 <button
-                  onClick={openModal}
+                  onClick={handleGetStarted}
                   className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors"
                   style={{
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
@@ -665,7 +667,7 @@ export const Hero = () => {
         </>
       )}
 
-      <CheckoutModal isOpen={isOpen} onClose={closeModal} />
+      <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
     </>
   );
 };
