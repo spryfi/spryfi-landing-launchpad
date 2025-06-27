@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -141,6 +142,16 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
   return (
     <div className="p-8">
       <div className="text-center mb-8">
+        {/* Enhanced SpryFi Branding */}
+        <div className="text-center mb-6">
+          <div className="text-[#0047AB] text-3xl font-bold mb-2">
+            SpryFi
+          </div>
+          <div className="text-gray-600 text-sm font-medium">
+            Internet that just works
+          </div>
+        </div>
+
         <div className="text-6xl mb-4">👋</div>
         <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
           Great! Now tell us who you are

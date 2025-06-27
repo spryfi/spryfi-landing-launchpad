@@ -25,9 +25,14 @@ export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ stat
     <div className="flex min-h-[500px] bg-white">
       {/* Left Content Section */}
       <div className="flex-1 p-12 flex flex-col justify-center max-w-[60%]">
-        {/* Small SpryFi Logo */}
-        <div className="mb-8">
-          <div className="text-2xl font-light text-[#0047AB] tracking-wider">SpryFi</div>
+        {/* Enhanced SpryFi Branding */}
+        <div className="text-center mb-8">
+          <div className="text-[#0047AB] text-3xl font-bold mb-2">
+            SpryFi
+          </div>
+          <div className="text-gray-600 text-sm font-medium">
+            Internet that just works
+          </div>
         </div>
 
         {/* Main Headline */}

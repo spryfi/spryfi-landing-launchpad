@@ -138,6 +138,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       case 'not-qualified':
         return (
           <div className="text-center p-8">
+            {/* Enhanced SpryFi Branding */}
+            <div className="text-center mb-6">
+              <div className="text-[#0047AB] text-3xl font-bold mb-2">
+                SpryFi
+              </div>
+              <div className="text-gray-600 text-sm font-medium">
+                Internet that just works
+              </div>
+            </div>
+
             <div className="text-6xl mb-4">📡</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               We're not in your area — yet.

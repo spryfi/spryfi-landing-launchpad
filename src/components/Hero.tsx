@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PricingModal } from '@/components/PricingModal';
@@ -333,8 +334,14 @@ export const Hero = () => {
           </button>
 
           <div className="px-6 py-6 h-full flex flex-col justify-center text-center relative">
-            <div className="text-white text-lg font-normal mb-6">
-              SpryFi
+            {/* Enhanced SpryFi Branding */}
+            <div className="text-center mb-6">
+              <div className="text-white text-3xl font-bold mb-2">
+                SpryFi
+              </div>
+              <div className="text-blue-100 text-sm font-medium">
+                Internet that just works
+              </div>
             </div>
 
             <h2 className="text-white text-xl font-bold mb-2 leading-tight">
@@ -371,8 +378,14 @@ export const Hero = () => {
           </button>
 
           <div className="px-6 py-6 h-full flex flex-col justify-center text-center relative">
-            <div className="text-white text-lg font-normal mb-4">
-              SpryFi
+            {/* Enhanced SpryFi Branding */}
+            <div className="text-center mb-4">
+              <div className="text-white text-3xl font-bold mb-2">
+                SpryFi
+              </div>
+              <div className="text-blue-100 text-sm font-medium">
+                Internet that just works
+              </div>
             </div>
 
             {selectedAddress && (
@@ -445,8 +458,14 @@ export const Hero = () => {
           </div>
 
           <div className="px-6 py-6 h-full flex flex-col justify-center text-center relative">
-            <div className="text-white text-lg font-normal mb-4">
-              SpryFi
+            {/* Enhanced SpryFi Branding */}
+            <div className="text-center mb-4">
+              <div className="text-white text-3xl font-bold mb-2">
+                SpryFi
+              </div>
+              <div className="text-blue-100 text-sm font-medium">
+                Internet that just works
+              </div>
             </div>
 
             {qualificationResult?.qualified ? (
