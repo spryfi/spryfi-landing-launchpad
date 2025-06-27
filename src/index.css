@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -147,4 +146,32 @@
   .transition-opacity.duration-2000 {
     transition-duration: 2000ms;
   }
+}
+
+/* Modal 3D Effects and Geometry Fixes */
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-container {
+  /* Ensure perfect rectangular geometry */
+  transform: none !important;
+  perspective: none !important;
+  /* Dramatic 3D shadow effects */
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.6),     /* Main depth shadow */
+    0 10px 20px rgba(0, 0, 0, 0.3),     /* Mid-level shadow */
+    0 0 20px rgba(0, 71, 171, 0.15) !important; /* Subtle blue glow */
+  /* Prevent any skewing or parallelogram effects */
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  -o-transform: none !important;
+}
+
+/* Ensure all modal elements maintain rectangular geometry */
+.modal-container * {
+  transform: none !important;
+  -webkit-transform: none !important;
 }

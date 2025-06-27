@@ -21,7 +21,14 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div 
+      className="fixed inset-0 flex items-center justify-center z-50 modal-backdrop"
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)'
+      }}
+    >
       <div 
         style={{
           width: '480px',
@@ -36,7 +43,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
           `,
           filter: 'drop-shadow(0 8px 16px rgba(0, 71, 171, 0.2))'
         }}
-        className="relative rounded-xl overflow-hidden"
+        className="relative rounded-xl overflow-hidden modal-container"
       >
         <button 
           onClick={onClose} 
@@ -54,18 +61,20 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
           </h2>
 
           <div className="space-y-4 mb-6">
-            <div className="bg-white rounded-lg p-4 shadow-lg">
+            <div className="bg-white rounded-lg p-4 shadow-lg text-center">
               <h3 className="text-blue-700 font-bold text-lg">SpryFi Essential</h3>
-              <p className="text-gray-600 text-sm mb-2">Perfect for everyday use</p>
+              <p className="text-gray-600 text-sm mb-1">Perfect for everyday use</p>
+              <p className="text-blue-500 text-sm font-medium mb-2">100+ Megabits</p>
               <div className="text-blue-700 font-bold text-2xl">
                 ${codeApplied && discount ? (99.95 - discount.amount).toFixed(2) : '99.95'}/mo
                 {codeApplied && <span className="text-sm text-green-600 ml-2">Discount Applied!</span>}
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-4 shadow-lg">
+            <div className="bg-white rounded-lg p-4 shadow-lg text-center">
               <h3 className="text-blue-700 font-bold text-lg">SpryFi Premium</h3>
-              <p className="text-gray-600 text-sm mb-2">For power users and families</p>
+              <p className="text-gray-600 text-sm mb-1">For power users and families</p>
+              <p className="text-blue-500 text-sm font-medium mb-2">200+ Megabits</p>
               <div className="text-blue-700 font-bold text-2xl">
                 ${codeApplied && discount ? (139.95 - discount.amount).toFixed(2) : '139.95'}/mo
                 {codeApplied && <span className="text-sm text-green-600 ml-2">Discount Applied!</span>}

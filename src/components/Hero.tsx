@@ -260,7 +260,7 @@ export const Hero = () => {
 
   const renderModal3D = (children: React.ReactNode, modalHeight = '500px') => (
     <div 
-      className="fixed inset-0 flex items-center justify-center z-50"
+      className="fixed inset-0 flex items-center justify-center z-50 modal-backdrop"
       style={{
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         backdropFilter: 'blur(10px)',
@@ -268,7 +268,7 @@ export const Hero = () => {
       }}
     >
       <div 
-        className="relative rounded-xl overflow-hidden"
+        className="relative rounded-xl overflow-hidden modal-container"
         style={{
           width: '480px',
           height: modalHeight,
