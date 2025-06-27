@@ -22,7 +22,7 @@ export const PlansSection = () => {
     {
       name: "SpryFi Premium",
       price: "$139.95/mo", 
-      speed: "Up to 250 Mbps",
+      speed: "200+ Mbps",
       description: "Perfect for families & remote work",
       subtitle: "No throttling, no limits",
       features: ["Great for streaming, Zoom, and gaming"],
