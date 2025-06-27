@@ -89,17 +89,21 @@ const SimpleAddressInput: React.FC<Props> = ({
     console.log('🔍 Parsing Mapbox address:', suggestion);
     
     const fullAddress = suggestion.place_name || suggestion.formatted;
-    const addressParts = fullAddress.split(',');
+    const parts = fullAddress.split(', ');
     
-    // Extract address_line1 (first part before comma)
-    const address_line1 = addressParts[0]?.trim() || '';
+    console.log('📝 Address parts:', parts);
     
-    // Extract city, state, and zip code from context
+    // Initialize components
+    let address_line1 = '';
     let city = '';
     let state = '';
     let zip_code = '';
     
+    // Try context-based parsing first (more reliable)
     if (suggestion.context && Array.isArray(suggestion.context)) {
+      // Extract address_line1 (first part before comma)
+      address_line1 = parts[0]?.trim() || '';
+      
       // Find city (place)
       const placeContext = suggestion.context.find(c => c.id && c.id.includes('place'));
       city = placeContext?.text || '';
@@ -118,22 +122,42 @@ const SimpleAddressInput: React.FC<Props> = ({
       zip_code = postcodeContext?.text || '';
     }
     
-    // Fallback parsing if context is not available or incomplete
-    if (!city || !state || !zip_code) {
+    // Fallback parsing for format: "1355 Rich Lane, Buda, Texas 78610, United States"
+    if (!address_line1 || !city || !state || !zip_code) {
       console.log('⚠️ Context incomplete, attempting fallback parsing');
       
-      // Try to parse from address parts: "Street, City, State ZIP"
-      if (addressParts.length >= 3) {
-        if (!city) {
-          city = addressParts[1]?.trim() || '';
+      if (parts.length >= 3) {
+        // Extract address_line1
+        if (!address_line1) {
+          address_line1 = parts[0]?.trim() || '';
         }
         
-        const lastPart = addressParts[addressParts.length - 1]?.trim() || '';
-        const stateZipMatch = lastPart.match(/^([A-Z]{2})\s+(\d{5}(-\d{4})?)$/);
+        // Extract city
+        if (!city) {
+          city = parts[1]?.trim() || '';
+        }
+        
+        // Extract state and zip from "Texas 78610" format
+        const stateZipPart = parts[2]?.trim() || '';
+        const stateZipMatch = stateZipPart.match(/^(\w+)\s+(\d{5}(-\d{4})?)$/);
         
         if (stateZipMatch) {
           if (!state) {
-            state = stateZipMatch[1];
+            const stateName = stateZipMatch[1];
+            // Convert common state names to abbreviations
+            const stateAbbreviations: { [key: string]: string } = {
+              'Texas': 'TX',
+              'California': 'CA',
+              'Florida': 'FL',
+              'NewYork': 'NY',
+              'Illinois': 'IL',
+              'Pennsylvania': 'PA',
+              'Ohio': 'OH',
+              'Georgia': 'GA',
+              'NorthCarolina': 'NC',
+              'Michigan': 'MI'
+            };
+            state = stateAbbreviations[stateName] || stateName;
           }
           if (!zip_code) {
             zip_code = stateZipMatch[2];
