@@ -598,9 +598,17 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
             {/* Content */}
             <div className="px-6 py-6 h-full flex flex-col justify-center text-center">
-              {/* Logo */}
-              <div className="text-white text-lg font-normal mb-6">
-                SpryFi
+              {/* Enhanced SpryFi Branding */}
+              <div className="text-center mb-6">
+                {/* Larger, bolder SpryFi logo */}
+                <div className="text-white text-3xl font-bold mb-2">
+                  SpryFi
+                </div>
+                
+                {/* Tagline */}
+                <div className="text-blue-100 text-sm font-medium">
+                  Internet that just works
+                </div>
               </div>
 
               {/* Headline */}
