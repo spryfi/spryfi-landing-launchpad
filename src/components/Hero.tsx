@@ -77,22 +77,68 @@ export const Hero = () => {
     };
   }, []); // Empty dependency array
 
-  const handleAddressSelect = async (address: string, parsedAddress: ParsedAddress) => {
-    console.log('🎯 Address selected from autocomplete:', address);
+  // Fixed address parsing function
+  const parseMapboxAddress = (fullAddress: string): ParsedAddress => {
+    console.log('🔍 Parsing Mapbox address:', fullAddress);
+    
+    // "1349 Rich Lane, Buda, Texas 78610, United States"
+    const parts = fullAddress.split(', ');
+    console.log('📝 Address parts:', parts);
+    
+    const stateZipPart = parts[2] || '';
+    const stateZipMatch = stateZipPart.match(/^(\w+)\s+(\d{5})$/);
+    
+    const state = stateZipMatch ? stateZipMatch[1] : '';
+    const zipCode = stateZipMatch ? stateZipMatch[2] : '';
+    
+    // Convert state name to abbreviation
+    const stateMap: { [key: string]: string } = {
+      'Texas': 'TX',
+      'California': 'CA', 
+      'Florida': 'FL',
+      'New York': 'NY',
+      'Illinois': 'IL',
+      'Pennsylvania': 'PA',
+      'Ohio': 'OH',
+      'Georgia': 'GA',
+      'North Carolina': 'NC',
+      'Michigan': 'MI'
+    };
+    
+    const stateAbbr = stateMap[state] || state;
+    
+    const parsed = {
+      address_line1: parts[0] || '',
+      city: parts[1] || '',
+      state: stateAbbr,
+      zip_code: zipCode,
+      full_address: fullAddress
+    };
+    
+    console.log('✅ Parsed address components:', parsed);
+    return parsed;
+  };
+
+  // Fixed address selection handler
+  const handleAddressSelect = async (fullAddress: string) => {
+    console.log('🎯 Address selected from autocomplete:', fullAddress);
+    
+    // 1. Parse the address into components
+    const parsedAddress = parseMapboxAddress(fullAddress);
     console.log('📝 Parsed address data:', parsedAddress);
     
-    // Store both the full address string and parsed components
-    setSelectedAddress(address); // This is the full Mapbox place_name
+    // 2. Store both the full address string and parsed components
+    setSelectedAddress(fullAddress); // This is the full Mapbox place_name
     setParsedAddressData(parsedAddress);
     
-    // Add a brief pause to show the selected address before advancing
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 seconds
+    // 3. Wait 1.5 seconds to show the full address before advancing
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Automatically transition to contact form - smooth flow!
+    // 4. Automatically transition to contact form - smooth flow!
     setShowAddressModal(false);
     setShowContactModal(true);
     
-    console.log('✅ Auto-advanced to contact form with address:', address);
+    console.log('✅ Auto-advanced to contact form with address:', fullAddress);
   };
 
   const handleContactSubmit = async () => {
@@ -305,7 +351,7 @@ export const Hero = () => {
               }}
             >
               <SimpleAddressInput
-                onAddressSelect={handleAddressSelect}
+                onAddressSelect={(address) => handleAddressSelect(address)}
                 placeholder="Enter your street address"
               />
             </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAddressSearch } from '@/hooks/useAddressSearch';
 import { AddressSuggestions } from './AddressSuggestions';
@@ -12,16 +13,8 @@ interface AddressOption {
   context?: any[];
 }
 
-interface ParsedAddress {
-  address_line1: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  full_address: string;
-}
-
 interface Props {
-  onAddressSelect?: (address: string, parsedAddress: ParsedAddress) => void;
+  onAddressSelect?: (address: string) => void;
   placeholder?: string;
 }
 
@@ -83,52 +76,6 @@ const SimpleAddressInput: React.FC<Props> = ({
     }
   };
 
-  // Parse Mapbox address response into components
-  const parseMapboxAddress = (suggestion: AddressOption): ParsedAddress => {
-    console.log('🔍 Parsing Mapbox address:', suggestion);
-    
-    const fullAddress = suggestion.place_name || suggestion.formatted;
-    const parts = fullAddress.split(', ');
-    // Example: "1355 Rich Lane, Buda, Texas 78610, United States"
-    // parts = ['1355 Rich Lane', 'Buda', 'Texas 78610', 'United States']
-    
-    console.log('📝 Address parts:', parts);
-    
-    // Extract state and zip from "Texas 78610" 
-    const stateZipPart = parts[2] || ''; // "Texas 78610"
-    const stateZipMatch = stateZipPart.match(/^(\w+)\s+(\d{5})$/);
-    
-    const state = stateZipMatch ? stateZipMatch[1] : '';
-    const zipCode = stateZipMatch ? stateZipMatch[2] : '';
-    
-    // Convert state name to abbreviation
-    const stateMap: { [key: string]: string } = {
-      'Texas': 'TX',
-      'California': 'CA', 
-      'Florida': 'FL',
-      'New York': 'NY',
-      'Illinois': 'IL',
-      'Pennsylvania': 'PA',
-      'Ohio': 'OH',
-      'Georgia': 'GA',
-      'North Carolina': 'NC',
-      'Michigan': 'MI'
-    };
-    
-    const stateAbbr = stateMap[state] || state;
-    
-    const parsed = {
-      address_line1: parts[0] || '',
-      city: parts[1] || '',
-      state: stateAbbr,
-      zip_code: zipCode,
-      full_address: fullAddress
-    };
-    
-    console.log('✅ Parsed address components:', parsed);
-    return parsed;
-  };
-
   // Prevent form submission on Enter key
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -143,27 +90,28 @@ const SimpleAddressInput: React.FC<Props> = ({
   };
 
   // Stable callback to prevent unnecessary re-renders
-  const stableOnAddressSelect = useCallback((address: string, parsedAddress: ParsedAddress) => {
+  const stableOnAddressSelect = useCallback((address: string) => {
     if (onAddressSelect) {
-      onAddressSelect(address, parsedAddress);
+      onAddressSelect(address);
     }
   }, [onAddressSelect]);
 
   const handleSuggestionClick = (suggestion: AddressOption) => {
-    console.log('🎯 Address selected:', suggestion.formatted);
+    console.log('🎯 Address selected:', suggestion.place_name);
     
     const fullAddress = suggestion.place_name || suggestion.formatted;
-    const parsedAddress = parseMapboxAddress(suggestion);
     
+    // 1. Show FULL address in input field
     setInputValue(fullAddress);
     setAddressSelected(true);
     setShowSuggestions(false);
     
-    // Clear suggestions and localStorage since address is selected
+    // 2. Clear suggestions and localStorage since address is selected
     clearSuggestions();
     clearAddressFromStorage();
     
-    stableOnAddressSelect(fullAddress, parsedAddress);
+    // 3. Call the parent callback with the full address
+    stableOnAddressSelect(fullAddress);
   };
 
   const handleInputBlur = () => {
