@@ -77,13 +77,16 @@ export const Hero = () => {
     };
   }, []); // Empty dependency array
 
-  const handleAddressSelect = (address: string, parsedAddress: ParsedAddress) => {
+  const handleAddressSelect = async (address: string, parsedAddress: ParsedAddress) => {
     console.log('🎯 Address selected from autocomplete:', address);
     console.log('📝 Parsed address data:', parsedAddress);
     
     // Store both the full address string and parsed components
     setSelectedAddress(address); // This is the full Mapbox place_name
     setParsedAddressData(parsedAddress);
+    
+    // Add a brief pause to show the selected address before advancing
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 seconds
     
     // Automatically transition to contact form - smooth flow!
     setShowAddressModal(false);
@@ -176,7 +179,7 @@ export const Hero = () => {
         className="relative rounded-xl overflow-hidden"
         style={{
           width: '480px',
-          height: showContactModal ? '380px' : showResultsModal ? '400px' : '320px',
+          height: showContactModal ? '420px' : showResultsModal ? '400px' : '320px',
           backgroundColor: '#0047AB',
           transform: 'perspective(1000px) rotateY(-5deg)',
           boxShadow: `
@@ -351,11 +354,11 @@ export const Hero = () => {
               SpryFi
             </div>
 
-            {/* Show selected address for confirmation */}
+            {/* Improved selected address display */}
             {selectedAddress && (
-              <div className="mb-4 p-3 bg-blue-800/30 rounded-lg border border-blue-400/30">
-                <p className="text-blue-100 text-sm mb-1">Selected Address:</p>
-                <p className="text-white text-sm font-medium">{selectedAddress}</p>
+              <div className="mb-6 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-300">
+                <p className="text-sm text-blue-600 font-medium mb-1">Selected Address:</p>
+                <p className="text-blue-800 font-semibold text-sm">{selectedAddress}</p>
               </div>
             )}
 
