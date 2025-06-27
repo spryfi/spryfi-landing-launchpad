@@ -152,6 +152,37 @@ export const Hero = () => {
     console.log('✅ Auto-advanced to contact form with address:', fullAddress);
   };
 
+  // Poll for API results when status is pending
+  const pollForResults = async (requestId: string) => {
+    const maxAttempts = 30; // Poll for up to 30 seconds
+    
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      
+      try {
+        console.log(`🔄 Polling attempt ${i + 1}/30 for request ${requestId}`);
+        const response = await fetch(`https://fwa.spry.network/api/fwa-status/${requestId}`);
+        
+        if (!response.ok) {
+          throw new Error(`Status check failed: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('📊 Status check response:', data);
+        
+        if (data.status !== 'pending') {
+          console.log('✅ Got final results:', data);
+          return data; // Got final results
+        }
+      } catch (error) {
+        console.error(`❌ Error polling for results (attempt ${i + 1}):`, error);
+      }
+    }
+    
+    console.log('⏰ Polling timeout after 30 seconds');
+    return { status: 'timeout' }; // Timeout after 30 seconds
+  };
+
   const handleContactSubmit = async () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim()) {
       alert('Please fill in all fields');
@@ -192,12 +223,32 @@ export const Hero = () => {
       const data = await response.json();
       console.log('✅ API Response:', data);
 
-      // Set qualification results based on API response
-      setQualificationResult({
-        qualified: data.qualified || false,
-        source: data.source || 'unknown',
-        network_type: data.network_type
-      });
+      // Check if we got a pending status and need to poll
+      if (data.status === 'pending' && data.request_id) {
+        console.log('🔄 Status is pending, starting polling...');
+        
+        // Poll for final results
+        const finalData = await pollForResults(data.request_id);
+        
+        if (finalData.status === 'timeout') {
+          alert('Request timed out. Please try again.');
+          return;
+        }
+        
+        // Use the final results
+        setQualificationResult({
+          qualified: finalData.qualified || false,
+          source: finalData.source || 'unknown',
+          network_type: finalData.network_type
+        });
+      } else {
+        // Set qualification results based on immediate API response
+        setQualificationResult({
+          qualified: data.qualified || false,
+          source: data.source || 'unknown',
+          network_type: data.network_type
+        });
+      }
 
       // Close contact modal and show results
       setShowContactModal(false);
@@ -236,7 +287,7 @@ export const Hero = () => {
         className="relative rounded-xl overflow-hidden"
         style={{
           width: '480px',
-          height: showContactModal ? '420px' : showResultsModal ? '400px' : '320px',
+          height: showContactModal ? '450px' : showResultsModal ? '400px' : '320px',
           backgroundColor: '#0047AB',
           transform: 'perspective(1000px) rotateY(-5deg)',
           boxShadow: `
