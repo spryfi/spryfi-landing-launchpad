@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckoutModal } from '@/components/checkout/CheckoutModal';
@@ -546,6 +547,17 @@ export const Hero = () => {
           >
             ×
           </button>
+
+          {/* Qualification method indicator */}
+          <div 
+            className="absolute bottom-3 left-3 text-xs text-blue-200 opacity-70"
+            style={{
+              fontSize: '10px',
+              color: 'rgba(255, 255, 255, 0.6)'
+            }}
+          >
+            {qualificationResult?.source === 'verizon' ? 'sapi1' : 'sapi2'}
+          </div>
 
           {/* Content */}
           <div 
