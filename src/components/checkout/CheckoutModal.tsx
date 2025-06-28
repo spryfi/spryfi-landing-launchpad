@@ -5,6 +5,7 @@ import { AddressStep } from './steps/AddressStep';
 import { ContactStep } from './steps/ContactStep';
 import { QualificationSuccess } from './steps/QualificationSuccess';
 import { PlanSelection } from './steps/PlanSelection';
+import { WiFiSetupStep } from './steps/WiFiSetupStep';
 import { RouterOffer } from './steps/RouterOffer';
 import { CheckoutStep } from './steps/CheckoutStep';
 
@@ -131,6 +132,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
         return <QualificationSuccess state={state} updateState={updateState} />;
       case 'plan-selection':
         return <PlanSelection state={state} updateState={updateState} />;
+      case 'wifi-setup':
+        return <WiFiSetupStep state={state} updateState={updateState} />;
       case 'router-offer':
         return <RouterOffer state={state} updateState={updateState} />;
       case 'checkout':
