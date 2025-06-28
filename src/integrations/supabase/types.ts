@@ -917,39 +917,6 @@ export type Database = {
           },
         ]
       }
-      lead_qualifications: {
-        Row: {
-          created_at: string | null
-          id: string
-          lead_id: string | null
-          network_type: string | null
-          qualified: boolean | null
-          raw_data: Json | null
-          received_at: string | null
-          request_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id: string
-          lead_id?: string | null
-          network_type?: string | null
-          qualified?: boolean | null
-          raw_data?: Json | null
-          received_at?: string | null
-          request_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          lead_id?: string | null
-          network_type?: string | null
-          qualified?: boolean | null
-          raw_data?: Json | null
-          received_at?: string | null
-          request_id?: string | null
-        }
-        Relationships: []
-      }
       lead_sources: {
         Row: {
           description: string | null
@@ -1104,6 +1071,7 @@ export type Database = {
           promo_code_plan_override: string | null
           qualification_checked_at: string | null
           qualification_result: string | null
+          qualification_source: string | null
           qualified: boolean | null
           reason: string | null
           state: string | null
@@ -1135,6 +1103,7 @@ export type Database = {
           promo_code_plan_override?: string | null
           qualification_checked_at?: string | null
           qualification_result?: string | null
+          qualification_source?: string | null
           qualified?: boolean | null
           reason?: string | null
           state?: string | null
@@ -1166,6 +1135,7 @@ export type Database = {
           promo_code_plan_override?: string | null
           qualification_checked_at?: string | null
           qualification_result?: string | null
+          qualification_source?: string | null
           qualified?: boolean | null
           reason?: string | null
           state?: string | null

@@ -57,7 +57,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
   return (
     <div 
-      className="fixed inset-0 flex items-center justify-center z-50 modal-backdrop"
+      className="fixed inset-0 flex items-center justify-center z-50 modal-backdrop p-4"
       style={{
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         backdropFilter: 'blur(10px)',
@@ -66,8 +66,8 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
     >
       <div 
         style={{
-          width: '480px',
-          height: '600px',
+          width: '520px',
+          height: '720px',
           backgroundColor: '#0047AB',
           transform: 'none',
           borderRadius: '12px',
@@ -78,53 +78,53 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
           `,
           filter: 'drop-shadow(0 8px 16px rgba(0, 71, 171, 0.2))'
         }}
-        className="relative rounded-xl overflow-hidden modal-container"
+        className="relative rounded-xl overflow-hidden modal-container max-w-full max-h-[90vh] overflow-y-auto"
       >
         <button 
           onClick={onClose} 
-          className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10 transition-all duration-200 hover:scale-110"
+          className="absolute top-6 right-6 text-white hover:text-gray-200 text-2xl font-light z-10 transition-all duration-200 hover:scale-110"
         >
           ×
         </button>
 
-        <div className="px-6 py-6 h-full flex flex-col">
+        <div className="px-8 py-8 h-full flex flex-col">
           {/* Enhanced SpryFi Branding */}
-          <div className="text-center mb-6">
-            <div className="text-white text-3xl font-bold mb-2">
+          <div className="text-center mb-8">
+            <div className="text-white text-4xl font-bold mb-3">
               SpryFi
             </div>
-            <div className="text-blue-100 text-sm font-medium">
+            <div className="text-blue-100 text-base font-medium">
               Internet that just works
             </div>
           </div>
 
-          <h2 className="text-white text-xl font-bold mb-6 text-center">
+          <h2 className="text-white text-2xl font-bold mb-8 text-center">
             Choose Your Plan
           </h2>
 
-          <div className="space-y-4 mb-6">
+          <div className="space-y-6 mb-8">
             {/* Essential Plan */}
             <div
-              className={`bg-white rounded-lg p-4 text-center cursor-pointer border-4 transition-all ${
+              className={`bg-white rounded-lg p-6 text-center cursor-pointer border-4 transition-all shadow-md ${
                 selectedPlan === 'essential' 
-                  ? 'border-green-500 shadow-lg transform scale-105' 
-                  : 'border-gray-200 hover:border-blue-300'
+                  ? 'border-green-500 shadow-xl transform scale-105' 
+                  : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
               }`}
               onClick={() => handlePlanSelect('essential')}
             >
-              <h3 className="text-blue-700 font-bold text-lg">SpryFi Essential</h3>
-              <p className="text-gray-600 text-sm mb-1">Perfect for everyday use</p>
-              <p className="text-blue-500 text-sm font-medium mb-2">100+ Megabits</p>
-              <div className="text-blue-700 font-bold text-2xl">
+              <h3 className="text-blue-700 font-bold text-xl mb-2">SpryFi Essential</h3>
+              <p className="text-gray-600 text-base mb-2">Perfect for everyday use</p>
+              <p className="text-blue-500 text-base font-medium mb-3">100+ Megabits</p>
+              <div className="text-blue-700 font-bold text-3xl mb-3">
                 ${codeApplied && discount ? (99.95 - discount.amount).toFixed(2) : '99.95'}/mo
-                {codeApplied && <span className="text-sm text-green-600 ml-2">Discount Applied!</span>}
+                {codeApplied && <span className="text-sm text-green-600 ml-2 block mt-1">Discount Applied!</span>}
               </div>
               
               {/* Selection indicator */}
               {selectedPlan === 'essential' && (
-                <div className="mt-3">
-                  <div className="bg-green-500 text-white text-sm px-3 py-1 rounded-full inline-flex items-center">
-                    <span className="mr-1">✓</span> Selected
+                <div className="mt-4">
+                  <div className="bg-green-500 text-white text-sm px-4 py-2 rounded-full inline-flex items-center font-medium">
+                    <span className="mr-2">✓</span> Selected
                   </div>
                 </div>
               )}
@@ -132,64 +132,64 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
             {/* Premium Plan */}
             <div
-              className={`bg-white rounded-lg p-4 text-center cursor-pointer border-4 transition-all ${
+              className={`bg-white rounded-lg p-6 text-center cursor-pointer border-4 transition-all shadow-md ${
                 selectedPlan === 'premium' 
-                  ? 'border-green-500 shadow-lg transform scale-105' 
-                  : 'border-gray-200 hover:border-blue-300'
+                  ? 'border-green-500 shadow-xl transform scale-105' 
+                  : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
               }`}
               onClick={() => handlePlanSelect('premium')}
             >
-              <h3 className="text-blue-700 font-bold text-lg">SpryFi Premium</h3>
-              <p className="text-gray-600 text-sm mb-1">For power users and families</p>
-              <p className="text-blue-500 text-sm font-medium mb-2">200+ Megabits</p>
-              <div className="text-blue-700 font-bold text-2xl">
+              <h3 className="text-blue-700 font-bold text-xl mb-2">SpryFi Premium</h3>
+              <p className="text-gray-600 text-base mb-2">For power users and families</p>
+              <p className="text-blue-500 text-base font-medium mb-3">200+ Megabits</p>
+              <div className="text-blue-700 font-bold text-3xl mb-3">
                 ${codeApplied && discount ? (139.95 - discount.amount).toFixed(2) : '139.95'}/mo
-                {codeApplied && <span className="text-sm text-green-600 ml-2">Discount Applied!</span>}
+                {codeApplied && <span className="text-sm text-green-600 ml-2 block mt-1">Discount Applied!</span>}
               </div>
               
               {/* Selection indicator */}
               {selectedPlan === 'premium' && (
-                <div className="mt-3">
-                  <div className="bg-green-500 text-white text-sm px-3 py-1 rounded-full inline-flex items-center">
-                    <span className="mr-1">✓</span> Selected
+                <div className="mt-4">
+                  <div className="bg-green-500 text-white text-sm px-4 py-2 rounded-full inline-flex items-center font-medium">
+                    <span className="mr-2">✓</span> Selected
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className="text-white text-sm font-medium mb-2 block">Invitation Code (Optional)</label>
-            <div className="flex gap-2">
+          <div className="mb-6">
+            <label className="text-white text-base font-medium mb-3 block">Invitation Code (Optional)</label>
+            <div className="flex gap-3">
               <input
                 type="text"
                 value={invitationCode}
                 onChange={(e) => setInvitationCode(e.target.value)}
                 placeholder="Enter invitation code"
-                className="flex-1 px-3 py-2 rounded-lg text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                className="flex-1 px-4 py-3 rounded-lg text-gray-800 text-base focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
               <button
                 onClick={validateInvitationCode}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                className="px-5 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
               >
                 {codeApplied ? '✓' : 'Apply'}
               </button>
             </div>
             {codeApplied && (
-              <p className="text-green-200 text-xs mt-1">Code applied successfully!</p>
+              <p className="text-green-200 text-sm mt-2">Code applied successfully!</p>
             )}
           </div>
 
-          <p className="text-blue-100 text-sm text-center mb-4">
+          <p className="text-blue-100 text-base text-center mb-6">
             Additional discounts may be available
           </p>
 
           <button 
             onClick={handleContinue}
             disabled={!selectedPlan || isSubmitting}
-            className={`w-full py-3 font-semibold rounded-lg transition-all ${
+            className={`w-full py-4 font-semibold text-lg rounded-lg transition-all ${
               selectedPlan && !isSubmitting
-                ? 'bg-blue-200 hover:bg-blue-100 text-blue-700 cursor-pointer' 
+                ? 'bg-blue-200 hover:bg-blue-100 text-blue-700 cursor-pointer shadow-md hover:shadow-lg' 
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
