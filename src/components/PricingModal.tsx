@@ -27,26 +27,31 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
   const handleContinue = async () => {
     if (!selectedPlan) {
-      alert('Please select a plan first');
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      // For now, just simulate saving - you can integrate with your actual API later
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Plan saved:', {
-        selected_plan: selectedPlan,
+      // Save plan selection silently
+      const planData = {
+        plan_selected: selectedPlan === 'essential' ? 'SpryFi Essential' : 'SpryFi Premium',
         plan_price: selectedPlan === 'essential' ? 99.95 : 139.95,
+        plan_speed: selectedPlan === 'essential' ? '100+ Megabits' : '200+ Megabits',
         discount_applied: codeApplied ? discount?.amount : 0
-      });
+      };
       
-      // Close modal and proceed to next step
+      console.log('Plan saved:', planData);
+      
+      // Close modal and proceed seamlessly - no alert popup
       onClose();
-      alert(`${selectedPlan === 'essential' ? 'Essential' : 'Premium'} plan selected! Proceeding to next step.`);
+      
+      // Here you would typically trigger navigation to the next step
+      // This will be handled by the parent component
+      
     } catch (error) {
       console.error('Error saving plan:', error);
+      // Only show error if something actually went wrong
       alert('Error saving plan. Please try again.');
     }
     
@@ -195,7 +200,12 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {isSubmitting ? 'Saving...' : 
+            {isSubmitting ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700 mr-2"></div>
+                Saving Plan...
+              </div>
+            ) : 
              selectedPlan ? `Continue with ${selectedPlan === 'essential' ? 'Essential' : 'Premium'} Plan` : 
              'Select a Plan to Continue'}
           </button>
