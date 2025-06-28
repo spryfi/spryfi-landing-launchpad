@@ -7,9 +7,10 @@ import { CheckoutState } from '../CheckoutModal';
 interface PlanSelectionProps {
   state: CheckoutState;
   updateState: (updates: Partial<CheckoutState>) => void;
+  onPlanSelected?: (planType: string) => void;
 }
 
-export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState }) => {
+export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState, onPlanSelected }) => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -20,13 +21,19 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
 
   const handleContinue = async () => {
     if (!selectedPlan) {
-      alert('Please select a plan first');
       return;
     }
     
     setLoading(true);
     
     try {
+      // Save plan selection to database
+      const planData = {
+        plan_selected: selectedPlan === 'spryfi-home' ? 'SpryFi Home' : 'SpryFi Home Premium',
+        plan_price: selectedPlan === 'spryfi-home' ? 99.95 : 139.95,
+        plan_speed: selectedPlan === 'spryfi-home' ? '100+ Mbps' : '200+ Mbps'
+      };
+
       // Update leads_fresh with selected plan
       await supabase
         .from('leads_fresh')
@@ -36,10 +43,17 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
         })
         .eq('id', state.leadId);
 
-      updateState({
-        step: 'wifi-setup',
-        planSelected: selectedPlan
-      });
+      console.log('Plan saved:', planData);
+
+      // Use callback if provided, otherwise use default navigation
+      if (onPlanSelected) {
+        onPlanSelected(selectedPlan);
+      } else {
+        updateState({
+          step: 'wifi-setup',
+          planSelected: selectedPlan
+        });
+      }
     } catch (error) {
       console.error('Error saving plan selection:', error);
       alert('Error saving plan. Please try again.');
@@ -140,9 +154,16 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
           onClick={handleContinue}
           variant="default"
           size="lg"
-          disabled={!selectedPlan}
+          disabled={!selectedPlan || loading}
         >
-          Continue
+          {loading ? (
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Saving Plan...
+            </div>
+          ) : (
+            'Continue'
+          )}
         </Button>
       </div>
     </div>

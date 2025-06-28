@@ -122,6 +122,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     setState(prev => ({ ...prev, ...updates }));
   };
 
+  // Handle plan selection from PricingModal
+  const handlePlanSelection = (planType: string) => {
+    console.log('Plan selected from modal:', planType);
+    updateState({
+      planSelected: planType,
+      step: 'wifi-setup' // Navigate directly to WiFi setup
+    });
+  };
+
   const renderStep = () => {
     switch (state.step) {
       case 'address':
@@ -131,7 +140,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       case 'qualification-success':
         return <QualificationSuccess state={state} updateState={updateState} />;
       case 'plan-selection':
-        return <PlanSelection state={state} updateState={updateState} />;
+        return <PlanSelection state={state} updateState={updateState} onPlanSelected={handlePlanSelection} />;
       case 'wifi-setup':
         return <WiFiSetupStep state={state} updateState={updateState} />;
       case 'router-offer':
