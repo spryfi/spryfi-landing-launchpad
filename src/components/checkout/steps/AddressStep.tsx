@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Select,
@@ -38,6 +39,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [isCheckingQualification, setIsCheckingQualification] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [isProcessingAddress, setIsProcessingAddress] = useState(false);
+  
+  // Progress tracking
+  const [qualificationProgress, setQualificationProgress] = useState(0);
+  const [currentStatusMessage, setCurrentStatusMessage] = useState('');
 
   // State name to abbreviation mapping
   const stateNameToAbbrev: { [key: string]: string } = {
@@ -193,13 +198,27 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   };
 
-  // Poll Verizon API status
+  // Enhanced polling with progress and C-BAND detection
   const pollVerizonStatus = async (requestId: string, maxAttempts: number = 20): Promise<any> => {
     let attempts = 0;
+    setQualificationProgress(10);
+    setCurrentStatusMessage('Checking Verizon...');
     
     while (attempts < maxAttempts) {
       try {
         console.log(`📡 Polling Verizon status (attempt ${attempts + 1}/${maxAttempts})`);
+        
+        // Update progress
+        const progress = 10 + (attempts / maxAttempts) * 60; // 10-70% during polling
+        setQualificationProgress(progress);
+        
+        if (attempts < 5) {
+          setCurrentStatusMessage('Checking Verizon...');
+        } else if (attempts < 10) {
+          setCurrentStatusMessage('Waiting for additional network data...');
+        } else {
+          setCurrentStatusMessage('Checking SpryFi coverage zones...');
+        }
         
         const statusResponse = await fetch(`https://fwa.spry.network/api/fwa-status/${requestId}`, {
           method: 'GET',
@@ -216,8 +235,18 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         const statusData = await statusResponse.json();
         console.log('📡 Verizon status response:', statusData);
 
+        // NEW: Stop polling immediately if C-BAND is detected, regardless of qualified status
+        if (statusData.network_type === 'C-BAND' && statusData.qualification_status === 'complete') {
+          console.log('🎯 C-BAND detected - stopping polling immediately');
+          setQualificationProgress(90);
+          setCurrentStatusMessage('Result found. Loading...');
+          return statusData;
+        }
+
         if (statusData.status === 'complete') {
           console.log('✅ Verizon qualification complete');
+          setQualificationProgress(90);
+          setCurrentStatusMessage('Result found. Loading...');
           return statusData;
         }
 
@@ -345,10 +374,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
 
     setIsCheckingQualification(true);
+    setQualificationProgress(5);
+    setCurrentStatusMessage('Initializing...');
 
     try {
       // Step 1: Save lead to database with anchor_address_id
       console.log('💾 Saving lead to database...');
+      setCurrentStatusMessage('Saving your information...');
+      
       const { data: saveLeadData, error: saveLeadError } = await supabase.functions.invoke('save-lead', {
         body: {
           email,
@@ -368,6 +401,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       // Step 2: Call Verizon API
       console.log('📡 Calling Verizon API...');
+      setQualificationProgress(10);
+      setCurrentStatusMessage('Checking Verizon...');
       
       const verizonPayload = {
         address_line1: addressLine1,
@@ -401,9 +436,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         try {
           const finalVerizonResult = await pollVerizonStatus(verizonData.request_id);
           
-          if (finalVerizonResult.qualified === true) {
-            // Verizon qualified - sapi1
-            console.log('✅ Verizon qualification successful - sapi1');
+          // Check for both qualified status and C-BAND detection
+          if (finalVerizonResult.qualified === true || finalVerizonResult.network_type === 'C-BAND') {
+            console.log('✅ Qualification successful - sapi1');
+            setQualificationProgress(100);
+            setCurrentStatusMessage('Success!');
             
             updateState({
               address: {
@@ -442,9 +479,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         } catch (pollError) {
           console.log('❌ Verizon polling failed, trying bot fallback...', pollError);
         }
-      } else if (verizonData.qualified === true) {
-        // Immediate qualification
-        console.log('✅ Verizon qualification successful (immediate) - sapi1');
+      } else if (verizonData.qualified === true || verizonData.network_type === 'C-BAND') {
+        // Immediate qualification or C-BAND detection
+        console.log('✅ Qualification successful (immediate) - sapi1');
+        setQualificationProgress(100);
+        setCurrentStatusMessage('Success!');
         
         updateState({
           address: {
@@ -480,6 +519,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       // Step 4: Verizon failed/not qualified, try bot fallback
       console.log('❌ Verizon not qualified, trying bot fallback...');
+      setQualificationProgress(75);
+      setCurrentStatusMessage('Checking additional coverage options...');
       
       const botResponse = await fetch('https://fwa.spry.network/api/bot-check', {
         method: 'POST',
@@ -499,6 +540,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       if (botData.qualified === true) {
         // Bot qualified - sapi2
         console.log('✅ Bot qualification successful - sapi2');
+        setQualificationProgress(100);
+        setCurrentStatusMessage('Success!');
         
         updateState({
           address: {
@@ -534,6 +577,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       // Both failed - not qualified
       console.log('❌ Both Verizon and Bot said not qualified');
+      setQualificationProgress(100);
+      setCurrentStatusMessage('Check complete');
       
       updateState({
         address: {
@@ -567,12 +612,19 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
     } catch (error) {
       console.error('🔥 Check area error:', error);
+      setQualificationProgress(0);
+      setCurrentStatusMessage('');
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
       });
     } finally {
       setIsCheckingQualification(false);
+      // Clear progress after a delay
+      setTimeout(() => {
+        setQualificationProgress(0);
+        setCurrentStatusMessage('');
+      }, 2000);
     }
   };
 
@@ -720,6 +772,30 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
               </div>
             </div>
             
+            {/* Progress Indicator */}
+            {isCheckingQualification && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">
+                      Checking availability across multiple networks...
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {Math.round(qualificationProgress)}%
+                    </span>
+                  </div>
+                  <Progress value={qualificationProgress} className="h-2" />
+                </div>
+                {currentStatusMessage && (
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600 animate-pulse">
+                      {currentStatusMessage}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <Button 
               onClick={handleCheckArea} 
               className="w-full bg-[#0047AB] hover:bg-[#003a94] text-white px-8 py-4 text-lg font-medium rounded-lg border-none shadow-sm transition-all duration-200 hover:shadow-md mb-4"
@@ -729,7 +805,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             </Button>
 
             <div className="text-center text-xs text-gray-400">
-              Checking takes 10 seconds
+              {isCheckingQualification ? 'Please wait while we check...' : 'Checking takes 10 seconds'}
             </div>
           </div>
         )}
