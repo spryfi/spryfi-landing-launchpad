@@ -54,21 +54,60 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
     validatePasskey(value);
   };
 
+  const saveWifiSettings = async (ssid: string, passkey: string) => {
+    try {
+      // Check if provisioning session already exists for this lead
+      const { data: existingSession, error: fetchError } = await supabase
+        .from('provisioning_sessions')
+        .select('id')
+        .eq('lead_id', state.leadId)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      if (existingSession) {
+        // Update existing session
+        const { error: updateError } = await supabase
+          .from('provisioning_sessions')
+          .update({
+            ssid: ssid,
+            passkey: passkey,
+            last_updated_at: new Date().toISOString()
+          })
+          .eq('id', existingSession.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new provisioning session
+        const { error: insertError } = await supabase
+          .from('provisioning_sessions')
+          .insert({
+            lead_id: state.leadId,
+            ssid: ssid,
+            passkey: passkey,
+            status: 'in_progress',
+            created_at: new Date().toISOString()
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      console.log('WiFi settings saved to provisioning_sessions');
+    } catch (error) {
+      console.error('Error saving WiFi settings:', error);
+      throw error;
+    }
+  };
+
   const handleContinue = async () => {
     if (!validatePasskey(wifiPasskey)) return;
     
     setLoading(true);
 
     try {
-      // Save WiFi settings to leads_fresh table
-      await supabase
-        .from('leads_fresh')
-        .update({
-          wifi_ssid: wifiSsid,
-          wifi_passkey: wifiPasskey
-        })
-        .eq('id', state.leadId);
-
+      await saveWifiSettings(wifiSsid, wifiPasskey);
       // Move to router offer step
       updateState({ step: 'router-offer' });
     } catch (error) {
@@ -90,15 +129,7 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
     setLoading(true);
 
     try {
-      // Save default WiFi settings
-      await supabase
-        .from('leads_fresh')
-        .update({
-          wifi_ssid: defaultSsid,
-          wifi_passkey: defaultPasskey
-        })
-        .eq('id', state.leadId);
-
+      await saveWifiSettings(defaultSsid, defaultPasskey);
       // Move to router offer step
       updateState({ step: 'router-offer' });
     } catch (error) {

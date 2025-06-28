@@ -1651,6 +1651,7 @@ export type Database = {
           id: string
           last_updated_at: string | null
           last_updated_by: string | null
+          lead_id: string | null
           passkey: string | null
           plan_added: boolean | null
           router_id: string | null
@@ -1677,6 +1678,7 @@ export type Database = {
           id?: string
           last_updated_at?: string | null
           last_updated_by?: string | null
+          lead_id?: string | null
           passkey?: string | null
           plan_added?: boolean | null
           router_id?: string | null
@@ -1703,6 +1705,7 @@ export type Database = {
           id?: string
           last_updated_at?: string | null
           last_updated_by?: string | null
+          lead_id?: string | null
           passkey?: string | null
           plan_added?: boolean | null
           router_id?: string | null

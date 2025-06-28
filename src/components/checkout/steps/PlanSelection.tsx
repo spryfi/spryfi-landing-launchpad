@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -137,7 +138,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
       <div className="mt-8">
         <Button
           onClick={handleContinue}
-          variant="primary"
+          variant="default"
           size="lg"
           disabled={!selectedPlan}
         >
