@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -168,10 +169,23 @@
   -moz-transform: none !important;
   -ms-transform: none !important;
   -o-transform: none !important;
+  /* Allow natural height expansion */
+  overflow-y: visible !important;
+  max-height: none !important;
+  height: auto !important;
 }
 
 /* Ensure all modal elements maintain rectangular geometry */
 .modal-container * {
   transform: none !important;
   -webkit-transform: none !important;
+}
+
+/* Mobile responsive adjustments for plan selection */
+@media (max-width: 600px) {
+  .modal-container {
+    width: 95vw !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+  }
 }

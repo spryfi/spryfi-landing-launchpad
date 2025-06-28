@@ -67,7 +67,9 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
       <div 
         style={{
           width: '520px',
-          height: '720px',
+          minHeight: 'auto',
+          height: 'auto',
+          maxHeight: '90vh',
           backgroundColor: '#0047AB',
           transform: 'none',
           borderRadius: '12px',
@@ -78,7 +80,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
           `,
           filter: 'drop-shadow(0 8px 16px rgba(0, 71, 171, 0.2))'
         }}
-        className="relative rounded-xl overflow-hidden modal-container max-w-full max-h-[90vh] overflow-y-auto"
+        className="relative rounded-xl modal-container max-w-full overflow-y-auto"
       >
         <button 
           onClick={onClose} 
@@ -87,43 +89,43 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
           ×
         </button>
 
-        <div className="px-8 py-8 h-full flex flex-col">
+        <div className="px-8 py-8 flex flex-col min-h-full">
           {/* Enhanced SpryFi Branding */}
-          <div className="text-center mb-8">
-            <div className="text-white text-4xl font-bold mb-3">
+          <div className="text-center mb-10">
+            <div className="text-white text-5xl font-bold mb-4">
               SpryFi
             </div>
-            <div className="text-blue-100 text-base font-medium">
+            <div className="text-blue-100 text-lg font-medium">
               Internet that just works
             </div>
           </div>
 
-          <h2 className="text-white text-2xl font-bold mb-8 text-center">
+          <h2 className="text-white text-3xl font-bold mb-10 text-center">
             Choose Your Plan
           </h2>
 
-          <div className="space-y-6 mb-8">
+          <div className="space-y-8 mb-10 flex-grow">
             {/* Essential Plan */}
             <div
-              className={`bg-white rounded-lg p-6 text-center cursor-pointer border-4 transition-all shadow-md ${
+              className={`bg-white rounded-lg p-8 text-center cursor-pointer border-4 transition-all shadow-md ${
                 selectedPlan === 'essential' 
                   ? 'border-green-500 shadow-xl transform scale-105' 
                   : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
               }`}
               onClick={() => handlePlanSelect('essential')}
             >
-              <h3 className="text-blue-700 font-bold text-xl mb-2">SpryFi Essential</h3>
-              <p className="text-gray-600 text-base mb-2">Perfect for everyday use</p>
-              <p className="text-blue-500 text-base font-medium mb-3">100+ Megabits</p>
-              <div className="text-blue-700 font-bold text-3xl mb-3">
+              <h3 className="text-blue-700 font-bold text-2xl mb-3">SpryFi Essential</h3>
+              <p className="text-gray-600 text-lg mb-3">Perfect for everyday use</p>
+              <p className="text-blue-500 text-lg font-medium mb-4">100+ Megabits</p>
+              <div className="text-blue-700 font-bold text-4xl mb-4">
                 ${codeApplied && discount ? (99.95 - discount.amount).toFixed(2) : '99.95'}/mo
-                {codeApplied && <span className="text-sm text-green-600 ml-2 block mt-1">Discount Applied!</span>}
+                {codeApplied && <span className="text-base text-green-600 ml-2 block mt-2">Discount Applied!</span>}
               </div>
               
               {/* Selection indicator */}
               {selectedPlan === 'essential' && (
-                <div className="mt-4">
-                  <div className="bg-green-500 text-white text-sm px-4 py-2 rounded-full inline-flex items-center font-medium">
+                <div className="mt-5">
+                  <div className="bg-green-500 text-white text-base px-5 py-3 rounded-full inline-flex items-center font-medium">
                     <span className="mr-2">✓</span> Selected
                   </div>
                 </div>
@@ -132,25 +134,25 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
             {/* Premium Plan */}
             <div
-              className={`bg-white rounded-lg p-6 text-center cursor-pointer border-4 transition-all shadow-md ${
+              className={`bg-white rounded-lg p-8 text-center cursor-pointer border-4 transition-all shadow-md ${
                 selectedPlan === 'premium' 
                   ? 'border-green-500 shadow-xl transform scale-105' 
                   : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
               }`}
               onClick={() => handlePlanSelect('premium')}
             >
-              <h3 className="text-blue-700 font-bold text-xl mb-2">SpryFi Premium</h3>
-              <p className="text-gray-600 text-base mb-2">For power users and families</p>
-              <p className="text-blue-500 text-base font-medium mb-3">200+ Megabits</p>
-              <div className="text-blue-700 font-bold text-3xl mb-3">
+              <h3 className="text-blue-700 font-bold text-2xl mb-3">SpryFi Premium</h3>
+              <p className="text-gray-600 text-lg mb-3">For power users and families</p>
+              <p className="text-blue-500 text-lg font-medium mb-4">200+ Megabits</p>
+              <div className="text-blue-700 font-bold text-4xl mb-4">
                 ${codeApplied && discount ? (139.95 - discount.amount).toFixed(2) : '139.95'}/mo
-                {codeApplied && <span className="text-sm text-green-600 ml-2 block mt-1">Discount Applied!</span>}
+                {codeApplied && <span className="text-base text-green-600 ml-2 block mt-2">Discount Applied!</span>}
               </div>
               
               {/* Selection indicator */}
               {selectedPlan === 'premium' && (
-                <div className="mt-4">
-                  <div className="bg-green-500 text-white text-sm px-4 py-2 rounded-full inline-flex items-center font-medium">
+                <div className="mt-5">
+                  <div className="bg-green-500 text-white text-base px-5 py-3 rounded-full inline-flex items-center font-medium">
                     <span className="mr-2">✓</span> Selected
                   </div>
                 </div>
@@ -158,8 +160,8 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
             </div>
           </div>
 
-          <div className="mb-6">
-            <label className="text-white text-base font-medium mb-3 block">Invitation Code (Optional)</label>
+          <div className="mb-8">
+            <label className="text-white text-lg font-medium mb-4 block">Invitation Code (Optional)</label>
             <div className="flex gap-3">
               <input
                 type="text"
@@ -180,14 +182,14 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
             )}
           </div>
 
-          <p className="text-blue-100 text-base text-center mb-6">
+          <p className="text-blue-100 text-lg text-center mb-8">
             Additional discounts may be available
           </p>
 
           <button 
             onClick={handleContinue}
             disabled={!selectedPlan || isSubmitting}
-            className={`w-full py-4 font-semibold text-lg rounded-lg transition-all ${
+            className={`w-full py-5 font-semibold text-xl rounded-lg transition-all mb-4 ${
               selectedPlan && !isSubmitting
                 ? 'bg-blue-200 hover:bg-blue-100 text-blue-700 cursor-pointer shadow-md hover:shadow-lg' 
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
