@@ -47,15 +47,10 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
 
       // Always use the callback to ensure proper navigation to WiFi setup
       if (onPlanSelected) {
-        console.log('🚀 Triggering direct navigation to WiFi setup');
+        console.log('🚀 Calling onPlanSelected callback to navigate to WiFi setup');
         onPlanSelected(selectedPlan);
       } else {
-        // Fallback navigation (should not be used with the updated flow)
-        console.log('⚠️ Using fallback navigation - this should not happen in the new flow');
-        updateState({
-          step: 'wifi-setup',
-          planSelected: selectedPlan
-        });
+        console.error('❌ onPlanSelected callback not provided - this should not happen');
       }
     } catch (error) {
       console.error('❌ Error saving plan selection:', error);

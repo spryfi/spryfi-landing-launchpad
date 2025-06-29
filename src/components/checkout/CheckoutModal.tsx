@@ -122,16 +122,27 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     setState(prev => ({ ...prev, ...updates }));
   };
 
-  // Handle plan selection - skip qualification modal and go directly to WiFi setup
+  // Handle plan selection - go directly to WiFi setup without qualification modal
   const handlePlanSelection = (planType: string) => {
     console.log('🎯 Plan selected, navigating directly to WiFi setup:', planType);
-    updateState({
+    
+    // Update state with plan selection and immediately go to wifi-setup
+    setState(prev => ({
+      ...prev,
       planSelected: planType,
-      step: 'wifi-setup' // Direct navigation to WiFi setup, skipping qualification modal
-    });
+      step: 'wifi-setup'
+    }));
+    
+    console.log('✅ Direct navigation to WiFi setup completed');
   };
 
   const renderStep = () => {
+    // Prevent showing qualification success if plan is already selected
+    if (state.step === 'qualification-success' && state.planSelected) {
+      console.log('🚫 Skipping qualification modal - plan already selected');
+      return <WiFiSetupStep state={state} updateState={updateState} />;
+    }
+
     switch (state.step) {
       case 'address':
         return <AddressStep state={state} updateState={updateState} />;
