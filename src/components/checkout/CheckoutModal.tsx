@@ -64,6 +64,16 @@ const getInitialState = (): CheckoutState => ({
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
   const [state, setState] = useState<CheckoutState>(getInitialState());
 
+  // COMPREHENSIVE DEBUG LOGGING
+  console.log('🔍 CHECKOUT MODAL DEBUG:', {
+    componentName: 'CheckoutModal',
+    state: state,
+    planSelected: state?.planSelected,
+    step: state?.step,
+    qualified: state?.qualified,
+    isOpen: isOpen
+  });
+
   // Reset state and clear storage when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -159,6 +169,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
 
   // NUCLEAR OPTION: Complete render override
   const renderContent = () => {
+    console.log('🔍 RENDER CONTENT DEBUG:', {
+      planSelected: state.planSelected,
+      qualified: state.qualified,
+      step: state.step
+    });
+
     // FORCE WiFi setup if any plan is selected - NO EXCEPTIONS
     if (state.planSelected) {
       console.log('🚨 FORCING WiFi SETUP - Plan detected:', state.planSelected);
@@ -174,16 +190,22 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     // Regular flow for other steps
     switch (state.step) {
       case 'address':
+        console.log('🔍 Rendering AddressStep');
         return <AddressStep state={state} updateState={updateState} />;
       case 'contact':
+        console.log('🔍 Rendering ContactStep');
         return <ContactStep state={state} updateState={updateState} />;
       case 'qualification-success':
+        console.log('🔍 Rendering QualificationSuccess');
         return <QualificationSuccess state={state} updateState={updateState} />;
       case 'router-offer':
+        console.log('🔍 Rendering RouterOffer');
         return <RouterOffer state={state} updateState={updateState} />;
       case 'checkout':
+        console.log('🔍 Rendering CheckoutStep');
         return <CheckoutStep state={state} updateState={updateState} onClose={onClose} />;
       case 'not-qualified':
+        console.log('🔍 Rendering not-qualified');
         return (
           <div className="text-center p-8">
             {/* Enhanced SpryFi Branding */}
@@ -212,9 +234,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
           </div>
         );
       default:
+        console.log('🔍 Default case - step:', state.step);
         return null;
     }
   };
+
+  console.log('🔍 ABOUT TO RENDER - Final state check:', {
+    planSelected: state.planSelected,
+    step: state.step,
+    qualified: state.qualified
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

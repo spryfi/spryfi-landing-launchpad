@@ -14,6 +14,14 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // DEBUG LOGGING
+  console.log('🔍 PLAN SELECTION DEBUG:', {
+    componentName: 'PlanSelection',
+    state: state,
+    planSelected: state?.planSelected,
+    selectedPlan: selectedPlan
+  });
+
   const handlePlanSelect = (planType: string) => {
     setSelectedPlan(planType);
     console.log('Selected plan:', planType);
