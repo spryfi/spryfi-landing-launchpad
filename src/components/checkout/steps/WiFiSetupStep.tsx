@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
 
@@ -14,6 +15,7 @@ interface WiFiSetupStepProps {
 export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState }) => {
   const [wifiSsid, setWifiSsid] = useState('');
   const [wifiPasskey, setWifiPasskey] = useState('');
+  const [skipSetup, setSkipSetup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [passkeyError, setPasskeyError] = useState('');
 
@@ -52,6 +54,21 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
   const handlePasskeyChange = (value: string) => {
     setWifiPasskey(value);
     validatePasskey(value);
+  };
+
+  const handleSkipSetupChange = (checked: boolean) => {
+    setSkipSetup(checked);
+    if (checked) {
+      // Auto-generate both values when skip is enabled
+      const randomNumber = Math.floor(1000 + Math.random() * 9000);
+      setWifiSsid(`SpryFi_${randomNumber}`);
+      
+      const words = ['mint', 'bike', 'book', 'lamp', 'fish', 'snow', 'tree', 'star'];
+      const word1 = words[Math.floor(Math.random() * words.length)];
+      const word2 = words[Math.floor(Math.random() * words.length)];
+      setWifiPasskey(`${word1}${word2}`);
+      setPasskeyError('');
+    }
   };
 
   const saveWifiSettings = async (ssid: string, passkey: string) => {
@@ -102,12 +119,20 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
   };
 
   const handleContinue = async () => {
-    if (!validatePasskey(wifiPasskey)) return;
+    if (!skipSetup && !validatePasskey(wifiPasskey)) return;
     
     setLoading(true);
 
     try {
-      await saveWifiSettings(wifiSsid, wifiPasskey);
+      const finalSsid = wifiSsid || `SpryFi_${Math.floor(1000 + Math.random() * 9000)}`;
+      const finalPasskey = wifiPasskey || (() => {
+        const words = ['mint', 'bike', 'book', 'lamp', 'fish', 'snow', 'tree', 'star'];
+        const word1 = words[Math.floor(Math.random() * words.length)];
+        const word2 = words[Math.floor(Math.random() * words.length)];
+        return `${word1}${word2}`;
+      })();
+
+      await saveWifiSettings(finalSsid, finalPasskey);
       // Move to router offer step
       updateState({ step: 'router-offer' });
     } catch (error) {
@@ -118,29 +143,7 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
     }
   };
 
-  const handleSkip = async () => {
-    // Generate default values
-    const defaultSsid = `SpryFi_${Math.floor(1000 + Math.random() * 9000)}`;
-    const words = ['mint', 'bike', 'book', 'lamp', 'fish', 'snow', 'tree', 'star'];
-    const word1 = words[Math.floor(Math.random() * words.length)];
-    const word2 = words[Math.floor(Math.random() * words.length)];
-    const defaultPasskey = `${word1}${word2}`;
-
-    setLoading(true);
-
-    try {
-      await saveWifiSettings(defaultSsid, defaultPasskey);
-      // Move to router offer step
-      updateState({ step: 'router-offer' });
-    } catch (error) {
-      console.error('Error saving default WiFi settings:', error);
-      alert('Error saving WiFi settings. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const isFormValid = wifiSsid.length > 0 && wifiPasskey.length >= 8 && !passkeyError;
+  const isFormValid = skipSetup || (wifiSsid.length > 0 && wifiPasskey.length >= 8 && !passkeyError);
 
   return (
     <div className="p-8">
@@ -167,61 +170,88 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
       </div>
 
       <div className="max-w-lg mx-auto space-y-6">
-        {/* Network Name (SSID) */}
-        <div className="space-y-3">
-          <Label htmlFor="wifi_ssid" className="text-lg font-medium text-gray-900">
-            Network Name (SSID)
+        {/* Skip Setup Option */}
+        <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
+          <Checkbox
+            id="skip_setup"
+            checked={skipSetup}
+            onCheckedChange={handleSkipSetupChange}
+          />
+          <Label 
+            htmlFor="skip_setup" 
+            className="text-sm font-medium text-gray-900 cursor-pointer"
+          >
+            Skip setup - auto-generate network name and password for me
           </Label>
-          <div className="flex gap-3">
-            <Input
-              id="wifi_ssid"
-              type="text"
-              value={wifiSsid}
-              onChange={(e) => setWifiSsid(e.target.value)}
-              placeholder="Enter network name"
-              className="flex-1 px-4 py-3 text-base"
-            />
-            <Button
-              onClick={generateNetworkName}
-              variant="outline"
-              className="px-4 py-3 whitespace-nowrap"
-            >
-              Generate Name
-            </Button>
-          </div>
         </div>
 
-        {/* WiFi Password */}
-        <div className="space-y-3">
-          <Label htmlFor="wifi_passkey" className="text-lg font-medium text-gray-900">
-            WiFi Password
-          </Label>
-          <div className="flex gap-3">
-            <Input
-              id="wifi_passkey"
-              type="text"
-              value={wifiPasskey}
-              onChange={(e) => handlePasskeyChange(e.target.value)}
-              placeholder="Enter password (min 8 characters)"
-              className="flex-1 px-4 py-3 text-base"
-            />
-            <Button
-              onClick={generateSecurePasskey}
-              variant="outline"
-              className="px-4 py-3 whitespace-nowrap"
-            >
-              Generate Password
-            </Button>
-          </div>
-          {passkeyError && (
-            <p className="text-red-600 text-sm flex items-center gap-2">
-              <span>❌</span> {passkeyError}
+        {!skipSetup && (
+          <>
+            {/* Network Name (SSID) */}
+            <div className="space-y-3">
+              <Label htmlFor="wifi_ssid" className="text-lg font-medium text-gray-900">
+                Network Name (SSID)
+              </Label>
+              <div className="flex gap-3">
+                <Input
+                  id="wifi_ssid"
+                  type="text"
+                  value={wifiSsid}
+                  onChange={(e) => setWifiSsid(e.target.value)}
+                  placeholder="Enter network name"
+                  className="flex-1 px-4 py-3 text-base"
+                />
+                <Button
+                  onClick={generateNetworkName}
+                  variant="outline"
+                  className="px-4 py-3 whitespace-nowrap"
+                >
+                  Generate Name
+                </Button>
+              </div>
+            </div>
+
+            {/* WiFi Password */}
+            <div className="space-y-3">
+              <Label htmlFor="wifi_passkey" className="text-lg font-medium text-gray-900">
+                WiFi Password
+              </Label>
+              <div className="flex gap-3">
+                <Input
+                  id="wifi_passkey"
+                  type="text"
+                  value={wifiPasskey}
+                  onChange={(e) => handlePasskeyChange(e.target.value)}
+                  placeholder="Enter password (min 8 characters)"
+                  className="flex-1 px-4 py-3 text-base"
+                />
+                <Button
+                  onClick={generateSecurePasskey}
+                  variant="outline"
+                  className="px-4 py-3 whitespace-nowrap"
+                >
+                  Generate Password
+                </Button>
+              </div>
+              {passkeyError && (
+                <p className="text-red-600 text-sm flex items-center gap-2">
+                  <span>❌</span> {passkeyError}
+                </p>
+              )}
+            </div>
+          </>
+        )}
+
+        {skipSetup && (
+          <div className="bg-green-50 rounded-lg p-4">
+            <p className="text-green-800 text-sm text-center">
+              ✅ We'll automatically generate your WiFi name and password. You can find them on a sticker on your router when it arrives.
             </p>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Action Buttons */}
-        <div className="space-y-4 pt-6">
+        {/* Action Button */}
+        <div className="pt-6">
           <Button
             onClick={handleContinue}
             disabled={!isFormValid || loading}
@@ -231,23 +261,15 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {loading ? 'Configuring...' : 'Continue with These Settings'}
+            {loading ? 'Configuring Router...' : 'Continue to Router Selection'}
           </Button>
-
-          <button
-            onClick={handleSkip}
-            disabled={loading}
-            className="w-full py-3 text-blue-600 hover:text-blue-700 font-medium underline disabled:opacity-50"
-          >
-            Skip this step
-          </button>
         </div>
 
         {/* Footer Note */}
         <div className="bg-blue-50 rounded-lg p-4 mt-6">
           <p className="text-blue-800 text-sm text-center">
             🖨️ We'll print your WiFi name and password on a sticker placed on the bottom of your router, 
-            so you'll always have access. If you skip this step, we'll automatically generate these for you.
+            so you'll always have access.
           </p>
         </div>
       </div>
