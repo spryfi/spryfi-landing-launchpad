@@ -126,20 +126,26 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
   const handlePlanSelection = (planType: string) => {
     console.log('🎯 Plan selected, navigating directly to WiFi setup:', planType);
     
-    // Update state with plan selection and immediately go to wifi-setup
-    setState(prev => ({
-      ...prev,
-      planSelected: planType,
-      step: 'wifi-setup'
-    }));
+    // Update state with plan selection and force wifi-setup step
+    setState(prev => {
+      const newState = {
+        ...prev,
+        planSelected: planType,
+        step: 'wifi-setup'
+      };
+      console.log('🔄 State updated to:', newState);
+      return newState;
+    });
     
     console.log('✅ Direct navigation to WiFi setup completed');
   };
 
   const renderStep = () => {
-    // Prevent showing qualification success if plan is already selected
-    if (state.step === 'qualification-success' && state.planSelected) {
-      console.log('🚫 Skipping qualification modal - plan already selected');
+    console.log('🎯 Rendering step:', state.step, 'Plan selected:', state.planSelected);
+
+    // Force WiFi setup if plan is selected and we're trying to show qualification
+    if (state.planSelected && (state.step === 'qualification-success' || state.step === 'plan-selection')) {
+      console.log('🚀 Plan already selected, forcing WiFi setup step');
       return <WiFiSetupStep state={state} updateState={updateState} />;
     }
 
@@ -149,7 +155,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       case 'contact':
         return <ContactStep state={state} updateState={updateState} />;
       case 'qualification-success':
-        return <QualificationSuccess state={state} updateState={updateState} />;
+        // Only show qualification success if no plan selected yet
+        if (!state.planSelected) {
+          return <QualificationSuccess state={state} updateState={updateState} />;
+        }
+        // If plan is selected, go to WiFi setup
+        return <WiFiSetupStep state={state} updateState={updateState} />;
       case 'plan-selection':
         return <PlanSelection state={state} updateState={updateState} onPlanSelected={handlePlanSelection} />;
       case 'wifi-setup':
