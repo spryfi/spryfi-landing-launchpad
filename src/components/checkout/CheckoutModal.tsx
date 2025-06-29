@@ -118,15 +118,42 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     checkFlowExpiration();
   }, [isOpen]);
 
+  // Debug state changes
+  useEffect(() => {
+    console.log('🔄 Checkout state changed:', {
+      step: state.step,
+      planSelected: state.planSelected,
+      qualified: state.qualified
+    });
+  }, [state.step, state.planSelected, state.qualified]);
+
   const updateState = (updates: Partial<CheckoutState>) => {
     setState(prev => ({ ...prev, ...updates }));
   };
 
-  // Handle plan selection - go directly to WiFi setup without qualification modal
+  // Determine the current step based on state - this prevents loops
+  const getCurrentStep = () => {
+    // If user has selected a plan, ALWAYS show WiFi setup - no exceptions
+    if (state.planSelected) {
+      console.log('🎯 Plan selected, forcing WiFi setup:', state.planSelected);
+      return 'wifi-setup';
+    }
+    
+    // If qualified but no plan selected, show plan selection
+    if (state.qualified && !state.planSelected && state.step !== 'address' && state.step !== 'contact') {
+      console.log('🎯 Qualified but no plan, showing plan selection');
+      return 'plan-selection';
+    }
+    
+    // Use the current step for everything else
+    return state.step;
+  };
+
+  // Handle plan selection - go directly to WiFi setup
   const handlePlanSelection = (planType: string) => {
     console.log('🎯 Plan selected, navigating directly to WiFi setup:', planType);
     
-    // Update state with plan selection and force wifi-setup step
+    // Update state with plan selection - this will trigger getCurrentStep to return 'wifi-setup'
     setState(prev => {
       const newState = {
         ...prev,
@@ -141,26 +168,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
   };
 
   const renderStep = () => {
-    console.log('🎯 Rendering step:', state.step, 'Plan selected:', state.planSelected);
+    const stepToRender = getCurrentStep();
+    console.log('🎯 Rendering step:', stepToRender, 'Original step:', state.step, 'Plan selected:', state.planSelected);
 
-    // Force WiFi setup if plan is selected and we're trying to show qualification
-    if (state.planSelected && (state.step === 'qualification-success' || state.step === 'plan-selection')) {
-      console.log('🚀 Plan already selected, forcing WiFi setup step');
-      return <WiFiSetupStep state={state} updateState={updateState} />;
-    }
-
-    switch (state.step) {
+    switch (stepToRender) {
       case 'address':
         return <AddressStep state={state} updateState={updateState} />;
       case 'contact':
         return <ContactStep state={state} updateState={updateState} />;
       case 'qualification-success':
-        // Only show qualification success if no plan selected yet
-        if (!state.planSelected) {
-          return <QualificationSuccess state={state} updateState={updateState} />;
-        }
-        // If plan is selected, go to WiFi setup
-        return <WiFiSetupStep state={state} updateState={updateState} />;
+        return <QualificationSuccess state={state} updateState={updateState} />;
       case 'plan-selection':
         return <PlanSelection state={state} updateState={updateState} onPlanSelected={handlePlanSelection} />;
       case 'wifi-setup':

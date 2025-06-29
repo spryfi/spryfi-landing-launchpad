@@ -45,18 +45,26 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
 
       console.log('✅ Plan saved successfully:', planData);
 
-      // Trigger callback immediately to navigate to WiFi setup
+      // CRITICAL: Force immediate navigation to WiFi setup
       console.log('🚀 Calling onPlanSelected callback to navigate to WiFi setup');
       if (onPlanSelected) {
         onPlanSelected(selectedPlan);
-      } else {
-        console.error('❌ onPlanSelected callback not provided');
-        // Fallback update state directly
+      }
+      
+      // Also update state directly as fallback
+      updateState({
+        planSelected: selectedPlan,
+        step: 'wifi-setup'
+      });
+      
+      // Force re-render with timeout to ensure state change takes effect
+      setTimeout(() => {
         updateState({
           planSelected: selectedPlan,
           step: 'wifi-setup'
         });
-      }
+      }, 0);
+      
     } catch (error) {
       console.error('❌ Error saving plan selection:', error);
       alert('Error saving plan. Please try again.');
