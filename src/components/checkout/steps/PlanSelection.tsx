@@ -43,19 +43,22 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
         })
         .eq('id', state.leadId);
 
-      console.log('Plan saved:', planData);
+      console.log('✅ Plan saved successfully:', planData);
 
-      // Use callback if provided, otherwise use default navigation
+      // Always use the callback to ensure proper navigation to WiFi setup
       if (onPlanSelected) {
+        console.log('🚀 Triggering direct navigation to WiFi setup');
         onPlanSelected(selectedPlan);
       } else {
+        // Fallback navigation (should not be used with the updated flow)
+        console.log('⚠️ Using fallback navigation - this should not happen in the new flow');
         updateState({
           step: 'wifi-setup',
           planSelected: selectedPlan
         });
       }
     } catch (error) {
-      console.error('Error saving plan selection:', error);
+      console.error('❌ Error saving plan selection:', error);
       alert('Error saving plan. Please try again.');
     } finally {
       setLoading(false);
@@ -162,7 +165,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
               Saving Plan...
             </div>
           ) : (
-            'Continue'
+            'Continue to Router Setup'
           )}
         </Button>
       </div>

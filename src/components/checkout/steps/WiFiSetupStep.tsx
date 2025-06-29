@@ -157,12 +157,12 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
       <div className="text-center mb-8">
         <div className="text-6xl mb-4">📡</div>
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          Would you like us to pre-configure your WiFi 7 router?
+          Let's Set Up Your WiFi 7 Router
         </h2>
         <p className="text-gray-600 text-lg leading-relaxed max-w-2xl mx-auto">
-          We can set up your new WiFi 7 router with an optimized network name and passkey, 
-          so it's plug-and-play out of the box. Your details will be printed on a sticker 
-          placed on the bottom of the router for easy access.
+          We'll pre-configure your high-performance WiFi 7 router with AI-optimized settings. 
+          Choose your network name and password now — or let us generate them for you. 
+          Your info will be printed on a sticker on the bottom of your router.
         </p>
       </div>
 
@@ -186,15 +186,15 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
               variant="outline"
               className="px-4 py-3 whitespace-nowrap"
             >
-              Generate Network Name
+              Generate Name
             </Button>
           </div>
         </div>
 
-        {/* WiFi Passkey */}
+        {/* WiFi Password */}
         <div className="space-y-3">
           <Label htmlFor="wifi_passkey" className="text-lg font-medium text-gray-900">
-            WiFi Passkey
+            WiFi Password
           </Label>
           <div className="flex gap-3">
             <Input
@@ -202,7 +202,7 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
               type="text"
               value={wifiPasskey}
               onChange={(e) => handlePasskeyChange(e.target.value)}
-              placeholder="Enter passkey (min 8 characters)"
+              placeholder="Enter password (min 8 characters)"
               className="flex-1 px-4 py-3 text-base"
             />
             <Button
@@ -210,7 +210,7 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
               variant="outline"
               className="px-4 py-3 whitespace-nowrap"
             >
-              Generate Secure Passkey
+              Generate Password
             </Button>
           </div>
           {passkeyError && (

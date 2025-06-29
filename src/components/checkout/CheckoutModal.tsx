@@ -122,12 +122,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     setState(prev => ({ ...prev, ...updates }));
   };
 
-  // Handle plan selection from PricingModal
+  // Handle plan selection - skip qualification modal and go directly to WiFi setup
   const handlePlanSelection = (planType: string) => {
-    console.log('Plan selected from modal:', planType);
+    console.log('🎯 Plan selected, navigating directly to WiFi setup:', planType);
     updateState({
       planSelected: planType,
-      step: 'wifi-setup' // Navigate directly to WiFi setup
+      step: 'wifi-setup' // Direct navigation to WiFi setup, skipping qualification modal
     });
   };
 
