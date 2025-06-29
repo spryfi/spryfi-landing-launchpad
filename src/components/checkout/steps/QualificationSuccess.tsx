@@ -9,6 +9,12 @@ interface QualificationSuccessProps {
 }
 
 export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ state, updateState }) => {
+  // NUCLEAR OPTION: Block this component if plan is selected
+  if (state.planSelected) {
+    console.log('🚨 QUALIFICATION CARD BLOCKED - PLAN EXISTS:', state.planSelected);
+    return null; // Don't render this card at all if plan is selected
+  }
+
   const handleContinue = () => {
     updateState({ step: 'plan-selection' });
   };
