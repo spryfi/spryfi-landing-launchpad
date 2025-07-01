@@ -9,23 +9,17 @@ interface QualificationSuccessProps {
 }
 
 export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ state, updateState }) => {
-  // COMPREHENSIVE DEBUG LOGGING
-  console.log('🚨 QUALIFICATION CARD RENDERING - THIS SHOULD NOT HAPPEN IF PLAN SELECTED');
-  console.log('🚨 QualificationSuccess component state:', state);
-  console.log('🚨 Plan selected?', state?.planSelected);
-  
-  // NUCLEAR OPTION: Block this component if plan is selected
-  if (state.planSelected) {
-    console.log('🚨 QUALIFICATION CARD BLOCKED - PLAN EXISTS:', state.planSelected);
-    return <div className="p-8 text-center">
-      <h2 className="text-2xl font-bold text-red-600 mb-4">DEBUG: BLOCKED</h2>
-      <p>Plan selected: {state.planSelected}</p>
-      <p>Should show WiFi setup instead</p>
-    </div>;
-  }
-
   const handleContinue = () => {
-    updateState({ step: 'plan-selection' });
+    // If plan is already selected (from landing page), go to WiFi setup
+    // If no plan selected (check availability flow), go to plan selection
+    if (state.planSelected || state.preselectedPlan) {
+      updateState({ 
+        step: 'wifi-setup',
+        planSelected: state.planSelected || state.preselectedPlan
+      });
+    } else {
+      updateState({ step: 'plan-selection' });
+    }
   };
 
   // Determine internal qualification code based on source

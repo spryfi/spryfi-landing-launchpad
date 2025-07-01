@@ -188,11 +188,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
       qualified: state.qualified 
     });
     
-    // CRITICAL FIX: If we have a preselected plan and we're qualified, ALWAYS show WiFi setup
-    if ((state.planSelected || state.preselectedPlan) && state.qualified) {
-      console.log('🚀 FORCING WIFI SETUP - BYPASSING QUALIFICATION SUCCESS');
-      return <WiFiSetupStep state={state} updateState={updateState} />;
-    }
     
     // If we have a preselected plan but not qualified yet, show the appropriate step
     if (state.preselectedPlan && !state.qualified) {

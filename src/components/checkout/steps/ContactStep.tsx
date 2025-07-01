@@ -128,16 +128,8 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
 
       // Move to next step based on qualification
       if (data.qualified) {
-        // CRITICAL FIX: If we have a preselected plan, skip qualification success and go to WiFi setup
-        if (state.preselectedPlan) {
-          console.log('🚀 PRESELECTED PLAN DETECTED - FORCING WIFI SETUP AFTER QUALIFICATION');
-          updateState({ 
-            step: 'wifi-setup',
-            planSelected: state.preselectedPlan
-          });
-        } else {
-          updateState({ step: 'qualification-success' });
-        }
+        // Always show qualification success card first, regardless of preselected plan
+        updateState({ step: 'qualification-success' });
       } else {
         updateState({ step: 'not-qualified' });
       }
