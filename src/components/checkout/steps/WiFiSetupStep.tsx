@@ -138,14 +138,6 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
     setLoading(true);
 
     try {
-      // Check if we have a leadId, if not, we can't save WiFi settings
-      if (!state.leadId) {
-        console.error('No leadId available for saving WiFi settings');
-        alert('Session error. Please restart the process.');
-        setLoading(false);
-        return;
-      }
-
       const finalSsid = wifiSsid || `SpryFi_${Math.floor(1000 + Math.random() * 9000)}`;
       const finalPasskey = wifiPasskey || (() => {
         const words = ['mint', 'bike', 'book', 'lamp', 'fish', 'snow', 'tree', 'star'];
@@ -154,12 +146,19 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
         return `${word1}${word2}`;
       })();
 
-      await saveWifiSettings(finalSsid, finalPasskey);
-      // Move to router offer step
+      // Only save WiFi settings if we have a leadId
+      if (state.leadId) {
+        await saveWifiSettings(finalSsid, finalPasskey);
+      } else {
+        console.log('⚠️ No leadId available, skipping WiFi settings save');
+      }
+      
+      // Always proceed to router offer step regardless of save status
       updateState({ step: 'router-offer' });
     } catch (error) {
       console.error('Error saving WiFi settings:', error);
-      alert('Error saving WiFi settings. Please try again.');
+      // Still proceed even if saving fails
+      updateState({ step: 'router-offer' });
     } finally {
       setLoading(false);
     }
