@@ -137,6 +137,14 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
     setLoading(true);
 
     try {
+      // Check if we have a leadId, if not, we can't save WiFi settings
+      if (!state.leadId) {
+        console.error('No leadId available for saving WiFi settings');
+        alert('Session error. Please restart the process.');
+        setLoading(false);
+        return;
+      }
+
       const finalSsid = wifiSsid || `SpryFi_${Math.floor(1000 + Math.random() * 9000)}`;
       const finalPasskey = wifiPasskey || (() => {
         const words = ['mint', 'bike', 'book', 'lamp', 'fish', 'snow', 'tree', 'star'];
