@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AddressStep } from './steps/AddressStep';
@@ -267,11 +266,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
     }
   };
 
-  // LAST RESORT - Direct DOM manipulation
+  // LAST RESORT - Direct DOM manipulation (FIXED TYPE ERROR)
   useEffect(() => {
     if ((state.planSelected || state.preselectedPlan) && state.qualified) {
       console.log('🔨 DOM MANIPULATION - HIDING QUALIFICATION CARD');
-      const qualificationCard = document.querySelector('[data-testid="qualification-success"]');
+      const qualificationCard = document.querySelector('[data-testid="qualification-success"]') as HTMLElement;
       if (qualificationCard) {
         qualificationCard.style.display = 'none';
       }
