@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Wifi } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
 
@@ -190,7 +191,9 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
       </div>
 
       <div className="text-center mb-8">
-        <div className="text-6xl mb-4">📡</div>
+        <div className="mb-4 flex justify-center">
+          <Wifi className="w-16 h-16 text-blue-600" />
+        </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
           Let's Set Up Your WiFi 7 Router
         </h2>
