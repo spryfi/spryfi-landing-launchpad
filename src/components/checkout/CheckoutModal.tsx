@@ -46,25 +46,31 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   preselectedPlan?: string;
+  qualificationData?: {
+    qualified: boolean;
+    address: any;
+    contact: any;
+    qualificationResult: any;
+  };
 }
 
-const getInitialState = (preselectedPlan?: string): CheckoutState => ({
-  step: 'address',
+const getInitialState = (preselectedPlan?: string, qualificationData?: any): CheckoutState => ({
+  step: qualificationData?.qualified ? 'plan-selection' : 'address',
   anchorAddressId: null,
   leadId: null,
-  address: null,
-  contact: null,
+  address: qualificationData?.address || null,
+  contact: qualificationData?.contact || null,
   planSelected: preselectedPlan || null,
   routerAdded: false,
   totalAmount: 0,
-  qualified: false,
-  qualificationResult: null,
+  qualified: qualificationData?.qualified || false,
+  qualificationResult: qualificationData?.qualificationResult || null,
   flow_completed: false,
   preselectedPlan: preselectedPlan || null
 });
 
-export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, preselectedPlan }) => {
-  const [state, setState] = useState<CheckoutState>(getInitialState(preselectedPlan));
+export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, preselectedPlan, qualificationData }) => {
+  const [state, setState] = useState<CheckoutState>(getInitialState(preselectedPlan, qualificationData));
 
   // COMPREHENSIVE STATE DEBUGGING
   useEffect(() => {
@@ -112,11 +118,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
       // Clear address form storage
       localStorage.removeItem('addressFormData');
       
-      // Reset to initial state with preselected plan
-      const initialState = getInitialState(preselectedPlan);
+      // Reset to initial state with preselected plan and qualification data
+      const initialState = getInitialState(preselectedPlan, qualificationData);
       setState(initialState);
       
-      console.log('✅ Flow state reset complete - starting from address step with preselected plan:', preselectedPlan);
+      console.log('✅ Flow state reset complete - starting from step:', initialState.step);
       console.log('✅ Initial state set:', initialState);
     }
   }, [isOpen, preselectedPlan]);

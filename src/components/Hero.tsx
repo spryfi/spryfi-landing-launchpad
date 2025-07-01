@@ -256,6 +256,7 @@ export const Hero = () => {
   };
 
   const handleGetStarted = () => {
+    setShowResultsModal(false);
     setShowCheckoutModal(true);
   };
 
@@ -517,7 +518,16 @@ export const Hero = () => {
         </>
       )}
 
-      <CheckoutModal isOpen={showCheckoutModal} onClose={() => setShowCheckoutModal(false)} />
+      <CheckoutModal 
+        isOpen={showCheckoutModal} 
+        onClose={() => setShowCheckoutModal(false)}
+        qualificationData={{
+          qualified: qualificationResult?.qualified || false,
+          address: parsedAddressData,
+          contact: { firstName, lastName, email, phone: '' },
+          qualificationResult
+        }}
+      />
     </>
   );
 };
