@@ -41,10 +41,14 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
     setPasskeyError('');
   };
 
-  // Validate passkey
+  // Validate passkey - 8+ alphanumeric characters
   const validatePasskey = (passkey: string) => {
     if (passkey.length < 8) {
-      setPasskeyError('Password must be at least 8 characters long');
+      setPasskeyError('Password must be at least 8 alphanumeric characters');
+      return false;
+    }
+    if (!/^[a-zA-Z0-9]+$/.test(passkey)) {
+      setPasskeyError('Password must contain only letters and numbers');
       return false;
     }
     setPasskeyError('');
