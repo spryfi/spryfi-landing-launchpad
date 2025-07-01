@@ -175,17 +175,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
         step: 'wifi-setup'
       };
       console.log('🚨 PLAN HANDLER COMPLETE - New State:', newState);
+      console.log('🚨 Setting step to wifi-setup, planSelected to:', planType);
       return newState;
     });
   };
 
-  // NUCLEAR OPTION - Force component replacement
   const renderCurrentStep = () => {
-    console.log('🎯 RENDER DECISION:', { 
+    console.log('🎯 RENDER DECISION - DETAILED:', { 
       step: state.step, 
       planSelected: state.planSelected, 
       preselectedPlan: state.preselectedPlan,
-      qualified: state.qualified 
+      qualified: state.qualified,
+      fullState: state
     });
     
     
