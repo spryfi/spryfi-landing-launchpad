@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 import { AddressStep } from './steps/AddressStep';
 import { ContactStep } from './steps/ContactStep';
 import { QualificationSuccess } from './steps/QualificationSuccess';
@@ -122,10 +123,43 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
       const initialState = getInitialState(preselectedPlan, qualificationData);
       setState(initialState);
       
+      // If we have qualification data but no leadId, create a lead
+      if (qualificationData?.qualified && qualificationData?.contact && !initialState.leadId) {
+        createLeadForQualifiedUser(qualificationData.contact);
+      }
+      
       console.log('✅ Flow state reset complete - starting from step:', initialState.step);
       console.log('✅ Initial state set:', initialState);
     }
   }, [isOpen, preselectedPlan]);
+
+  // Create lead for qualified user when bypassing contact step
+  const createLeadForQualifiedUser = async (contact: any) => {
+    try {
+      console.log('🔄 Creating lead for qualified user:', contact);
+      
+      const { data, error } = await supabase.functions.invoke('save-lead', {
+        body: {
+          email: contact.email,
+          first_name: contact.firstName,
+          last_name: contact.lastName,
+          started_at: new Date().toISOString(),
+          status: 'qualified'
+        }
+      });
+
+      if (error) {
+        console.error('Error creating lead:', error);
+        return;
+      }
+
+      console.log('✅ Lead created successfully:', data);
+      updateState({ leadId: data.lead_id });
+      
+    } catch (error) {
+      console.error('Error creating lead for qualified user:', error);
+    }
+  };
 
   // Set flow start timestamp when moving past address step
   useEffect(() => {
