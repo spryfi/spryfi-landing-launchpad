@@ -66,8 +66,19 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
 
       // CRITICAL: Use the callback to navigate to WiFi setup
       console.log('🚀 Calling onPlanSelected callback to navigate to WiFi setup');
+      console.log('🚀 onPlanSelected callback exists:', !!onPlanSelected);
+      
       if (onPlanSelected) {
+        console.log('🚀 About to call onPlanSelected with:', selectedPlan);
         onPlanSelected(selectedPlan);
+        console.log('🚀 onPlanSelected callback completed');
+      } else {
+        console.error('❌ onPlanSelected callback is missing!');
+        // Fallback: try to update state directly
+        updateState({ 
+          step: 'wifi-setup',
+          planSelected: selectedPlan 
+        });
       }
       
     } catch (error) {
