@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PricingModal } from '@/components/PricingModal';
+import { CheckoutModal } from '@/components/checkout/CheckoutModal';
 import { useRotatingHook } from '@/hooks/useRotatingHook';
 import SimpleAddressInput from '@/components/SimpleAddressInput';
 
@@ -18,7 +18,7 @@ export const Hero = () => {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
-  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
   const [parsedAddressData, setParsedAddressData] = useState<ParsedAddress | null>(null);
   const [firstName, setFirstName] = useState('');
@@ -256,7 +256,7 @@ export const Hero = () => {
   };
 
   const handleGetStarted = () => {
-    setShowPricingModal(true);
+    setShowCheckoutModal(true);
   };
 
   const renderModal3D = (children: React.ReactNode, modalHeight = '500px') => (
@@ -517,7 +517,7 @@ export const Hero = () => {
         </>
       )}
 
-      <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
+      <CheckoutModal isOpen={showCheckoutModal} onClose={() => setShowCheckoutModal(false)} />
     </>
   );
 };
