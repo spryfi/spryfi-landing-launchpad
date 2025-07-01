@@ -9,15 +9,27 @@ interface QualificationSuccessProps {
 }
 
 export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ state, updateState }) => {
+  console.log('🔍 QUALIFICATION SUCCESS COMPONENT STATE:', {
+    step: state.step,
+    planSelected: state.planSelected,
+    preselectedPlan: state.preselectedPlan,
+    qualified: state.qualified
+  });
+
   const handleContinue = () => {
+    console.log('🎯 QUALIFICATION SUCCESS - CONTINUE CLICKED');
+    console.log('🎯 Current state:', { planSelected: state.planSelected, preselectedPlan: state.preselectedPlan });
+    
     // If plan is already selected (from landing page), go to WiFi setup
     // If no plan selected (check availability flow), go to plan selection
     if (state.planSelected || state.preselectedPlan) {
+      console.log('🚀 PLAN EXISTS - GOING TO WIFI SETUP');
       updateState({ 
         step: 'wifi-setup',
         planSelected: state.planSelected || state.preselectedPlan
       });
     } else {
+      console.log('🎯 NO PLAN - GOING TO PLAN SELECTION');
       updateState({ step: 'plan-selection' });
     }
   };
