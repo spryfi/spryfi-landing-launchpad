@@ -23,14 +23,25 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
   });
 
   const handlePlanSelect = (planType: string) => {
+    console.log('🎯 PLAN CLICKED:', planType);
+    console.log('🎯 BEFORE STATE UPDATE:', { selectedPlan, currentStep: state.step });
+    
     setSelectedPlan(planType);
     console.log('Selected plan:', planType);
+    
+    // Check if state actually updated
+    setTimeout(() => {
+      console.log('🎯 STATE CHECK AFTER TIMEOUT:', { selectedPlan, planType });
+    }, 100);
   };
 
   const handleContinue = async () => {
     if (!selectedPlan) {
       return;
     }
+    
+    console.log('🚀 PLAN CONTINUE CLICKED:', selectedPlan);
+    console.log('🚀 CURRENT STATE BEFORE CONTINUE:', state);
     
     setLoading(true);
     
@@ -60,10 +71,16 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
       }
       
       // Also update state directly as fallback
+      console.log('🚀 Updating state directly as fallback');
       updateState({
         planSelected: selectedPlan,
         step: 'wifi-setup'
       });
+      
+      // Extra logging to verify the update
+      setTimeout(() => {
+        console.log('🔍 POST-UPDATE STATE CHECK (in PlanSelection)');
+      }, 500);
       
     } catch (error) {
       console.error('❌ Error saving plan selection:', error);
@@ -74,7 +91,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
   };
 
   return (
-    <div className="p-8">
+    <div className="p-8" data-testid="plan-selection">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">
           Pick Your Plan — No Contracts, No Surprises

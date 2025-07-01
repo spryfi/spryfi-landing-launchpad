@@ -37,7 +37,7 @@ export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ stat
   };
 
   return (
-    <div className="flex min-h-[500px] bg-white">
+    <div className="flex min-h-[500px] bg-white" data-testid="qualification-success">
       {/* Left Content Section */}
       <div className="flex-1 p-12 flex flex-col justify-center max-w-[60%]">
         {/* Enhanced SpryFi Branding */}

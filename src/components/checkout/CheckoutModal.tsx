@@ -55,7 +55,7 @@ const getInitialState = (preselectedPlan?: string): CheckoutState => ({
   leadId: null,
   address: null,
   contact: null,
-  planSelected: preselectedPlan || null, // Set planSelected if preselected
+  planSelected: preselectedPlan || null,
   routerAdded: false,
   totalAmount: 0,
   qualified: false,
@@ -67,15 +67,35 @@ const getInitialState = (preselectedPlan?: string): CheckoutState => ({
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, preselectedPlan }) => {
   const [state, setState] = useState<CheckoutState>(getInitialState(preselectedPlan));
 
-  console.log('🔍 CHECKOUT MODAL DEBUG:', {
-    componentName: 'CheckoutModal',
-    state: state,
-    planSelected: state?.planSelected,
-    step: state?.step,
-    qualified: state?.qualified,
-    isOpen: isOpen,
-    preselectedPlan: preselectedPlan
-  });
+  // COMPREHENSIVE STATE DEBUGGING
+  useEffect(() => {
+    console.log('🔍 FULL STATE DEBUG:');
+    console.log('- step:', state.step);
+    console.log('- planSelected:', state.planSelected);
+    console.log('- preselectedPlan:', state.preselectedPlan);
+    console.log('- qualified:', state.qualified);
+    console.log('- isOpen:', isOpen);
+    console.log('- props.preselectedPlan:', preselectedPlan);
+    console.log('- All state:', state);
+    console.log('==================');
+  }, [state, isOpen, preselectedPlan]);
+
+  // DOM DEBUGGING - Check for multiple modals
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        console.log('🔍 CHECKING FOR MULTIPLE MODALS');
+        const qualificationElements = document.querySelectorAll('[data-testid*="qualification"], [class*="qualification"]');
+        console.log('Found qualification elements:', qualificationElements.length);
+        
+        const planElements = document.querySelectorAll('[data-testid*="plan"], [class*="plan"]');
+        console.log('Found plan elements:', planElements.length);
+        
+        const wifiElements = document.querySelectorAll('[data-testid*="wifi"], [class*="wifi"]');
+        console.log('Found wifi elements:', wifiElements.length);
+      }, 100);
+    }
+  }, [isOpen, state.step]);
 
   // Reset state when modal opens with preselected plan
   useEffect(() => {
@@ -134,12 +154,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
   }, [isOpen, preselectedPlan]);
 
   const updateState = (updates: Partial<CheckoutState>) => {
-    setState(prev => ({ ...prev, ...updates }));
+    console.log('🔄 STATE UPDATE REQUESTED:', updates);
+    console.log('🔄 CURRENT STATE BEFORE UPDATE:', state);
+    
+    setState(prev => {
+      const newState = { ...prev, ...updates };
+      console.log('🔄 NEW STATE AFTER UPDATE:', newState);
+      return newState;
+    });
   };
 
   // Handle plan selection
   const handlePlanSelection = (planType: string) => {
     console.log('🚨 PLAN SELECTION HANDLER TRIGGERED:', planType);
+    console.log('🚨 CURRENT STATE BEFORE PLAN SELECTION:', state);
     
     setState(prev => {
       const newState = {
@@ -152,26 +180,36 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
     });
   };
 
-  const renderContent = () => {
-    console.log('🔍 RENDER CONTENT DEBUG:', {
-      planSelected: state.planSelected,
-      qualified: state.qualified,
-      step: state.step,
-      preselectedPlan: state.preselectedPlan
+  // NUCLEAR OPTION - Force component replacement
+  const renderCurrentStep = () => {
+    console.log('🎯 RENDER DECISION:', { 
+      step: state.step, 
+      planSelected: state.planSelected, 
+      preselectedPlan: state.preselectedPlan,
+      qualified: state.qualified 
     });
-
-    // CRITICAL: If we have a qualified address AND a plan is selected, go to WiFi setup
-    if (state.qualified && state.planSelected) {
-      console.log('🚨 QUALIFIED + PLAN SELECTED - SHOWING WIFI SETUP');
+    
+    // FORCE WiFi setup if ANY plan exists AND we're qualified
+    if ((state.planSelected || state.preselectedPlan) && state.qualified) {
+      console.log('🚀 FORCING WIFI SETUP COMPONENT');
       return <WiFiSetupStep state={state} updateState={updateState} />;
     }
-
-    // If qualified but no plan selected and no preselected plan, show plan selection
-    if (state.qualified && !state.planSelected && !state.preselectedPlan) {
-      console.log('🚨 QUALIFIED - SHOWING PLAN SELECTION');
-      return <PlanSelection state={state} updateState={updateState} onPlanSelected={handlePlanSelection} />;
+    
+    // If we have a preselected plan but not qualified yet, show the appropriate step
+    if (state.preselectedPlan && !state.qualified) {
+      console.log('🎯 PRESELECTED PLAN - SHOWING APPROPRIATE STEP FOR QUALIFICATION');
+      
+      // Show address step if we haven't qualified yet
+      if (state.step === 'address') {
+        return <AddressStep state={state} updateState={updateState} />;
+      }
+      
+      // Show contact step if we have address but need contact info
+      if (state.step === 'contact') {
+        return <ContactStep state={state} updateState={updateState} />;
+      }
     }
-
+    
     // Regular step-based flow
     switch (state.step) {
       case 'address':
@@ -183,6 +221,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
       case 'qualification-success':
         console.log('🔍 Rendering QualificationSuccess');
         return <QualificationSuccess state={state} updateState={updateState} />;
+      case 'plan-selection':
+        console.log('🔍 Rendering PlanSelection');
+        return <PlanSelection state={state} updateState={updateState} onPlanSelected={handlePlanSelection} />;
       case 'wifi-setup':
         console.log('🔍 Rendering WiFiSetupStep');
         return <WiFiSetupStep state={state} updateState={updateState} />;
@@ -226,6 +267,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
     }
   };
 
+  // LAST RESORT - Direct DOM manipulation
+  useEffect(() => {
+    if ((state.planSelected || state.preselectedPlan) && state.qualified) {
+      console.log('🔨 DOM MANIPULATION - HIDING QUALIFICATION CARD');
+      const qualificationCard = document.querySelector('[data-testid="qualification-success"]');
+      if (qualificationCard) {
+        qualificationCard.style.display = 'none';
+      }
+    }
+  }, [state.planSelected, state.preselectedPlan, state.qualified]);
+
   console.log('🔍 ABOUT TO RENDER - Final state check:', {
     planSelected: state.planSelected,
     step: state.step,
@@ -241,7 +293,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
           Enter your address and contact information to check if SpryFi internet service is available in your area
         </DialogDescription>
         <div className="bg-white">
-          {renderContent()}
+          {renderCurrentStep()}
         </div>
       </DialogContent>
     </Dialog>
