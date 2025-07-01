@@ -43,21 +43,30 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
 
   // Validate passkey - 8+ alphanumeric characters
   const validatePasskey = (passkey: string) => {
+    console.log('🔍 Validating passkey:', { passkey, length: passkey.length });
+    
     if (passkey.length < 8) {
+      console.log('❌ Passkey too short');
       setPasskeyError('Password must be at least 8 alphanumeric characters');
       return false;
     }
     if (!/^[a-zA-Z0-9]+$/.test(passkey)) {
+      console.log('❌ Passkey invalid characters');
       setPasskeyError('Password must contain only letters and numbers');
       return false;
     }
+    console.log('✅ Passkey valid');
     setPasskeyError('');
     return true;
   };
 
   const handlePasskeyChange = (value: string) => {
     setWifiPasskey(value);
-    validatePasskey(value);
+    if (value.length > 0) {
+      validatePasskey(value);
+    } else {
+      setPasskeyError('');
+    }
   };
 
   const handleSkipSetupChange = (checked: boolean) => {
@@ -148,6 +157,17 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
   };
 
   const isFormValid = skipSetup || (wifiSsid.length > 0 && wifiPasskey.length >= 8 && !passkeyError);
+  
+  // Debug form validation
+  console.log('🔍 Form validation check:', {
+    skipSetup,
+    wifiSsid: wifiSsid,
+    wifiSsidLength: wifiSsid.length,
+    wifiPasskey: wifiPasskey,
+    wifiPasskeyLength: wifiPasskey.length,
+    passkeyError,
+    isFormValid
+  });
 
   return (
     <div className="p-8">
