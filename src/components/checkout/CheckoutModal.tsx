@@ -138,11 +138,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
     try {
       console.log('🔄 Creating lead for qualified user:', contact);
       
+      // Extract contact info properly, handling both firstName/lastName and first_name/last_name formats
+      const firstName = contact.firstName || contact.first_name || '';
+      const lastName = contact.lastName || contact.last_name || '';
+      const email = contact.email || '';
+
+      console.log('📝 Extracted contact data:', { firstName, lastName, email });
+
+      if (!firstName || !lastName || !email) {
+        console.error('❌ Missing contact information:', { firstName, lastName, email });
+        return;
+      }
+      
       const { data, error } = await supabase.functions.invoke('save-lead', {
         body: {
-          email: contact.email,
-          first_name: contact.firstName,
-          last_name: contact.lastName,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
           started_at: new Date().toISOString(),
           status: 'qualified'
         }
