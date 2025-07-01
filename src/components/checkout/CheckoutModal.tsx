@@ -173,6 +173,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
     }
   };
 
+  // Ensure leadId exists when reaching WiFi setup
+  const ensureLeadExists = async () => {
+    if (!state.leadId && state.qualified && state.contact) {
+      console.log('🔄 No leadId found, creating lead...');
+      await createLeadForQualifiedUser(state.contact);
+    }
+  };
+
   // Set flow start timestamp when moving past address step
   useEffect(() => {
     if (state.step !== 'address' && state.step !== 'not-qualified') {
@@ -273,6 +281,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
         return <PlanSelection state={state} updateState={updateState} onPlanSelected={handlePlanSelection} />;
       case 'wifi-setup':
         console.log('🔍 Rendering WiFiSetupStep');
+        // Ensure leadId exists before showing WiFi setup
+        ensureLeadExists();
         return <WiFiSetupStep state={state} updateState={updateState} />;
       case 'router-offer':
         console.log('🔍 Rendering RouterOffer');
