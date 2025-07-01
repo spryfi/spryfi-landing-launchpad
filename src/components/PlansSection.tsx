@@ -7,6 +7,7 @@ import { useCheckoutModal } from '@/hooks/useCheckoutModal';
 
 export const PlansSection = () => {
   const { isOpen, openModal, closeModal } = useCheckoutModal();
+  const [selectedPlan, setSelectedPlan] = React.useState<string | null>(null);
 
   const plans = [
     {
@@ -17,7 +18,8 @@ export const PlansSection = () => {
       subtitle: "Works great for 1–2 people",
       features: ["No contracts, no credit checks"],
       popular: false,
-      style: "basic"
+      style: "basic",
+      planType: "spryfi-home" // Add plan type for checkout
     },
     {
       name: "SpryFi Premium",
@@ -27,7 +29,8 @@ export const PlansSection = () => {
       subtitle: "No throttling, no limits",
       features: ["Great for streaming, Zoom, and gaming"],
       popular: true,
-      style: "premium"
+      style: "premium",
+      planType: "spryfi-home-premium" // Add plan type for checkout
     }
   ];
 
@@ -37,6 +40,17 @@ export const PlansSection = () => {
     "Modem included",
     "14-day money-back guarantee"
   ];
+
+  const handlePlanClick = (planType: string) => {
+    console.log('🎯 Plan clicked from landing page:', planType);
+    setSelectedPlan(planType);
+    openModal();
+  };
+
+  const handleModalClose = () => {
+    setSelectedPlan(null);
+    closeModal();
+  };
 
   return (
     <>
@@ -102,7 +116,7 @@ export const PlansSection = () => {
                   </div>
                   
                   <Button 
-                    onClick={openModal}
+                    onClick={() => handlePlanClick(plan.planType)}
                     className={`w-full py-4 text-lg font-semibold rounded-2xl transition-all duration-300 transform group-hover:scale-105 ${
                       plan.style === 'basic' 
                         ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/25' 
@@ -132,7 +146,11 @@ export const PlansSection = () => {
         </div>
       </section>
 
-      <CheckoutModal isOpen={isOpen} onClose={closeModal} />
+      <CheckoutModal 
+        isOpen={isOpen} 
+        onClose={handleModalClose} 
+        preselectedPlan={selectedPlan}
+      />
     </>
   );
 };

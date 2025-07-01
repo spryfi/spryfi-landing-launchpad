@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AddressStep } from './steps/AddressStep';
@@ -40,14 +39,16 @@ export interface CheckoutState {
     max_speed_mbps?: number;
   } | null;
   flow_completed?: boolean;
+  preselectedPlan?: string | null; // Add preselected plan from landing page
 }
 
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
+  preselectedPlan?: string; // Plan clicked from landing page
 }
 
-const getInitialState = (): CheckoutState => ({
+const getInitialState = (preselectedPlan?: string): CheckoutState => ({
   step: 'address',
   anchorAddressId: null,
   leadId: null,
@@ -58,11 +59,12 @@ const getInitialState = (): CheckoutState => ({
   totalAmount: 0,
   qualified: false,
   qualificationResult: null,
-  flow_completed: false
+  flow_completed: false,
+  preselectedPlan: preselectedPlan || null
 });
 
-export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
-  const [state, setState] = useState<CheckoutState>(getInitialState());
+export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, preselectedPlan }) => {
+  const [state, setState] = useState<CheckoutState>(getInitialState(preselectedPlan));
 
   // COMPREHENSIVE DEBUG LOGGING
   console.log('🔍 CHECKOUT MODAL DEBUG:', {
@@ -71,7 +73,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     planSelected: state?.planSelected,
     step: state?.step,
     qualified: state?.qualified,
-    isOpen: isOpen
+    isOpen: isOpen,
+    preselectedPlan: preselectedPlan
   });
 
   // Reset state and clear storage when modal opens
@@ -90,12 +93,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       // Clear address form storage
       localStorage.removeItem('addressFormData');
       
-      // Reset to initial state
-      setState(getInitialState());
+      // Reset to initial state with preselected plan
+      setState(getInitialState(preselectedPlan));
       
-      console.log('✅ Flow state reset complete - starting from address step');
+      console.log('✅ Flow state reset complete - starting from address step with preselected plan:', preselectedPlan);
     }
-  }, [isOpen]);
+  }, [isOpen, preselectedPlan]);
 
   // Set flow start timestamp when moving past address step
   useEffect(() => {
@@ -120,13 +123,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
         localStorage.removeItem('addressFormData');
         
         if (isOpen) {
-          setState(getInitialState());
+          setState(getInitialState(preselectedPlan));
         }
       }
     };
 
     checkFlowExpiration();
-  }, [isOpen]);
+  }, [isOpen, preselectedPlan]);
 
   // CRITICAL FIX: Auto-advance to WiFi setup when plan is selected
   useEffect(() => {
@@ -144,9 +147,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     console.log('🔄 Checkout state changed:', {
       step: state.step,
       planSelected: state.planSelected,
-      qualified: state.qualified
+      qualified: state.qualified,
+      preselectedPlan: state.preselectedPlan
     });
-  }, [state.step, state.planSelected, state.qualified]);
+  }, [state.step, state.planSelected, state.qualified, state.preselectedPlan]);
 
   const updateState = (updates: Partial<CheckoutState>) => {
     setState(prev => ({ ...prev, ...updates }));
@@ -173,7 +177,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     console.log('🔍 RENDER CONTENT DEBUG:', {
       planSelected: state.planSelected,
       qualified: state.qualified,
-      step: state.step
+      step: state.step,
+      preselectedPlan: state.preselectedPlan
     });
 
     // FORCE WiFi setup if any plan is selected - NO EXCEPTIONS
@@ -182,10 +187,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
       return <WiFiSetupStep state={state} updateState={updateState} />;
     }
 
-    // Show plan selection if qualified
-    if (state.qualified && !state.planSelected && state.step !== 'address' && state.step !== 'contact') {
-      console.log('🚨 Showing plan selection - qualified but no plan');
+    // Show plan selection if qualified (but skip if we have a preselected plan and are qualified)
+    if (state.qualified && !state.preselectedPlan) {
+      console.log('🚨 Showing plan selection - qualified but no preselected plan');
       return <PlanSelection state={state} updateState={updateState} onPlanSelected={handlePlanSelection} />;
+    }
+
+    // If qualified and have preselected plan, auto-select it and go to WiFi setup
+    if (state.qualified && state.preselectedPlan && !state.planSelected) {
+      console.log('🚨 Auto-selecting preselected plan:', state.preselectedPlan);
+      // Auto-select the preselected plan
+      setTimeout(() => {
+        handlePlanSelection(state.preselectedPlan!);
+      }, 100);
+      return <div className="p-8 text-center">Configuring your selected plan...</div>;
     }
 
     // Regular flow for other steps
@@ -243,7 +258,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
   console.log('🔍 ABOUT TO RENDER - Final state check:', {
     planSelected: state.planSelected,
     step: state.step,
-    qualified: state.qualified
+    qualified: state.qualified,
+    preselectedPlan: state.preselectedPlan
   });
 
   return (

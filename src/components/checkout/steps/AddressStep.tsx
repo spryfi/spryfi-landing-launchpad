@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -663,15 +664,18 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
                 </div>
               </div>
 
-              {/* Headline */}
+              {/* Headline - Updated for plan selection flow */}
               <h2 className="text-white text-xl font-bold mb-2 leading-tight">
-                See if our award-winning internet has arrived<br />
-                in your neighborhood
+                {state.preselectedPlan ? (
+                  <>Great! Let's confirm that our SpryFi service<br />is available at your location</>
+                ) : (
+                  <>See if our award-winning internet has arrived<br />in your neighborhood</>
+                )}
               </h2>
 
               {/* Subheadline */}
               <p className="text-blue-100 text-base mb-6">
-                Simple internet, no runaround
+                {state.preselectedPlan ? 'Enter your address to get started' : 'Simple internet, no runaround'}
               </p>
 
               {/* Input with SimpleAddressInput functionality */}
@@ -720,7 +724,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             {/* Contact Form Headline */}
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-semibold text-gray-900">
-                Almost there
+                {state.preselectedPlan ? 'Almost there' : 'Almost there'}
               </h2>
               <p className="text-gray-600">
                 Just need a few quick details to check your area.
