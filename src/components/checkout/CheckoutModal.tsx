@@ -128,15 +128,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     checkFlowExpiration();
   }, [isOpen]);
 
-  // EMERGENCY FIX: Force WiFi setup when plan is detected
+  // CRITICAL FIX: Auto-advance to WiFi setup when plan is selected
   useEffect(() => {
-    if (state.planSelected) {
-      console.log('🚨 PLAN DETECTED - FORCING WIFI STEP:', state.planSelected);
-      setTimeout(() => {
-        console.log('🚨 TIMEOUT FORCE RENDER');
-      }, 100);
+    if (state.planSelected && state.step !== 'wifi-setup') {
+      console.log('🚨 PLAN DETECTED - AUTO-ADVANCING TO WIFI SETUP:', state.planSelected);
+      setState(prev => ({
+        ...prev,
+        step: 'wifi-setup'
+      }));
     }
-  }, [state.planSelected]);
+  }, [state.planSelected, state.step]);
 
   // Debug state changes
   useEffect(() => {
@@ -151,11 +152,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
     setState(prev => ({ ...prev, ...updates }));
   };
 
-  // Handle plan selection - NUCLEAR OPTION
+  // Handle plan selection - CRITICAL FIX
   const handlePlanSelection = (planType: string) => {
     console.log('🚨 PLAN SELECTION HANDLER TRIGGERED:', planType);
     
-    // Update state with plan selection
+    // Update state with plan selection AND force WiFi setup step
     setState(prev => {
       const newState = {
         ...prev,

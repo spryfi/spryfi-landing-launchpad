@@ -65,14 +65,6 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
         step: 'wifi-setup'
       });
       
-      // Force re-render with timeout to ensure state change takes effect
-      setTimeout(() => {
-        updateState({
-          planSelected: selectedPlan,
-          step: 'wifi-setup'
-        });
-      }, 0);
-      
     } catch (error) {
       console.error('❌ Error saving plan selection:', error);
       alert('Error saving plan. Please try again.');
