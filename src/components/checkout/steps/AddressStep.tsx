@@ -634,7 +634,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       className="relative rounded-xl overflow-hidden"
       style={{
         width: '480px',
-        height: '320px',
+        height: 'auto',
+        minHeight: '420px',
         backgroundColor: '#0047AB'
       }}
     >
