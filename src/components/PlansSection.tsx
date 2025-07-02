@@ -5,32 +5,40 @@ import { Check } from 'lucide-react';
 import { CheckoutModal } from './checkout/CheckoutModal';
 import { useCheckoutModal } from '@/hooks/useCheckoutModal';
 
-export const PlansSection = () => {
+interface PlansSectionProps {
+  saleActive?: boolean;
+}
+
+export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
   const { isOpen, openModal, closeModal } = useCheckoutModal();
   const [selectedPlan, setSelectedPlan] = React.useState<string | null>(null);
 
   const plans = [
     {
       name: "SpryFi Essential",
-      price: "$99.95/mo",
+      originalPrice: "$99.95/mo",
+      salePrice: "$89.95/mo",
+      price: saleActive ? "$89.95/mo" : "$99.95/mo",
       speed: "100+ Mbps",
       description: "Stream shows, browse freely",
       subtitle: "Works great for 1–2 people",
       features: ["No contracts, no credit checks"],
       popular: false,
       style: "basic",
-      planType: "spryfi-home" // Add plan type for checkout
+      planType: "spryfi-home"
     },
     {
       name: "SpryFi Premium",
-      price: "$139.95/mo", 
+      originalPrice: "$139.95/mo",
+      salePrice: "$129.95/mo", 
+      price: saleActive ? "$129.95/mo" : "$139.95/mo",
       speed: "200+ Mbps",
       description: "Perfect for families & remote work",
       subtitle: "No throttling, no limits",
       features: ["Great for streaming, Zoom, and gaming"],
       popular: true,
       style: "premium",
-      planType: "spryfi-home-premium" // Add plan type for checkout
+      planType: "spryfi-home-premium"
     }
   ];
 
@@ -59,9 +67,15 @@ export const PlansSection = () => {
           <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-4">
             Pick the Plan That's Right for You.
           </h2>
-          <h2 className="text-center text-xl font-medium text-gray-700 mb-16">
+          <h2 className="text-center text-xl font-medium text-gray-700 mb-8">
             Two simple plans. Both with plenty of power to make your life online a dream.
           </h2>
+          
+          {saleActive && (
+            <div className="text-center mb-8">
+              <span className="sale-badge">🔥 FLASH SALE PRICING - LOCKED FOR LIFE 🔥</span>
+            </div>
+          )}
           
           <div className="flex flex-wrap justify-center gap-6 mb-12">
             {plans.map((plan, index) => (
@@ -90,14 +104,32 @@ export const PlansSection = () => {
                     {plan.speed}
                   </div>
                   
-                  <div className={`text-5xl font-bold mb-6 ${
-                    plan.style === 'basic' ? 'text-gray-900' : 'text-blue-700'
-                  }`}>
-                    {plan.price}
+                  <div className="price-display mb-6">
+                    {saleActive ? (
+                      <>
+                        <div className="original-price">{plan.originalPrice}</div>
+                        <div className={`sale-price ${
+                          plan.style === 'basic' ? 'text-red-600' : 'text-red-700'
+                        }`}>
+                          {plan.salePrice}
+                        </div>
+                        <div className="forever-badge">FOREVER PRICE</div>
+                      </>
+                    ) : (
+                      <div className={`text-5xl font-bold ${
+                        plan.style === 'basic' ? 'text-gray-900' : 'text-blue-700'
+                      }`}>
+                        {plan.price}
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full mb-3 inline-block">
-                    Save $180/year vs. Comcast
+                  <div className={`text-sm font-semibold px-3 py-1 rounded-full mb-3 inline-block ${
+                    saleActive 
+                      ? 'savings-callout-sale' 
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {saleActive ? "Save $120/year forever!" : "Save $180/year vs. Comcast"}
                   </div>
                   
                   <div className="text-lg font-medium mb-3 text-gray-700">

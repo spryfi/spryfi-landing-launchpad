@@ -678,3 +678,211 @@
     page-break-inside: avoid;
   }
 }
+
+/* Flash Sale Banner Styles */
+.flash-sale-banner {
+  background: linear-gradient(45deg, #DC2626 0%, #EF4444 50%, #DC2626 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+  color: white;
+  padding: 1.5rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.sale-content {
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.sale-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.flash-icon {
+  font-size: 1.5rem;
+  animation: flash 1s ease-in-out infinite;
+}
+
+@keyframes flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.sale-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sale-subtitle {
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.95;
+}
+
+/* Countdown Timer */
+.countdown-container {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+}
+
+.countdown-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.countdown-timer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'SF Mono', 'Monaco', monospace;
+}
+
+.time-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  min-width: 60px;
+}
+
+.time-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.time-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-top: 0.25rem;
+}
+
+.separator {
+  font-size: 1.5rem;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+/* Pricing Card Sale Styles */
+.sale-badge {
+  background: #DC2626;
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 30px;
+  font-weight: 700;
+  display: inline-block;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.price-display {
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #9CA3AF;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.sale-price {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0.5rem 0;
+}
+
+.forever-badge {
+  background: #10B981;
+  color: white;
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.savings-callout-sale {
+  background: #FEF3C7;
+  color: #92400E;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Flash Sale Banner Enhancement */
+.flash-sale-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+  transform: rotate(45deg);
+  animation: shine 3s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+/* Mobile Responsive for Flash Sale */
+@media (max-width: 768px) {
+  .sale-title {
+    font-size: 1.25rem;
+  }
+  
+  .countdown-timer {
+    gap: 0.25rem;
+  }
+  
+  .time-unit {
+    min-width: 50px;
+    padding: 0.5rem;
+  }
+  
+  .time-value {
+    font-size: 1.5rem;
+  }
+  
+  .sale-price {
+    font-size: 2rem;
+  }
+}
