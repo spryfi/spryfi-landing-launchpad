@@ -2174,6 +2174,42 @@ export type Database = {
           },
         ]
       }
+      shipping_zones: {
+        Row: {
+          active: boolean | null
+          base_cost: number
+          created_at: string | null
+          estimated_days: string
+          id: string
+          name: string
+          states: string[]
+          updated_at: string | null
+          zone_number: number
+        }
+        Insert: {
+          active?: boolean | null
+          base_cost: number
+          created_at?: string | null
+          estimated_days: string
+          id: string
+          name: string
+          states: string[]
+          updated_at?: string | null
+          zone_number: number
+        }
+        Update: {
+          active?: boolean | null
+          base_cost?: number
+          created_at?: string | null
+          estimated_days?: string
+          id?: string
+          name?: string
+          states?: string[]
+          updated_at?: string | null
+          zone_number?: number
+        }
+        Relationships: []
+      }
       social_mentions: {
         Row: {
           credit_applied: boolean | null
