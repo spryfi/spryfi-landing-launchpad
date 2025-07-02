@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/Footer';
 
@@ -245,12 +246,12 @@ export const LoyaltySavings = () => {
             <div className="trust-item bg-white p-8 rounded-2xl shadow-lg">
               <h3 className="text-xl font-bold mb-4 text-blue-600">Life Happens Clause</h3>
               <p className="text-gray-600 mb-4">Need to cancel early? We understand. Our early termination fees are reasonable and clearly stated.</p>
-              <a href="/loyalty-terms" className="text-blue-600 hover:underline">View full terms →</a>
+              <Link to="/loyalty-terms" className="text-blue-600 hover:underline">View full terms →</Link>
             </div>
             <div className="trust-item bg-white p-8 rounded-2xl shadow-lg">
               <h3 className="text-xl font-bold mb-4 text-blue-600">Membership Rules</h3>
               <p className="text-gray-600 mb-4">Simple and straightforward. No hidden clauses, no gotchas. Just honest terms for honest savings.</p>
-              <a href="/loyalty-terms" className="text-blue-600 hover:underline">Read the details →</a>
+              <Link to="/loyalty-terms" className="text-blue-600 hover:underline">Read the details →</Link>
             </div>
             <div className="trust-item bg-white p-8 rounded-2xl shadow-lg">
               <h3 className="text-xl font-bold mb-4 text-blue-600">Auto-Renewal</h3>
@@ -270,7 +271,7 @@ export const LoyaltySavings = () => {
             <Button className="w-full md:w-auto bg-gray-400 hover:bg-gray-500 text-white">Join Silver Circle (Save 8%)</Button>
             <Button className="w-full md:w-auto bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-bold hover:from-yellow-500 hover:to-yellow-600">Join Gold Circle (Save 16%)</Button>
           </div>
-          <p className="text-sm text-gray-500 mt-4">By joining the Loyalty Circle, you agree to our <a href="/loyalty-terms" className="text-blue-600 hover:underline">membership terms and conditions</a>.</p>
+          <p className="text-sm text-gray-500 mt-4">By joining the Loyalty Circle, you agree to our <Link to="/loyalty-terms" className="text-blue-600 hover:underline">membership terms and conditions</Link>.</p>
         </div>
       </section>
 
