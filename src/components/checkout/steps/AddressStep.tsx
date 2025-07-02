@@ -630,15 +630,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div 
-        className="relative rounded-xl overflow-hidden"
-        style={{
-          width: '480px',
-          height: '320px',
-          backgroundColor: '#0047AB'
-        }}
-      >
+    <div 
+      className="relative rounded-xl overflow-hidden"
+      style={{
+        width: '480px',
+        height: '320px',
+        backgroundColor: '#0047AB'
+      }}
+    >
         {!showContactForm ? (
           <>
             {/* Close button */}
@@ -828,7 +827,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 };
