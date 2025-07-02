@@ -1,8 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import SimpleAddressInput from '@/components/SimpleAddressInput';
 
 export const HowItWorks = () => {
+  const [showAddressInput, setShowAddressInput] = useState(false);
+
   const steps = [
     {
       number: "1",
@@ -11,7 +14,7 @@ export const HowItWorks = () => {
     },
     {
       number: "2",
-      title: "Pick Your Plan",
+      title: "Pick Your Plan", 
       description: "Choose the speed that fits your needs."
     },
     {
@@ -20,6 +23,15 @@ export const HowItWorks = () => {
       description: "Get your SpryFi kit in the mail. You're online in minutes."
     }
   ];
+
+  const handleGetStarted = () => {
+    setShowAddressInput(true);
+  };
+
+  const handleAddressSelect = (address: string) => {
+    console.log('Address selected:', address);
+    // Handle address selection logic here
+  };
 
   return (
     <section className="py-20 bg-white px-6">
@@ -48,14 +60,35 @@ export const HowItWorks = () => {
           ))}
         </div>
         
-        <div className="text-center">
-          <Button 
-            size="lg" 
-            className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 text-xl rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-          >
-            Get Started Now
-          </Button>
-        </div>
+        {!showAddressInput ? (
+          <div className="text-center">
+            <Button 
+              onClick={handleGetStarted}
+              size="lg" 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 text-xl rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              Get Started Now
+            </Button>
+          </div>
+        ) : (
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-8 text-center text-white shadow-2xl">
+              <h3 className="text-3xl font-bold mb-4">
+                Great! Let's see if our award winning service is available at your location.
+              </h3>
+              <p className="text-blue-100 text-lg mb-6">
+                We're happy you're here! Enter your address to check coverage.
+              </p>
+              
+              <div className="relative z-40" style={{ overflow: 'visible' }}>
+                <SimpleAddressInput
+                  onAddressSelect={handleAddressSelect}
+                  placeholder="Enter your street address"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
