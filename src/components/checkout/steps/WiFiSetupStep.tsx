@@ -233,14 +233,13 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
                   value={wifiSsid}
                   onChange={(e) => setWifiSsid(e.target.value)}
                   placeholder="Enter network name"
-                  className="flex-1 px-4 py-3 text-base"
+                  className="flex-1 px-4 py-3 text-base bg-green-50"
                 />
                 <Button
                   onClick={generateNetworkName}
-                  variant="outline"
-                  className="px-4 py-3 whitespace-nowrap"
+                  className="px-4 py-3 whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  Generate Name
+                  Or Generate Name for me
                 </Button>
               </div>
             </div>
@@ -257,14 +256,13 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
                   value={wifiPasskey}
                   onChange={(e) => handlePasskeyChange(e.target.value)}
                   placeholder="Enter password (min 8 characters)"
-                  className="flex-1 px-4 py-3 text-base"
+                  className="flex-1 px-4 py-3 text-base bg-green-50"
                 />
                 <Button
                   onClick={generateSecurePasskey}
-                  variant="outline"
-                  className="px-4 py-3 whitespace-nowrap"
+                  className="px-4 py-3 whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  Generate Password
+                  Or Generate password for me
                 </Button>
               </div>
               {passkeyError && (
