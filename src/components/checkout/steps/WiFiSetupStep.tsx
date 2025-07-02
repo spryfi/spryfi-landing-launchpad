@@ -262,7 +262,7 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
                   onClick={generateSecurePasskey}
                   className="px-4 py-3 whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  Or Generate password for me
+                  Or Generate Password for me
                 </Button>
               </div>
               {passkeyError && (
