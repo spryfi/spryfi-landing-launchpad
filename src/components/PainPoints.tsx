@@ -9,7 +9,7 @@ export const PainPoints = () => {
     },
     {
       icon: "💸",
-      headline: "Bill jumps from $59 to $89",
+      headline: "Bill jumps to $149 with hidden fees",
       description: "After the \"promotional price\" expires (surprise!)"
     },
     {
