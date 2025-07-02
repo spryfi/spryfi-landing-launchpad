@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckoutState } from '../CheckoutModal';
 import { supabase } from '@/integrations/supabase/client';
 import { ShieldCheck, CreditCard, Truck, Clock } from 'lucide-react';
+import { getShippingRate, getShippingOrigin } from '@/utils/shipping';
 
 interface CheckoutStepProps {
   state: CheckoutState;
@@ -57,26 +58,52 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ state, updateState, 
     subtotal: 0,
     shipping: 0,
     total: 0,
-    estimatedDays: 5
+    estimatedDays: '5'
   });
 
   const [loading, setLoading] = useState(false);
+  const [calculatingShipping, setCalculatingShipping] = useState(false);
+  const [shippingOrigin, setShippingOrigin] = useState<{city: string; state: string} | null>(null);
+  const [shippingInfo, setShippingInfo] = useState<{cost: number; estimatedDays: string; zoneName: string} | null>(null);
 
-  // Calculate shipping based on state
-  const calculateShipping = (state: string) => {
-    const shippingZones = {
-      zone1: { states: ['TX', 'OK', 'AR', 'LA', 'NM'], rate: 12.95, days: 3 },
-      zone2: { states: ['AZ', 'CA', 'NV', 'UT', 'CO', 'KS', 'MO', 'TN', 'MS', 'AL', 'GA', 'FL'], rate: 16.95, days: 5 },
-      zone3: { states: ['WA', 'OR', 'ID', 'MT', 'WY', 'ND', 'SD', 'NE', 'IA', 'IL', 'IN', 'OH', 'KY', 'WV', 'VA', 'NC', 'SC'], rate: 19.95, days: 7 },
-      zone4: { states: ['AK', 'HI', 'ME', 'VT', 'NH', 'MA', 'RI', 'CT', 'NY', 'NJ', 'PA', 'DE', 'MD', 'DC'], rate: 24.95, days: 10 }
+  // Fetch shipping origin on mount
+  useEffect(() => {
+    const fetchOrigin = async () => {
+      const origin = await getShippingOrigin();
+      setShippingOrigin({ city: origin.city, state: origin.state });
     };
+    fetchOrigin();
+  }, []);
 
-    for (const zone of Object.values(shippingZones)) {
-      if (zone.states.includes(state)) {
-        return { rate: zone.rate, days: zone.days };
-      }
+  // Calculate shipping based on state using database
+  const calculateShipping = async (stateCode: string) => {
+    if (!stateCode) return;
+
+    try {
+      setCalculatingShipping(true);
+      
+      // Fetch rate from database
+      const shippingData = await getShippingRate(stateCode);
+      
+      setShippingInfo(shippingData);
+      setOrderSummary(prev => ({
+        ...prev,
+        shipping: shippingData.cost,
+        total: prev.subtotal + shippingData.cost,
+        estimatedDays: shippingData.estimatedDays
+      }));
+    } catch (error) {
+      console.error('Error calculating shipping:', error);
+      // Fallback to default shipping
+      setOrderSummary(prev => ({
+        ...prev,
+        shipping: 16.95,
+        total: prev.subtotal + 16.95,
+        estimatedDays: '5'
+      }));
+    } finally {
+      setCalculatingShipping(false);
     }
-    return { rate: 16.95, days: 5 }; // Default
   };
 
   useEffect(() => {
@@ -106,15 +133,10 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ state, updateState, 
     markFlowCompleted();
   }, [state.leadId]);
 
+  // Auto-calculate shipping when state changes
   useEffect(() => {
     if (formData.state) {
-      const shipping = calculateShipping(formData.state);
-      setOrderSummary({
-        subtotal: 0,
-        shipping: shipping.rate,
-        total: shipping.rate,
-        estimatedDays: shipping.days
-      });
+      calculateShipping(formData.state);
     }
   }, [formData.state]);
 
@@ -415,29 +437,44 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ state, updateState, 
 
               <Separator />
 
-              {/* Shipping */}
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>$0.00</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="flex items-center gap-2">
-                    <Truck className="w-4 h-4" />
-                    Shipping from Austin, TX
-                  </span>
-                  <span>${orderSummary.shipping.toFixed(2)}</span>
-                </div>
-                {formData.state && (
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      Estimated delivery
-                    </span>
-                    <span>{orderSummary.estimatedDays} business days</span>
-                  </div>
-                )}
-              </div>
+               {/* Shipping */}
+               <div className="space-y-2">
+                 <div className="flex justify-between">
+                   <span>Subtotal</span>
+                   <span>$0.00</span>
+                 </div>
+                 
+                 {calculatingShipping ? (
+                   <div className="flex justify-between items-center">
+                     <span className="flex items-center gap-2">
+                       <Truck className="w-4 h-4" />
+                       Calculating shipping...
+                     </span>
+                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                   </div>
+                 ) : (
+                   <div className="flex justify-between">
+                     <span className="flex items-center gap-2">
+                       <Truck className="w-4 h-4" />
+                       Shipping from {shippingOrigin?.city || 'Austin'}, {shippingOrigin?.state || 'TX'}
+                       {shippingInfo && (
+                         <span className="text-xs text-gray-500">({shippingInfo.zoneName})</span>
+                       )}
+                     </span>
+                     <span>${orderSummary.shipping.toFixed(2)}</span>
+                   </div>
+                 )}
+                 
+                 {formData.state && !calculatingShipping && (
+                   <div className="flex justify-between text-sm text-gray-600">
+                     <span className="flex items-center gap-1">
+                       <Clock className="w-3 h-3" />
+                       Estimated delivery
+                     </span>
+                     <span>{orderSummary.estimatedDays} business days</span>
+                   </div>
+                 )}
+               </div>
 
               <Separator />
 
