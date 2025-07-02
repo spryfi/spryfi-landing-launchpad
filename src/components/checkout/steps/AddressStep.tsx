@@ -726,7 +726,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             </div>
           </>
         ) : (
-          <div className="h-full bg-white rounded-lg p-6 space-y-6">
+          <div className="h-full p-6 space-y-6">
             {/* Address Confirmed State */}
             <div className="text-sm text-gray-600 bg-green-50 p-4 rounded-lg border-l-4 border-green-500 mb-6">
               <div className="flex items-center gap-2 mb-2">
