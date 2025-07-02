@@ -153,12 +153,12 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
         console.log('⚠️ No leadId available, skipping WiFi settings save');
       }
       
-      // Always proceed to router offer step regardless of save status
-      updateState({ step: 'router-offer' });
+      // Always proceed to checkout step (router included by default)
+      updateState({ step: 'checkout', routerAdded: true });
     } catch (error) {
       console.error('Error saving WiFi settings:', error);
       // Still proceed even if saving fails
-      updateState({ step: 'router-offer' });
+      updateState({ step: 'checkout', routerAdded: true });
     } finally {
       setLoading(false);
     }
@@ -293,7 +293,7 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {loading ? 'Configuring Router...' : 'Continue to Router Selection'}
+            {loading ? 'Configuring Router...' : 'Continue to Checkout'}
           </Button>
         </div>
 

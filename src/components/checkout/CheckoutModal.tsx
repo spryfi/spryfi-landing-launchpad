@@ -268,9 +268,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
         // Ensure leadId exists before showing WiFi setup
         ensureLeadExists();
         return <WiFiSetupStep state={state} updateState={updateState} />;
-      case 'router-offer':
-        console.log('🔍 Rendering RouterOffer');
-        return <RouterOffer state={state} updateState={updateState} />;
       case 'checkout':
         console.log('🔍 Rendering CheckoutStep');
         return <CheckoutStep state={state} updateState={updateState} onClose={onClose} />;
