@@ -662,9 +662,24 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
                 <div className="text-blue-100 text-sm font-medium">
                   Internet that just works
                 </div>
-              </div>
+               </div>
 
-              {/* Headline - Updated for plan selection flow */}
+               {/* Preselected Plan Banner */}
+               {state.preselectedPlan && (
+                 <div className="mb-4 bg-green-500/20 border border-green-400 rounded-lg p-3 text-center">
+                   <div className="flex items-center justify-center gap-2 text-white">
+                     <span className="text-green-400">✓</span>
+                     <span className="font-semibold">
+                       {state.preselectedPlan === 'spryfi-home' ? 'Essential' : 'Premium'} Plan Selected
+                     </span>
+                   </div>
+                   <div className="text-green-100 text-sm mt-1">
+                     Sale price locked in forever!
+                   </div>
+                 </div>
+               )}
+
+               {/* Headline - Updated for plan selection flow */}
               <h2 className="text-white text-xl font-bold mb-2 leading-tight">
                 {state.preselectedPlan ? (
                   <>Great! Let's confirm that our SpryFi service<br />is available at your location</>
