@@ -7,22 +7,22 @@ export const WhySpryFi = () => {
     {
       icon: Check,
       title: "Truly Unlimited",
-      description: "No throttling. No surprise slowdowns."
+      description: "No throttling at 7pm. No data caps. Ever."
     },
     {
       icon: Unlock,
       title: "No Contracts",
-      description: "Stay because it works—not because you're trapped."
+      description: "Month-to-month freedom. Cancel anytime. Zero penalties."
     },
     {
       icon: Package,
       title: "Plug & Play Setup",
-      description: "Delivered to your door. Online in minutes."
+      description: "No waiting for installers. Online in 5 minutes."
     },
     {
       icon: Users,
       title: "Real Human Support",
-      description: "No robots. No hold music. Just help."
+      description: "Average response: 47 seconds. No robots. No transfers."
     }
   ];
 
@@ -30,7 +30,7 @@ export const WhySpryFi = () => {
     <section className="py-20 bg-gradient-to-b from-gray-50 to-white px-6">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-16">
-          Why SpryFi?
+          Here's How SpryFi Solves These Problems
         </h2>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

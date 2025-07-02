@@ -96,12 +96,20 @@ export const PlansSection = () => {
                     {plan.price}
                   </div>
                   
+                  <div className="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full mb-3 inline-block">
+                    Save $180/year vs. Comcast
+                  </div>
+                  
                   <div className="text-lg font-medium mb-3 text-gray-700">
                     {plan.description}
                   </div>
                   
-                  <div className="text-base mb-6 text-gray-600">
+                  <div className="text-base mb-4 text-gray-600">
                     {plan.subtitle}
+                  </div>
+                  
+                  <div className="text-sm text-gray-500 mb-6 border-t pt-3">
+                    No equipment fees • No activation fees • No surprises
                   </div>
                   
                   <div className="mb-8 space-y-3">

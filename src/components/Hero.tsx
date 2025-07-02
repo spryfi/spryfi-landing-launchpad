@@ -309,11 +309,15 @@ export const Hero = () => {
               isVisible ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            {currentHook || "Finally. Internet that doesn't hate you."}
+            {currentHook || "Finally. Internet Without the BS."}
           </h1>
 
-          <p className="text-base text-white mt-2 drop-shadow-lg leading-relaxed">
-            Takes just 30 seconds.
+          <p className="text-xl text-white mt-2 drop-shadow-lg leading-relaxed mb-2">
+            No contracts. No hidden fees. No more getting screwed by big cable.
+          </p>
+          
+          <p className="text-base text-white/90 drop-shadow-lg leading-relaxed">
+            Join 12,847 Americans who ditched their greedy ISP this month.
           </p>
 
           <button
