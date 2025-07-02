@@ -738,10 +738,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
             {/* Contact Form Headline */}
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-semibold text-gray-900">
+              <h2 className="text-2xl font-semibold text-white">
                 {state.preselectedPlan ? 'Almost there' : 'Almost there'}
               </h2>
-              <p className="text-gray-600">
+              <p className="text-blue-100">
                 Just need a few quick details to check your area.
               </p>
             </div>
