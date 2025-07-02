@@ -249,20 +249,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
       fullState: state
     });
     
-    
-    // If we have a preselected plan but not qualified yet, show the appropriate step
-    if (state.preselectedPlan && !state.qualified) {
-      console.log('🎯 PRESELECTED PLAN - SHOWING APPROPRIATE STEP FOR QUALIFICATION');
-      
-      // Show address step if we haven't qualified yet
-      if (state.step === 'address') {
-        return <AddressStep state={state} updateState={updateState} />;
-      }
-      
-      // Show contact step if we have address but need contact info
-      if (state.step === 'contact') {
-        return <ContactStep state={state} updateState={updateState} />;
-      }
+    // Always show address step for preselected plans when not qualified yet
+    if (state.preselectedPlan && !state.qualified && state.step === 'address') {
+      console.log('🎯 RENDERING ADDRESS STEP FOR PRESELECTED PLAN');
+      return <AddressStep state={state} updateState={updateState} />;
     }
     
     // Regular step-based flow
@@ -320,7 +310,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
         );
       default:
         console.log('🔍 Default case - step:', state.step);
-        return null;
+        return <AddressStep state={state} updateState={updateState} />;
     }
   };
 
