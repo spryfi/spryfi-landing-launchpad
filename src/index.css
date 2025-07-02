@@ -354,6 +354,93 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
+/* Loyalty Circle Specific Styles */
+.circle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 30px;
+  margin-bottom: 1rem;
+}
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin-top: 3rem;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-number {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+/* Tier Cards */
+.tier-card {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  transition: all 0.3s;
+}
+
+.tier-card.circle-silver {
+  border: 2px solid #C0C0C0;
+}
+
+.tier-card.circle-gold {
+  border: 3px solid #FFD700;
+  transform: scale(1.05);
+}
+
+.tier-label {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #FFD700;
+  color: #000;
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 0.875rem;
+}
+
+.monthly-savings {
+  color: #10B981;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.annual-savings-badge {
+  background: #10B981;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+  margin: 1rem 0;
+  font-weight: 600;
+}
+
 /* Mobile Responsive for Loyalty Page */
 @media (max-width: 768px) {
   .savings-grid {
@@ -367,5 +454,19 @@
   .cta-buttons {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .tiers-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tier-card.circle-gold {
+    transform: none;
+    margin-top: 2rem;
+  }
+  
+  .hero-stats {
+    flex-direction: column;
+    gap: 1.5rem;
   }
 }

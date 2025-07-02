@@ -115,7 +115,7 @@ export const PlansSection = () => {
                   <div className="optional-savings-hint mb-4">
                     <span className="month-to-month-badge">Month-to-month</span>
                     <a href="/loyalty-savings" className="savings-link">
-                      Want to save more? <span className="underline">See optional loyalty savings</span> →
+                      Want to save more? <span className="underline">Join the Loyalty Circle</span> →
                     </a>
                   </div>
                   
