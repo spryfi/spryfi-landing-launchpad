@@ -189,3 +189,183 @@
     overflow-y: auto !important;
   }
 }
+
+/* Optional Savings Program Styling */
+.optional-savings-hint {
+  margin: 1rem 0;
+  font-size: 0.875rem;
+  color: #666;
+  text-align: center;
+}
+
+.month-to-month-badge {
+  background: #e5f3ff;
+  color: #1E40AF;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-right: 0.5rem;
+  display: inline-block;
+}
+
+.savings-link {
+  color: #1E40AF;
+  text-decoration: none;
+  transition: opacity 0.2s;
+  font-size: 0.875rem;
+}
+
+.savings-link:hover {
+  opacity: 0.8;
+}
+
+.savings-link .underline {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Loyalty Page Styles */
+.loyalty-hero {
+  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+  color: white;
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.hero-disclaimer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: rgba(255,255,255,0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Savings Grid */
+.savings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  margin: 3rem 0;
+}
+
+.savings-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 2rem;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.savings-card.default {
+  border-color: #1E40AF;
+}
+
+.savings-card.best-value {
+  border-color: #10b981;
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.default-badge {
+  background: #1E40AF;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.savings-badge {
+  background: #10b981;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Fine Print Section */
+.fine-print-section {
+  background: #f8f9fa;
+  padding: 3rem 2rem;
+  border-radius: 16px;
+  margin: 3rem 0;
+}
+
+.fine-print-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.note {
+  font-size: 0.875rem;
+  color: #666;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+/* CTA Section */
+.cta-section {
+  text-align: center;
+  padding: 4rem 0;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.btn {
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #1E40AF;
+  color: white;
+}
+
+.btn-secondary {
+  background: white;
+  color: #1E40AF;
+  border: 2px solid #1E40AF;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Mobile Responsive for Loyalty Page */
+@media (max-width: 768px) {
+  .savings-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .savings-card.best-value {
+    transform: none;
+  }
+  
+  .cta-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

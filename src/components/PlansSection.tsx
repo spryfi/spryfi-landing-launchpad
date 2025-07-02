@@ -36,7 +36,7 @@ export const PlansSection = () => {
 
   const included = [
     "Unlimited data",
-    "No contracts", 
+    "No contracts required (save more with optional loyalty terms)", 
     "Modem included",
     "14-day money-back guarantee"
   ];
@@ -108,8 +108,15 @@ export const PlansSection = () => {
                     {plan.subtitle}
                   </div>
                   
-                  <div className="text-sm text-gray-500 mb-6 border-t pt-3">
+                  <div className="text-sm text-gray-500 mb-4 border-t pt-3">
                     No equipment fees • No activation fees • No surprises
+                  </div>
+                  
+                  <div className="optional-savings-hint mb-4">
+                    <span className="month-to-month-badge">Month-to-month</span>
+                    <a href="/loyalty-savings" className="savings-link">
+                      Want to save more? <span className="underline">See optional loyalty savings</span> →
+                    </a>
                   </div>
                   
                   <div className="mb-8 space-y-3">
