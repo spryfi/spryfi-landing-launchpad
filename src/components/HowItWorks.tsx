@@ -2,9 +2,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import SimpleAddressInput from '@/components/SimpleAddressInput';
+import { CheckoutModal } from '@/components/checkout/CheckoutModal';
 
 export const HowItWorks = () => {
   const [showAddressInput, setShowAddressInput] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState('');
 
   const steps = [
     {
@@ -30,7 +33,8 @@ export const HowItWorks = () => {
 
   const handleAddressSelect = (address: string) => {
     console.log('Address selected:', address);
-    // Handle address selection logic here
+    setSelectedAddress(address);
+    setShowCheckoutModal(true);
   };
 
   return (
@@ -90,6 +94,11 @@ export const HowItWorks = () => {
           </div>
         )}
       </div>
+
+      <CheckoutModal 
+        isOpen={showCheckoutModal} 
+        onClose={() => setShowCheckoutModal(false)}
+      />
     </section>
   );
 };

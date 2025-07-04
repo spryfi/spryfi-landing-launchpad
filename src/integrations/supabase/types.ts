@@ -1065,11 +1065,15 @@ export type Database = {
           last_emailed_at: string | null
           last_name: string | null
           lead_type: string | null
+          override_at: string | null
+          override_by: string | null
+          override_reason: string | null
           phone: string | null
           promo_code: string | null
           promo_code_discount_percent: number | null
           promo_code_plan_override: string | null
           qualification_checked_at: string | null
+          qualification_override: boolean | null
           qualification_result: string | null
           qualification_source: string | null
           qualified: boolean | null
@@ -1079,6 +1083,14 @@ export type Database = {
           updated_at: string | null
           usage_type: string | null
           usage_types: string[] | null
+          verizon_api_confidence: number | null
+          verizon_api_response: Json | null
+          verizon_checked_at: string | null
+          verizon_map_screenshot: string | null
+          verizon_network_type: string | null
+          verizon_qualification_source: string | null
+          verizon_qualified: boolean | null
+          verizon_screenshot_captured_at: string | null
           zip_code: string | null
         }
         Insert: {
@@ -1097,11 +1109,15 @@ export type Database = {
           last_emailed_at?: string | null
           last_name?: string | null
           lead_type?: string | null
+          override_at?: string | null
+          override_by?: string | null
+          override_reason?: string | null
           phone?: string | null
           promo_code?: string | null
           promo_code_discount_percent?: number | null
           promo_code_plan_override?: string | null
           qualification_checked_at?: string | null
+          qualification_override?: boolean | null
           qualification_result?: string | null
           qualification_source?: string | null
           qualified?: boolean | null
@@ -1111,6 +1127,14 @@ export type Database = {
           updated_at?: string | null
           usage_type?: string | null
           usage_types?: string[] | null
+          verizon_api_confidence?: number | null
+          verizon_api_response?: Json | null
+          verizon_checked_at?: string | null
+          verizon_map_screenshot?: string | null
+          verizon_network_type?: string | null
+          verizon_qualification_source?: string | null
+          verizon_qualified?: boolean | null
+          verizon_screenshot_captured_at?: string | null
           zip_code?: string | null
         }
         Update: {
@@ -1129,11 +1153,15 @@ export type Database = {
           last_emailed_at?: string | null
           last_name?: string | null
           lead_type?: string | null
+          override_at?: string | null
+          override_by?: string | null
+          override_reason?: string | null
           phone?: string | null
           promo_code?: string | null
           promo_code_discount_percent?: number | null
           promo_code_plan_override?: string | null
           qualification_checked_at?: string | null
+          qualification_override?: boolean | null
           qualification_result?: string | null
           qualification_source?: string | null
           qualified?: boolean | null
@@ -1143,6 +1171,14 @@ export type Database = {
           updated_at?: string | null
           usage_type?: string | null
           usage_types?: string[] | null
+          verizon_api_confidence?: number | null
+          verizon_api_response?: Json | null
+          verizon_checked_at?: string | null
+          verizon_map_screenshot?: string | null
+          verizon_network_type?: string | null
+          verizon_qualification_source?: string | null
+          verizon_qualified?: boolean | null
+          verizon_screenshot_captured_at?: string | null
           zip_code?: string | null
         }
         Relationships: [
