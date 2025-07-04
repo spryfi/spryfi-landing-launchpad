@@ -315,12 +315,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-transparent border-none shadow-none">
         <DialogTitle className="sr-only">Check Internet Availability</DialogTitle>
         <DialogDescription className="sr-only">
           Enter your address and contact information to check if SpryFi internet service is available in your area
         </DialogDescription>
-        <div className="bg-white">
+        <div>
           {renderCurrentStep()}
         </div>
       </DialogContent>
