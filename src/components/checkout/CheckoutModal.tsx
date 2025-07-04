@@ -305,16 +305,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
     }
   };
 
-  // LAST RESORT - Direct DOM manipulation (FIXED TYPE ERROR)
-  useEffect(() => {
-    if ((state.planSelected || state.preselectedPlan) && state.qualified) {
-      console.log('🔨 DOM MANIPULATION - HIDING QUALIFICATION CARD');
-      const qualificationCard = document.querySelector('[data-testid="qualification-success"]') as HTMLElement;
-      if (qualificationCard) {
-        qualificationCard.style.display = 'none';
-      }
-    }
-  }, [state.planSelected, state.preselectedPlan, state.qualified]);
 
   console.log('🔍 ABOUT TO RENDER - Final state check:', {
     planSelected: state.planSelected,
