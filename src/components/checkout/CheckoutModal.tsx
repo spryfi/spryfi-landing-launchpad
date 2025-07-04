@@ -133,6 +133,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
     }
   }, [isOpen, preselectedPlan]);
 
+  // Handle body overflow when modal is open/closed
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   // Create lead for qualified user when bypassing contact step
   const createLeadForQualifiedUser = async (contact: any) => {
     try {
