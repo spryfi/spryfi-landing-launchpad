@@ -43,9 +43,9 @@ export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ stat
   };
 
   return (
-    <div className="flex min-h-[500px] bg-white" data-testid="qualification-success">
+    <div className="flex flex-col lg:flex-row min-h-[500px] bg-white w-full" data-testid="qualification-success">
       {/* Left Content Section */}
-      <div className="flex-1 p-12 flex flex-col justify-center max-w-[60%]">
+      <div className="flex-1 p-6 lg:p-12 flex flex-col justify-center w-full lg:max-w-[60%]">
         {/* Enhanced SpryFi Branding */}
         <div className="text-center mb-8">
           <div className="text-[#0047AB] text-3xl font-bold mb-2">
@@ -109,7 +109,7 @@ export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ stat
       </div>
 
       {/* Right Visual Section */}
-      <div className="w-[40%] bg-gray-50 flex items-center justify-center">
+      <div className="hidden lg:flex lg:w-[40%] bg-gray-50 items-center justify-center">
         <div className="text-center p-8">
           {/* Placeholder for hero image */}
           <div className="w-full h-80 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mb-4">
