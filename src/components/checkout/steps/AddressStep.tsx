@@ -36,9 +36,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   const [lastName, setLastName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   
-  // UI state
+  // UI state - New two-card flow
+  const [addressConfirmed, setAddressConfirmed] = useState(false);
+  const [showDetailsCard, setShowDetailsCard] = useState(false);
   const [isCheckingQualification, setIsCheckingQualification] = useState(false);
-  const [showContactForm, setShowContactForm] = useState(false);
   const [isProcessingAddress, setIsProcessingAddress] = useState(false);
   
   // Progress tracking
@@ -283,6 +284,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           title: "Address Error",
           description: "We couldn't process your address — please re-enter it or try a different address.",
         });
+        setIsProcessingAddress(false);
         return;
       }
 
@@ -312,15 +314,14 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         anchorAddressId
       });
       
-      // Step 5: Automatically transition to contact form
-      setTimeout(() => {
-        setShowContactForm(true);
-      }, 300);
+      // Step 5: Show address confirmed and auto-advance to details card
+      setAddressConfirmed(true);
+      setIsProcessingAddress(false);
       
-      toast({
-        title: "Address confirmed! ✅",
-        description: "Now please enter your contact information.",
-      });
+      // Wait 1 second then show details card
+      setTimeout(() => {
+        setShowDetailsCard(true);
+      }, 1000);
       
     } catch (error) {
       console.error('🔥 Error processing address:', error);
@@ -328,7 +329,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         title: "Address Processing Error",
         description: error instanceof Error ? error.message : "We couldn't process your address — please re-enter it.",
       });
-    } finally {
       setIsProcessingAddress(false);
     }
   };
@@ -630,116 +630,145 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   return (
-    <div 
-      className="relative rounded-xl overflow-hidden"
-      style={{
-        width: '480px',
-        height: 'auto',
-        minHeight: '420px',
-        backgroundColor: '#0047AB'
-      }}
-    >
-        {!showContactForm ? (
-          <>
-            {/* Close button */}
-            <button
-              onClick={() => {}} // Will be handled by parent modal
-              className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10"
-            >
-              ×
-            </button>
+    <div className="flex justify-center items-center min-h-screen p-4">
+      {!showDetailsCard ? (
+        /* Card 1: Address Only */
+        <div 
+          className="relative rounded-xl overflow-hidden"
+          style={{
+            width: '480px',
+            height: 'auto',
+            minHeight: '420px',
+            backgroundColor: '#0047AB',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22)'
+          }}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => {}} // Will be handled by parent modal
+            className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10"
+          >
+            ×
+          </button>
 
-            {/* Content */}
-            <div className="px-6 py-6 h-full flex flex-col justify-center text-center">
-              {/* Enhanced SpryFi Branding */}
-              <div className="text-center mb-6">
-                {/* Larger, bolder SpryFi logo */}
-                <div className="text-white text-3xl font-bold mb-2">
-                  SpryFi
-                </div>
-                
-                {/* Tagline */}
-                <div className="text-blue-100 text-sm font-medium">
-                  Internet that just works
-                </div>
-               </div>
-
-               {/* Preselected Plan Banner */}
-               {state.preselectedPlan && (
-                 <div className="mb-4 bg-green-500/20 border border-green-400 rounded-lg p-3 text-center">
-                   <div className="flex items-center justify-center gap-2 text-white">
-                     <span className="text-green-400">✓</span>
-                     <span className="font-semibold">
-                       {state.preselectedPlan === 'spryfi-home' ? 'Essential' : 'Premium'} Plan Selected
-                     </span>
-                   </div>
-                   <div className="text-green-100 text-sm mt-1">
-                     Sale price locked in forever!
-                   </div>
-                 </div>
-               )}
-
-               {/* Headline - Updated for plan selection flow */}
-              <h2 className="text-white text-xl font-bold mb-2 leading-tight">
-                {state.preselectedPlan ? (
-                  <>Great! Let's confirm that our SpryFi service<br />is available at your location</>
-                ) : (
-                  <>See if our award-winning internet has arrived<br />in your neighborhood</>
-                )}
-              </h2>
-
-              {/* Subheadline */}
-              <p className="text-blue-100 text-base mb-6">
-                {state.preselectedPlan ? 'Enter your address to get started' : 'Simple internet, no runaround'}
-              </p>
-
-              {/* Input with SimpleAddressInput functionality */}
-              <div className="relative z-40 mb-4" style={{ overflow: 'visible' }}>
-                <SimpleAddressInput
-                  onAddressSelect={handleAddressSelect}
-                  placeholder="Enter your street address"
-                />
-                {isProcessingAddress && (
-                  <div className="absolute top-full left-0 right-0 mt-1 text-center">
-                    <span className="text-xs text-blue-100">Processing...</span>
-                  </div>
-                )}
+          {/* Address confirmed banner */}
+          {addressConfirmed && (
+            <div className="absolute top-4 left-4 right-12 bg-green-500/20 border border-green-400 rounded-lg p-3 text-center z-10">
+              <div className="flex items-center justify-center gap-2 text-white">
+                <span className="text-green-400">✓</span>
+                <span className="font-medium text-sm">Address confirmed:</span>
               </div>
-
-              {/* Button */}
-              <button
-                onClick={() => {
-                  if (selectedAddress) {
-                    setShowContactForm(true);
-                  }
-                }}
-                disabled={!selectedAddress || isProcessingAddress}
-                className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors mb-4 disabled:opacity-50"
-              >
-                Check my address
-              </button>
-
-              {/* Footer */}
-              <p className="text-blue-100 text-sm">
-                Results in 10 seconds
-              </p>
+              <div className="text-green-100 text-xs mt-1 truncate">{selectedAddress}</div>
             </div>
-          </>
-        ) : (
+          )}
+
+          {/* Content */}
+          <div className={`px-6 py-6 h-full flex flex-col justify-center text-center ${addressConfirmed ? 'pt-20' : ''}`}>
+            {/* Enhanced SpryFi Branding */}
+            <div className="text-center mb-6">
+              <div className="text-white text-3xl font-bold mb-2">
+                SpryFi
+              </div>
+              <div className="text-blue-100 text-sm font-medium">
+                Internet that just works
+              </div>
+            </div>
+
+            {/* Preselected Plan Banner */}
+            {state.preselectedPlan && !addressConfirmed && (
+              <div className="mb-4 bg-green-500/20 border border-green-400 rounded-lg p-3 text-center">
+                <div className="flex items-center justify-center gap-2 text-white">
+                  <span className="text-green-400">✓</span>
+                  <span className="font-semibold">
+                    {state.preselectedPlan === 'spryfi-home' ? 'Essential' : 'Premium'} Plan Selected
+                  </span>
+                </div>
+                <div className="text-green-100 text-sm mt-1">
+                  Sale price locked in forever!
+                </div>
+              </div>
+            )}
+
+            {/* Headline */}
+            <h2 className="text-white text-xl font-bold mb-2 leading-tight">
+              {addressConfirmed ? (
+                <>Perfect! Setting up your details...</>
+              ) : state.preselectedPlan ? (
+                <>Great! Let's confirm that our SpryFi service<br />is available at your location</>
+              ) : (
+                <>See if our award-winning internet has arrived<br />in your neighborhood</>
+              )}
+            </h2>
+
+            {/* Subheadline */}
+            {!addressConfirmed && (
+              <>
+                <p className="text-blue-100 text-base mb-6">
+                  {state.preselectedPlan ? 'Enter your address to get started' : 'Simple internet, no runaround'}
+                </p>
+
+                {/* Input with SimpleAddressInput functionality */}
+                <div className="relative z-40 mb-4" style={{ overflow: 'visible' }}>
+                  <SimpleAddressInput
+                    onAddressSelect={handleAddressSelect}
+                    placeholder="Enter your street address"
+                  />
+                  {isProcessingAddress && (
+                    <div className="absolute top-full left-0 right-0 mt-1 text-center">
+                      <span className="text-xs text-blue-100">Processing...</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <p className="text-blue-100 text-sm">
+                  Results in 10 seconds
+                </p>
+              </>
+            )}
+            
+            {/* Loading state after address confirmed */}
+            {addressConfirmed && (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Card 2: User Details */
+        <div 
+          className="relative rounded-xl overflow-hidden"
+          style={{
+            width: '480px',
+            height: 'auto',
+            minHeight: '420px',
+            backgroundColor: '#0047AB',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22)'
+          }}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => {}} // Will be handled by parent modal
+            className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10"
+          >
+            ×
+          </button>
+
           <div className="h-full p-6 space-y-6">
             {/* Address Confirmed State */}
-            <div className="text-sm text-gray-600 bg-green-50 p-4 rounded-lg border-l-4 border-green-500 mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-green-500">✅</span>
-                <span className="font-medium">Address confirmed:</span>
+            <div className="bg-green-500/20 border border-green-400 rounded-lg p-3 text-center">
+              <div className="flex items-center justify-center gap-2 text-white">
+                <span className="text-green-400">✓</span>
+                <span className="font-medium text-sm">Address confirmed:</span>
               </div>
-              <div className="text-gray-700 text-xs">{selectedAddress}</div>
+              <div className="text-green-100 text-xs mt-1 truncate">{selectedAddress}</div>
             </div>
 
             {/* Contact Form Headline */}
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-semibold text-white">
-                {state.preselectedPlan ? 'Almost there' : 'Almost there'}
+                Almost there
               </h2>
               <p className="text-blue-100">
                 Just need a few quick details to check your area.
@@ -750,42 +779,42 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="first-name" className="text-sm font-medium text-gray-700">First Name</Label>
+                  <Label htmlFor="first-name" className="text-sm font-medium text-white">First Name</Label>
                   <Input
                     type="text"
                     id="first-name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="First name"
-                    className="h-11 text-base border-gray-200 focus:border-[#0047AB] focus:ring-[#0047AB]"
+                    className="h-11 text-base bg-white/10 border-white/20 text-white placeholder:text-white/70 focus:border-white focus:ring-white/30"
                     autoFocus
                     required
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="last-name" className="text-sm font-medium text-gray-700">Last Name</Label>
+                  <Label htmlFor="last-name" className="text-sm font-medium text-white">Last Name</Label>
                   <Input
                     type="text"
                     id="last-name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Last name"
-                    className="h-11 text-base border-gray-200 focus:border-[#0047AB] focus:ring-[#0047AB]"
+                    className="h-11 text-base bg-white/10 border-white/20 text-white placeholder:text-white/70 focus:border-white focus:ring-white/30"
                     required
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-white">Email Address</Label>
                 <Input
                   type="email"
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="h-11 text-base border-gray-200 focus:border-[#0047AB] focus:ring-[#0047AB]"
+                  className="h-11 text-base bg-white/10 border-white/20 text-white placeholder:text-white/70 focus:border-white focus:ring-white/30"
                   required
                 />
               </div>
@@ -796,10 +825,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
               <div className="space-y-3">
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-white">
                       Checking availability across multiple networks...
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-blue-100">
                       {Math.round(qualificationProgress)}%
                     </span>
                   </div>
@@ -807,7 +836,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
                 </div>
                 {currentStatusMessage && (
                   <div className="text-center">
-                    <p className="text-sm text-gray-600 animate-pulse">
+                    <p className="text-sm text-blue-100 animate-pulse">
                       {currentStatusMessage}
                     </p>
                   </div>
@@ -817,17 +846,18 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             
             <Button 
               onClick={handleCheckArea} 
-              className="w-full bg-[#0047AB] hover:bg-[#003a94] text-white px-8 py-4 text-lg font-medium rounded-lg border-none shadow-sm transition-all duration-200 hover:shadow-md mb-4"
+              className="w-full bg-blue-200 hover:bg-blue-100 text-blue-700 px-8 py-4 text-lg font-medium rounded-lg border-none shadow-sm transition-all duration-200 hover:shadow-md mb-4"
               disabled={isCheckingQualification || !isValidContactInfo() || !state.anchorAddressId}
             >
               {isCheckingQualification ? 'Checking your area...' : 'Check availability'}
             </Button>
 
-            <div className="text-center text-xs text-gray-400">
+            <div className="text-center text-xs text-blue-100">
               {isCheckingQualification ? 'Please wait while we check...' : 'Checking takes 10 seconds'}
             </div>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 };
