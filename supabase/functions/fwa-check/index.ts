@@ -194,12 +194,12 @@ serve(async (req) => {
       console.log('✅ Lead verified:', leadData.id)
     }
 
-    // Step 1: Try Verizon API first
+    // Step 1: Try SpryFi Databases first
     let qualificationResult = null;
     let source = 'none';
 
     try {
-      console.log('📡 Calling Verizon API...')
+      console.log('📡 Checking SpryFi Databases...')
       
       const verizonResponse = await callVerizonAPI({
         address_line1: addressData.address_line1,
@@ -210,21 +210,21 @@ serve(async (req) => {
         longitude: addressData.longitude
       });
 
-      console.log('📡 Verizon API raw response:', JSON.stringify(verizonResponse, null, 2));
+      console.log('📡 SpryFi Database response:', JSON.stringify(verizonResponse, null, 2));
 
-      // Parse Verizon response correctly - qualified is a string, not boolean
+      // Parse response correctly - qualified is a string, not boolean
       const isQualified = verizonResponse?.intelligenceResponse?.wirelessCoverages?.fwaCoverage?.[0]?.coverage?.qualified === 'true';
       
-      console.log('📡 Verizon qualification result:', { 
+      console.log('📡 SpryFi Database qualification result:', { 
         isQualified, 
         qualified: verizonResponse?.intelligenceResponse?.wirelessCoverages?.fwaCoverage?.[0]?.coverage?.qualified,
         apiSuccess: verizonResponse.success 
       });
 
-      // Only proceed with Verizon result if API call was successful
+      // Only proceed with SpryFi Database result if API call was successful
       if (verizonResponse.success) {
         if (isQualified) {
-          // Verizon qualified - use this result and do NOT fall back to bot
+          // SpryFi Database qualified - use this result and do NOT fall back to bot
           qualificationResult = {
             qualified: true,
             network_type: '5G_HOME',
@@ -234,20 +234,20 @@ serve(async (req) => {
             raw_data: verizonResponse
           };
           source = 'verizon';
-          console.log('✅ Verizon qualification successful - QUALIFIED (sapi1)')
+          console.log('✅ SpryFi Database qualification successful - QUALIFIED (sapi1)')
         } else {
-          // Verizon explicitly said not qualified - fallback to bot
-          console.log('❌ Verizon said not qualified, trying bot fallback')
-          throw new Error('Verizon said not qualified, trying bot')
+          // SpryFi Database explicitly said not qualified - fallback to bot
+          console.log('❌ SpryFi Database said not qualified, trying bot fallback')
+          throw new Error('SpryFi Database said not qualified, trying bot')
         }
       } else {
-        console.log('❌ Verizon API failed, trying bot fallback')
-        throw new Error('Verizon API call failed')
+        console.log('❌ SpryFi Database failed, trying bot fallback')
+        throw new Error('SpryFi Database call failed')
       }
     } catch (verizonError) {
-      console.log('🤖 Verizon failed/unavailable, using Bot Fallback')
+      console.log('🤖 SpryFi Database failed/unavailable, using Bot Fallback')
       
-      // Step 2: Fall back to bot logic only if Verizon API failed or returned not qualified
+      // Step 2: Fall back to bot logic only if SpryFi Database failed or returned not qualified
       const botResult = await callBotFallback({
         address_line1: addressData.address_line1,
         city: addressData.city,
@@ -356,12 +356,12 @@ serve(async (req) => {
   }
 })
 
-// Mock Verizon API function - replace with actual implementation
+// Mock SpryFi Database function - replace with actual implementation
 async function callVerizonAPI(addressData: any) {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1500));
   
-  // Mock realistic Verizon API response structure
+  // Mock realistic SpryFi Database response structure
   const success = Math.random() > 0.3; // 70% success rate
   
   if (success) {
@@ -384,7 +384,7 @@ async function callVerizonAPI(addressData: any) {
       serviceAvailability: true
     };
   } else {
-    throw new Error('Verizon API unavailable');
+    throw new Error('SpryFi Database unavailable');
   }
 }
 
