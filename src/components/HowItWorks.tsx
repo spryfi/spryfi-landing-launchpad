@@ -28,7 +28,7 @@ export const HowItWorks = () => {
   ];
 
   const handleGetStarted = () => {
-    setShowAddressInput(true);
+    setShowCheckoutModal(true);
   };
 
   const handleAddressSelect = (address: string) => {
