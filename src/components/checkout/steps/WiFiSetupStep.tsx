@@ -178,16 +178,17 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
   });
 
   return (
-    <div className="p-8">
-      {/* Enhanced SpryFi Branding */}
-      <div className="text-center mb-8">
-        <div className="text-[#0047AB] text-3xl font-bold mb-2">
-          SpryFi
+    <div className="bg-white rounded-2xl shadow-xl max-w-2xl mx-auto overflow-hidden">
+      <div className="p-8">
+        {/* Enhanced SpryFi Branding */}
+        <div className="text-center mb-8">
+          <div className="text-[#0047AB] text-3xl font-bold mb-2">
+            SpryFi
+          </div>
+          <div className="text-gray-600 text-sm font-medium">
+            Internet that just works
+          </div>
         </div>
-        <div className="text-gray-600 text-sm font-medium">
-          Internet that just works
-        </div>
-      </div>
 
       <div className="text-center mb-8">
         <div className="mb-4 flex justify-center">
@@ -304,6 +305,7 @@ export const WiFiSetupStep: React.FC<WiFiSetupStepProps> = ({ state, updateState
             so you'll always have access.
           </p>
         </div>
+      </div>
       </div>
     </div>
   );
