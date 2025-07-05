@@ -16,7 +16,7 @@ export const QualificationBadge: React.FC<QualificationBadgeProps> = ({
       case 'verizon':
         return {
           icon: '✓',
-          text: 'Verizon',
+          text: 'SpryFi DB',
           className: 'bg-green-100 text-green-700 border-green-200'
         };
       case 'bot':

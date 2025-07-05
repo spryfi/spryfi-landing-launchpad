@@ -492,7 +492,7 @@ export const Hero = () => {
                   Great news! SpryFi is available
                 </h2>
                 <p className="text-blue-100 text-sm mb-6">
-                  We found {qualificationResult.source === 'verizon' ? 'excellent' : 'good'} coverage at your address
+                   We found {qualificationResult.source === 'verizon' ? 'excellent' : 'good'} coverage at your address
                 </p>
                 <button
                   onClick={handleGetStarted}

@@ -201,21 +201,21 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
   };
 
   // Enhanced polling with progress and C-BAND detection
-  const pollVerizonStatus = async (requestId: string, maxAttempts: number = 20): Promise<any> => {
+  const pollSpryFiStatus = async (requestId: string, maxAttempts: number = 20): Promise<any> => {
     let attempts = 0;
     setQualificationProgress(10);
-    setCurrentStatusMessage('Checking Verizon...');
+    setCurrentStatusMessage('Checking SpryFi Databases...');
     
     while (attempts < maxAttempts) {
       try {
-        console.log(`📡 Polling Verizon status (attempt ${attempts + 1}/${maxAttempts})`);
+        console.log(`📡 Polling SpryFi Database status (attempt ${attempts + 1}/${maxAttempts})`);
         
         // Update progress
         const progress = 10 + (attempts / maxAttempts) * 60; // 10-70% during polling
         setQualificationProgress(progress);
         
         if (attempts < 5) {
-          setCurrentStatusMessage('Checking Verizon...');
+          setCurrentStatusMessage('Checking SpryFi Databases...');
         } else if (attempts < 10) {
           setCurrentStatusMessage('Waiting for additional network data...');
         } else {
@@ -235,7 +235,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         }
 
         const statusData = await statusResponse.json();
-        console.log('📡 Verizon status response:', statusData);
+        console.log('📡 SpryFi Database status response:', statusData);
 
         // NEW: Stop polling immediately if C-BAND is detected, regardless of qualified status
         if (statusData.network_type === 'C-BAND' && statusData.qualification_status === 'complete') {
@@ -246,15 +246,15 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         }
 
         if (statusData.status === 'complete') {
-          console.log('✅ Verizon qualification complete');
+          console.log('✅ SpryFi Database qualification complete');
           setQualificationProgress(90);
           setCurrentStatusMessage('Result found. Loading...');
           return statusData;
         }
 
         if (statusData.status === 'failed') {
-          console.log('❌ Verizon qualification failed');
-          throw new Error('Verizon qualification failed');
+          console.log('❌ SpryFi Database qualification failed');
+          throw new Error('SpryFi Database qualification failed');
         }
 
         // Still pending, wait 3 seconds before next poll
@@ -267,7 +267,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       }
     }
 
-    throw new Error('Verizon API timeout - exceeded maximum polling attempts');
+    throw new Error('SpryFi Database timeout - exceeded maximum polling attempts');
   };
 
   const handleAddressSelect = async (address: string) => {
@@ -400,12 +400,12 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const leadId = saveLeadData.lead_id;
       console.log('✅ Lead saved with ID:', leadId);
 
-      // Step 2: Call Verizon API
-      console.log('📡 Calling Verizon API...');
+      // Step 2: Call SpryFi Databases
+      console.log('📡 Checking SpryFi Databases...');
       setQualificationProgress(10);
-      setCurrentStatusMessage('Checking Verizon...');
+      setCurrentStatusMessage('Checking SpryFi Databases...');
       
-      const verizonPayload = {
+      const databasePayload = {
         address_line1: addressLine1,
         address_line2: addressLine2 || '',
         city: city,
@@ -414,31 +414,31 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         formatted_address: selectedAddress
       };
 
-      const verizonResponse = await fetch('https://fwa.spry.network/api/fwa-check', {
+      const databaseResponse = await fetch('https://fwa.spry.network/api/fwa-check', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(verizonPayload)
+        body: JSON.stringify(databasePayload)
       });
 
-      if (!verizonResponse.ok) {
-        throw new Error('Verizon API call failed');
+      if (!databaseResponse.ok) {
+        throw new Error('SpryFi Database call failed');
       }
 
-      const verizonData = await verizonResponse.json();
-      console.log('📡 Verizon API initial response:', verizonData);
+      const databaseData = await databaseResponse.json();
+      console.log('📡 SpryFi Database initial response:', databaseData);
 
-      // Step 3: Handle Verizon response based on status
-      if (verizonData.status === 'pending' && verizonData.request_id) {
+      // Step 3: Handle SpryFi Database response based on status
+      if (databaseData.status === 'pending' && databaseData.request_id) {
         // Poll for completion
-        console.log('⏳ Verizon response pending, starting polling...');
+        console.log('⏳ SpryFi Database response pending, starting polling...');
         
         try {
-          const finalVerizonResult = await pollVerizonStatus(verizonData.request_id);
+          const finalDatabaseResult = await pollSpryFiStatus(databaseData.request_id);
           
           // Check for both qualified status and C-BAND detection
-          if (finalVerizonResult.qualified === true || finalVerizonResult.network_type === 'C-BAND') {
+          if (finalDatabaseResult.qualified === true || finalDatabaseResult.network_type === 'C-BAND') {
             console.log('✅ Qualification successful - sapi1');
             setQualificationProgress(100);
             setCurrentStatusMessage('Success!');
@@ -461,8 +461,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
               leadId,
               qualified: true,
               qualificationResult: {
-                source: 'verizon',
-                network_type: finalVerizonResult.network_type || 'C-BAND',
+              source: 'verizon',
+              network_type: finalDatabaseResult.network_type || 'C-BAND',
                 max_speed_mbps: 300
               },
               step: 'qualification-success'
@@ -474,13 +474,13 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             });
             return;
           } else {
-            // Verizon said not qualified, try bot fallback
-            console.log('❌ Verizon not qualified after polling, trying bot fallback...');
+            // SpryFi Database said not qualified, try bot fallback
+            console.log('❌ SpryFi Database not qualified after polling, trying bot fallback...');
           }
         } catch (pollError) {
-          console.log('❌ Verizon polling failed, trying bot fallback...', pollError);
+          console.log('❌ SpryFi Database polling failed, trying bot fallback...', pollError);
         }
-      } else if (verizonData.qualified === true || verizonData.network_type === 'C-BAND') {
+      } else if (databaseData.qualified === true || databaseData.network_type === 'C-BAND') {
         // Immediate qualification or C-BAND detection
         console.log('✅ Qualification successful (immediate) - sapi1');
         setQualificationProgress(100);
@@ -505,7 +505,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           qualified: true,
           qualificationResult: {
             source: 'verizon',
-            network_type: verizonData.network_type || 'C-BAND',
+            network_type: databaseData.network_type || 'C-BAND',
             max_speed_mbps: 300
           },
           step: 'qualification-success'
@@ -518,8 +518,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         return;
       }
 
-      // Step 4: Verizon failed/not qualified, try bot fallback
-      console.log('❌ Verizon not qualified, trying bot fallback...');
+      // Step 4: SpryFi Database failed/not qualified, try bot fallback
+      console.log('❌ SpryFi Database not qualified, trying bot fallback...');
       setQualificationProgress(75);
       setCurrentStatusMessage('Checking additional coverage options...');
       
@@ -528,7 +528,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(verizonPayload)
+        body: JSON.stringify(databasePayload)
       });
 
       if (!botResponse.ok) {
@@ -577,7 +577,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       }
 
       // Both failed - not qualified
-      console.log('❌ Both Verizon and Bot said not qualified');
+      console.log('❌ Both SpryFi Database and Bot said not qualified');
       setQualificationProgress(100);
       setCurrentStatusMessage('Check complete');
       
