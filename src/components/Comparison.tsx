@@ -16,7 +16,7 @@ export const Comparison = () => {
     },
     {
       bad: "❌ Equipment rental fees",
-      good: "✅ Modem included free"
+      good: "✅ WiFi 7 compatible router with AI optimization included"
     },
     {
       bad: "❌ Data caps & throttling",

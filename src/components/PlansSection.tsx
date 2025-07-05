@@ -45,7 +45,7 @@ export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
   const included = [
     "Unlimited data",
     "No contracts required (save more with optional loyalty terms)", 
-    "Modem included",
+    "WiFi 7 compatible router with AI optimization included",
     "14-day money-back guarantee"
   ];
 
