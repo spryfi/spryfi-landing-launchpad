@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { CheckoutModal } from './checkout/CheckoutModal';
@@ -44,7 +45,16 @@ export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
 
   const included = [
     "Unlimited data",
-    "No contracts required (save more with optional loyalty terms)", 
+    <span key="loyalty">
+      No contracts required (save more with{' '}
+      <Link 
+        to="/loyalty-savings" 
+        className="text-blue-600 underline hover:text-blue-800 transition-colors"
+      >
+        optional loyalty circle program
+      </Link>
+      )
+    </span>,
     "WiFi 7 compatible router with AI optimization included",
     "14-day money-back guarantee"
   ];
