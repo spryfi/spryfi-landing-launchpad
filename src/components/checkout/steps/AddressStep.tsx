@@ -405,6 +405,10 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       setQualificationProgress(10);
       setCurrentStatusMessage('Checking SpryFi Databases...');
       
+      // Log if address was selected from autosuggest
+      console.log("📍 Address was selected from autosuggest:", !!selectedAddress);
+      console.log("🌍 Raw address string:", selectedAddress);
+      
       const databasePayload = {
         address: {
           addressLine1: addressLine1,
@@ -415,11 +419,12 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         },
         firstName: firstName,
         lastName: lastName,
-        email: email
+        email: email,
+        usageType: "residential"
       };
 
-      console.log("📤 Submitting address to API:", databasePayload.address);
-      console.log("📤 Full onboarding form data:", databasePayload);
+      // Log the parsed address payload being sent to fwa-check
+      console.log("📦 Parsed address payload being sent to fwa-check:", databasePayload);
 
       const databaseResponse = await fetch('https://fwa.spry.network/api/fwa-check', {
         method: 'POST',
@@ -475,13 +480,19 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
               step: 'qualification-success'
             });
 
-            console.log('🏠 Final address preserved in state:', {
-              addressLine1,
-              addressLine2,
-              city,
-              state: selectedState,
-              zipCode,
-              formattedAddress: selectedAddress
+            // Log final saved onboarding state
+            console.log("🧠 Final saved onboarding state:", {
+              qualified: true,
+              address: {
+                addressLine1,
+                addressLine2,
+                city,
+                state: selectedState,
+                zipCode,
+                formattedAddress: selectedAddress
+              },
+              source: 'verizon',
+              network_type: finalDatabaseResult.network_type || 'C-BAND'
             });
 
             toast({

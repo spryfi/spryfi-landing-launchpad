@@ -256,18 +256,26 @@ export const Hero = () => {
     try {
       console.log('📤 Submitting to HTTPS API...');
       
-      // Log the full payload before sending
-      console.log("📬 Submitting address to API with payload:", {
-        address_line1: formData.address_line1,
-        address_line2: formData.address_line2 || null,
-        city: formData.city,
-        state: formData.state,
-        zip_code: formData.zip_code,
+      // Log if address was selected from autosuggest (always true in landing form)
+      console.log("📍 Address was selected from autosuggest:", true);
+      console.log("🌍 Raw address string:", selectedAddress);
+      
+      // Log the parsed address payload being sent to fwa-check
+      const payload = {
+        address: {
+          addressLine1: formData.address_line1,
+          addressLine2: formData.address_line2 || "",
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zip_code
+        },
+        email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: formData.email,
-        usageType: "residential" // Adding default usage type
-      });
+        usageType: "residential"
+      };
+      
+      console.log("📦 Parsed address payload being sent to fwa-check:", payload);
       
       const response = await fetch('https://fwa.spry.network/api/fwa-check', {
         method: 'POST',
@@ -310,6 +318,14 @@ export const Hero = () => {
 
       setQualificationResult({
         qualified: finalResults.qualified || false,
+        source: qualificationSource,
+        network_type: finalResults.network_type
+      });
+
+      // Log final saved state
+      console.log("🧠 Final saved onboarding state:", {
+        qualified: finalResults.qualified || false,
+        address: parsedAddressData,
         source: qualificationSource,
         network_type: finalResults.network_type
       });
