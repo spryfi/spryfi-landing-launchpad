@@ -179,6 +179,18 @@ export const Hero = () => {
       return;
     }
 
+    console.log("📬 Landing form submission started");
+    const formData = {
+      address_line1: parsedAddressData.address_line1,
+      city: parsedAddressData.city,
+      state: parsedAddressData.state,
+      zip_code: parsedAddressData.zip_code,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim()
+    };
+    console.log("📤 Form data:", formData);
+
     setIsSubmitting(true);
 
     try {
@@ -189,23 +201,16 @@ export const Hero = () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          address_line1: parsedAddressData.address_line1,
-          city: parsedAddressData.city,
-          state: parsedAddressData.state,
-          zip_code: parsedAddressData.zip_code,
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.trim()
-        })
+        body: JSON.stringify(formData)
       });
 
       if (!response.ok) {
+        console.error("❌ Landing form API error:", response.status);
         throw new Error(`API responded with status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('✅ API Response:', data);
+      console.log('✅ Landing form API response:', data);
 
       let finalResults = data;
       let qualificationSource = 'verizon';

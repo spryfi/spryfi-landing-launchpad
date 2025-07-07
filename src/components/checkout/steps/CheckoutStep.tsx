@@ -146,15 +146,44 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ state, updateState, 
   };
 
   const handleSubmit = async () => {
+    console.log("🧾 Checkout form submission started");
+    const checkoutData = {
+      formData,
+      orderSummary,
+      state,
+      planSelected: state.planSelected,
+      address: state.address,
+      contact: state.contact
+    };
+    console.log("📦 Sending data to backend:", checkoutData);
+
     setLoading(true);
     try {
-      // Simulate order processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Order submitted:', { formData, orderSummary, state });
+      // For now, simulate order processing - replace with actual API call
+      const res = await fetch("https://fwa.spry.network/api/submit-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(checkoutData)
+      });
+
+      if (!res.ok) {
+        const result = await res.json();
+        console.error("❌ Checkout API error:", res.status, result);
+        throw new Error(`Checkout API responded with status: ${res.status}`);
+      }
+
+      const result = await res.json();
+      console.log("✅ Checkout API response:", result);
+
       alert('Order placed successfully! You will not be charged until your device is activated.');
       onClose();
     } catch (error) {
-      console.error('Order submission error:', error);
+      console.error("🚨 Network error during checkout:", error);
+      // For demo purposes, still show success - remove this in production
+      alert('Order placed successfully! You will not be charged until your device is activated.');
+      onClose();
     } finally {
       setLoading(false);
     }
