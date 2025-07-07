@@ -209,7 +209,15 @@ export const Hero = () => {
         console.log('📊 Status check response:', data);
         
         if (data.status !== 'pending') {
-          console.log('✅ Got final results:', data);
+          console.log('✅ Got final results →', {
+            qualified: data.qualified,
+            network_type: data.network_type,
+            request_id: data.request_id,
+            source: data.source,
+            status: data.status,
+            qualification_status: data.qualification_status,
+            raw: data
+          });
           return data;
         }
       } catch (error) {
