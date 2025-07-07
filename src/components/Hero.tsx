@@ -234,18 +234,21 @@ export const Hero = () => {
 
     console.log("📬 Landing form submission started");
     const formData = {
-      address: {
-        addressLine1: parsedAddressData.address_line1,
-        addressLine2: parsedAddressData.address_line2 || '',
-        city: parsedAddressData.city,
-        state: parsedAddressData.state,
-        zipCode: parsedAddressData.zip_code
-      },
+      address_line1: parsedAddressData.address_line1,
+      address_line2: parsedAddressData.address_line2 || '',
+      city: parsedAddressData.city,
+      state: parsedAddressData.state,
+      zip_code: parsedAddressData.zip_code,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim()
     };
-    console.log("📤 Submitting address to API:", formData.address);
+    console.log("📤 Submitting address to API:", {
+      address_line1: formData.address_line1,
+      city: formData.city,
+      state: formData.state,
+      zip_code: formData.zip_code
+    });
     console.log("📤 Full form data:", formData);
 
     setIsSubmitting(true);
