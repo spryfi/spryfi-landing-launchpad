@@ -406,13 +406,20 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       setCurrentStatusMessage('Checking SpryFi Databases...');
       
       const databasePayload = {
-        address_line1: addressLine1,
-        address_line2: addressLine2 || '',
-        city: city,
-        state: selectedState,
-        zip_code: zipCode,
-        formatted_address: selectedAddress
+        address: {
+          addressLine1: addressLine1,
+          addressLine2: addressLine2 || '',
+          city: city,
+          state: selectedState,
+          zipCode: zipCode
+        },
+        firstName: firstName,
+        lastName: lastName,
+        email: email
       };
+
+      console.log("📤 Submitting address to API:", databasePayload.address);
+      console.log("📤 Full onboarding form data:", databasePayload);
 
       const databaseResponse = await fetch('https://fwa.spry.network/api/fwa-check', {
         method: 'POST',
@@ -429,7 +436,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const databaseData = await databaseResponse.json();
       console.log('📡 SpryFi Database initial response:', databaseData);
 
-      // Step 3: Handle SpryFi Database response based on status
+      // Step 4: Handle SpryFi Database response based on status
       if (databaseData.status === 'pending' && databaseData.request_id) {
         // Poll for completion
         console.log('⏳ SpryFi Database response pending, starting polling...');
@@ -466,6 +473,15 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
                 max_speed_mbps: 300
               },
               step: 'qualification-success'
+            });
+
+            console.log('🏠 Final address preserved in state:', {
+              addressLine1,
+              addressLine2,
+              city,
+              state: selectedState,
+              zipCode,
+              formattedAddress: selectedAddress
             });
 
             toast({

@@ -7,6 +7,7 @@ import SimpleAddressInput from '@/components/SimpleAddressInput';
 
 interface ParsedAddress {
   address_line1: string;
+  address_line2?: string;
   city: string;
   state: string;
   zip_code: string;
@@ -85,35 +86,86 @@ export const Hero = () => {
   const parseMapboxAddress = (fullAddress: string): ParsedAddress => {
     console.log('🔍 Parsing Mapbox address:', fullAddress);
     
-    const parts = fullAddress.split(', ');
-    console.log('📝 Address parts:', parts);
+    // Split the address by commas and filter out "United States"
+    const parts = fullAddress.split(',').map(part => part.trim()).filter(part => part !== 'United States');
+    console.log('📝 Address parts after filtering:', parts);
     
-    const stateZipPart = parts[2] || '';
-    const stateZipMatch = stateZipPart.match(/^(\w+)\s+(\d{5})$/);
+    if (parts.length < 3) {
+      console.error('❌ Address has insufficient parts:', parts.length);
+      return {
+        address_line1: fullAddress,
+        city: '',
+        state: '',
+        zip_code: '',
+        full_address: fullAddress
+      };
+    }
+
+    // Extract street address (first part)
+    const street = parts[0] || '';
     
-    const state = stateZipMatch ? stateZipMatch[1] : '';
-    const zipCode = stateZipMatch ? stateZipMatch[2] : '';
+    // Extract city (second to last part)
+    const cityPart = parts[parts.length - 2] || '';
     
-    const stateMap: { [key: string]: string } = {
-      'Texas': 'TX',
-      'California': 'CA', 
-      'Florida': 'FL',
-      'New York': 'NY',
-      'Illinois': 'IL',
-      'Pennsylvania': 'PA',
-      'Ohio': 'OH',
-      'Georgia': 'GA',
-      'North Carolina': 'NC',
-      'Michigan': 'MI'
+    // Extract state and zip from last part
+    const lastPart = parts[parts.length - 1];
+    console.log('🏛️ Processing last part:', lastPart);
+    
+    let statePart = '';
+    let zipPart = '';
+    
+    // State name to abbreviation mapping
+    const stateNameToAbbrev: { [key: string]: string } = {
+      'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+      'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+      'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+      'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+      'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+      'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+      'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+      'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+      'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+      'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
     };
     
-    const stateAbbr = stateMap[state] || state;
+    // Extract ZIP code using flexible pattern (5 digits or 5+4 format)
+    const zipMatch = lastPart.match(/(\d{5}(?:-\d{4})?)/);
+    if (zipMatch) {
+      zipPart = zipMatch[1];
+      console.log('📮 Found ZIP:', zipPart);
+      
+      // Remove ZIP from string to get state part
+      const stateText = lastPart.replace(zipMatch[0], '').trim();
+      console.log('🏛️ State text after removing ZIP:', stateText);
+      
+      // Check if it's already a 2-letter abbreviation
+      if (stateText.length === 2 && /^[A-Z]{2}$/i.test(stateText)) {
+        statePart = stateText.toUpperCase();
+        console.log('✅ Found state abbreviation:', statePart);
+      } else {
+        // Try to find full state name in our mapping
+        const foundState = Object.keys(stateNameToAbbrev).find(stateName => 
+          stateName.toLowerCase() === stateText.toLowerCase()
+        );
+        
+        if (foundState) {
+          statePart = stateNameToAbbrev[foundState];
+          console.log('✅ Converted state name to abbreviation:', stateText, '->', statePart);
+        } else {
+          console.log('❌ Could not find state mapping for:', stateText);
+          statePart = stateText; // Use as-is if we can't map it
+        }
+      }
+    } else {
+      console.log('❌ No ZIP code found in:', lastPart);
+    }
     
     const parsed = {
-      address_line1: parts[0] || '',
-      city: parts[1] || '',
-      state: stateAbbr,
-      zip_code: zipCode,
+      address_line1: street,
+      address_line2: '', // Optional second address line
+      city: cityPart,
+      state: statePart,
+      zip_code: zipPart,
       full_address: fullAddress
     };
     
@@ -136,6 +188,7 @@ export const Hero = () => {
     setShowContactModal(true);
     
     console.log('✅ Auto-advanced to contact form with address:', fullAddress);
+    console.log('🏠 Final address in state:', parsedAddress);
   };
 
   const pollForResults = async (requestId: string) => {
@@ -181,15 +234,19 @@ export const Hero = () => {
 
     console.log("📬 Landing form submission started");
     const formData = {
-      address_line1: parsedAddressData.address_line1,
-      city: parsedAddressData.city,
-      state: parsedAddressData.state,
-      zip_code: parsedAddressData.zip_code,
+      address: {
+        addressLine1: parsedAddressData.address_line1,
+        addressLine2: parsedAddressData.address_line2 || '',
+        city: parsedAddressData.city,
+        state: parsedAddressData.state,
+        zipCode: parsedAddressData.zip_code
+      },
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim()
     };
-    console.log("📤 Form data:", formData);
+    console.log("📤 Submitting address to API:", formData.address);
+    console.log("📤 Full form data:", formData);
 
     setIsSubmitting(true);
 
