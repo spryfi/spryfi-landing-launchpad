@@ -256,12 +256,28 @@ export const Hero = () => {
     try {
       console.log('📤 Submitting to HTTPS API...');
       
+      // Log the full payload before sending
+      console.log("📬 Submitting address to API with payload:", {
+        address_line1: formData.address_line1,
+        address_line2: formData.address_line2 || null,
+        city: formData.city,
+        state: formData.state,
+        zip_code: formData.zip_code,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        usageType: "residential" // Adding default usage type
+      });
+      
       const response = await fetch('https://fwa.spry.network/api/fwa-check', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          usageType: "residential" // Adding usage type to payload
+        })
       });
 
       if (!response.ok) {
