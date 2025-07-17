@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { CheckoutModal } from '@/components/checkout/CheckoutModal';
 import { useRotatingHook } from '@/hooks/useRotatingHook';
@@ -17,6 +18,7 @@ interface ParsedAddress {
 
 export const Hero = () => {
   const { currentHook, isVisible } = useRotatingHook();
+  const navigate = useNavigate();
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
@@ -389,7 +391,14 @@ export const Hero = () => {
       });
 
       setShowContactModal(false);
-      setShowResultsModal(true);
+      
+      // Redirect to address-success page if qualified, otherwise show results modal
+      if (qualified) {
+        console.log("✅ User qualified - redirecting to address-success page");
+        navigate('/address-success');
+      } else {
+        setShowResultsModal(true);
+      }
       
       setFirstName('');
       setLastName('');
