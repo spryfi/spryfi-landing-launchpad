@@ -72,7 +72,12 @@ export const RouterSetup = () => {
                       <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>This is the SSID your devices will see.</p>
+                      <div className="max-w-xs">
+                        <p className="font-medium mb-1">WiFi Network Name (SSID)</p>
+                        <p className="text-sm mb-2">This is the name your devices will see when they scan for Wi-Fi networks.</p>
+                        <p className="text-sm mb-2">It can include letters, numbers, and hyphens.</p>
+                        <p className="text-sm">Choose something easy to recognize, for example SpryFi-Home.</p>
+                      </div>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -104,7 +109,12 @@ export const RouterSetup = () => {
                       <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>This is your Wi-Fi password. Must be 8+ characters.</p>
+                      <div className="max-w-xs">
+                        <p className="font-medium mb-1">WiFi Password</p>
+                        <p className="text-sm mb-2">This is the key your devices will use to connect securely.</p>
+                        <p className="text-sm mb-2">It must be at least 8 characters long and can include letters, numbers, or both.</p>
+                        <p className="text-sm">Avoid using easily guessed words like "password" or "12345678."</p>
+                      </div>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
