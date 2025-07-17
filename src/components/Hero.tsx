@@ -28,8 +28,10 @@ export const Hero = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [qualificationResult, setQualificationResult] = useState<{
     qualified: boolean;
-    source: string;
+    source?: string;
     network_type?: string;
+    error?: boolean;
+    message?: string;
   } | null>(null);
 
   React.useEffect(() => {
@@ -240,6 +242,8 @@ export const Hero = () => {
       return;
     }
 
+    let leadId: string | null = null;
+
     console.log("📬 Landing form submission started");
     const formData = {
       address_line1: parsedAddressData.address_line1,
@@ -251,91 +255,144 @@ export const Hero = () => {
       lastName: lastName.trim(),
       email: email.trim()
     };
-    console.log("📤 Submitting address to API:", {
-      address_line1: formData.address_line1,
-      city: formData.city,
-      state: formData.state,
-      zip_code: formData.zip_code
-    });
-    console.log("📤 Full form data:", formData);
 
     setIsSubmitting(true);
 
     try {
-      console.log('📤 Submitting to HTTPS API...');
-      
-      // Log if address was selected from autosuggest (always true in landing form)
-      console.log("📍 Address was selected from autosuggest:", true);
-      console.log("🌍 Raw address string:", selectedAddress);
-      
-      // Log the parsed address payload being sent to fwa-check
-      const payload = {
-        address: {
-          addressLine1: formData.address_line1,
-          addressLine2: formData.address_line2 || "",
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zip_code
-        },
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        usageType: "residential"
-      };
-      
-      console.log("📦 Parsed address payload being sent to fwa-check:", payload);
-      
-      const response = await fetch('https://fwa.spry.network/api/fwa-check', {
+      // Step 1: Save lead first
+      console.log("💾 Saving lead to database...");
+      const leadResponse = await fetch(`https://efrzzqqtmiazlsmwprmt.supabase.co/functions/v1/save-lead`, {
         method: 'POST',
+        mode: 'cors',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
-          usageType: "residential" // Adding usage type to payload
-        })
+          email: formData.email,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          address_line1: formData.address_line1,
+          address_line2: formData.address_line2,
+          city: formData.city,
+          state: formData.state,
+          zip_code: formData.zip_code,
+        }),
       });
 
-      if (!response.ok) {
-        console.error("❌ Landing form API error:", response.status);
-        throw new Error(`API responded with status: ${response.status}`);
+      if (!leadResponse.ok) {
+        throw new Error(`Failed to save lead: ${leadResponse.status}`);
       }
 
-      const data = await response.json();
-      console.log('✅ Landing form API response:', data);
+      const leadResult = await leadResponse.json();
+      console.log("✅ Lead saved:", leadResult);
+      leadId = leadResult.lead_id;
 
-      let finalResults = data;
-      let qualificationSource = 'verizon';
+      // Step 2: Check availability with robust error handling
+      console.log('📤 Submitting to FWA API...');
+      console.log("📦 FWA Check Submission Payload:", {
+        address: parsedAddressData,
+        email: formData.email,
+        usageType: "residential"
+      });
 
-      if (data.status === 'pending' && data.request_id) {
-        console.log('🔄 Status is pending, starting polling...');
-        
-        const polledData = await pollForResults(data.request_id);
-        
-        if (polledData.status === 'timeout') {
-          alert('Request timed out. Please try again.');
-          return;
+      let qualified = false;
+      let networkType = null;
+      let errorMessage = null;
+      let qualificationSource = 'fwa-api';
+      let requestId = null;
+      let finalResults = null;
+
+      try {
+        const response = await fetch('https://fwa.spry.network/api/fwa-check', {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ...formData,
+            usageType: "residential"
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`FWA API ${response.status}`);
         }
-        
-        finalResults = polledData;
+
+        const data = await response.json();
+        console.log('✅ Landing form API response:', data);
+
+        if (data.status === 'pending' && data.request_id) {
+          console.log('🔄 Status is pending, starting polling...');
+          
+          const polledData = await pollForResults(data.request_id);
+          
+          if (polledData.status === 'timeout') {
+            throw new Error('Request timed out');
+          }
+          
+          finalResults = polledData;
+        } else {
+          finalResults = data;
+        }
+
+        if (finalResults.source) {
+          qualificationSource = finalResults.source;
+        }
+
+        qualified = finalResults.qualified || false;
+        networkType = finalResults.network_type;
+        requestId = finalResults.request_id;
+
+        setQualificationResult({
+          qualified: finalResults.qualified || false,
+          source: qualificationSource,
+          network_type: finalResults.network_type
+        });
+
+      } catch (fwaError) {
+        console.error('🔥 FWA check error:', fwaError);
+        errorMessage = fwaError.message;
+        // Still show results with error state
+        setQualificationResult({
+          qualified: false,
+          network_type: null,
+          error: true,
+          message: 'Unable to check availability at this time'
+        });
       }
 
-      if (finalResults.source) {
-        qualificationSource = finalResults.source;
+      // Step 3: Update lead with qualification results (success or failure)
+      if (leadId) {
+        try {
+          console.log("📝 Updating lead with qualification results...");
+          await fetch(`https://efrzzqqtmiazlsmwprmt.supabase.co/functions/v1/update-lead`, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              lead_id: leadId,
+              qualified,
+              network_type: networkType,
+              error_message: errorMessage,
+              qualification_source: qualificationSource,
+              request_id: requestId
+            }),
+          });
+          console.log("✅ Lead qualification status updated");
+        } catch (updateError) {
+          console.error('🔥 Failed to update lead qualification:', updateError);
+        }
       }
-
-      setQualificationResult({
-        qualified: finalResults.qualified || false,
-        source: qualificationSource,
-        network_type: finalResults.network_type
-      });
 
       // Log final saved state
       console.log("🧠 Final saved onboarding state:", {
-        qualified: finalResults.qualified || false,
+        qualified: qualified,
         address: parsedAddressData,
         source: qualificationSource,
-        network_type: finalResults.network_type
+        network_type: networkType
       });
 
       setShowContactModal(false);
