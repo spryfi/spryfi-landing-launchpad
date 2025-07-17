@@ -200,75 +200,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   };
 
-  // Enhanced polling with progress and C-BAND detection
-  const pollSpryFiStatus = async (requestId: string, maxAttempts: number = 20): Promise<any> => {
-    let attempts = 0;
-    setQualificationProgress(10);
-    setCurrentStatusMessage('Checking SpryFi Databases...');
-    
-    while (attempts < maxAttempts) {
-      try {
-        console.log(`📡 Polling SpryFi Database status (attempt ${attempts + 1}/${maxAttempts})`);
-        
-        // Update progress
-        const progress = 10 + (attempts / maxAttempts) * 60; // 10-70% during polling
-        setQualificationProgress(progress);
-        
-        if (attempts < 5) {
-          setCurrentStatusMessage('Checking SpryFi Databases...');
-        } else if (attempts < 10) {
-          setCurrentStatusMessage('Waiting for additional network data...');
-        } else {
-          setCurrentStatusMessage('Checking SpryFi coverage zones...');
-        }
-        
-        const statusResponse = await fetch(`https://fwa.spry.network/api/fwa-status/${requestId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (!statusResponse.ok) {
-          console.error('❌ Status polling failed:', statusResponse.status);
-          throw new Error('Status polling failed');
-        }
-
-        const statusData = await statusResponse.json();
-        console.log('📡 SpryFi Database status response:', statusData);
-
-        // NEW: Stop polling immediately if C-BAND is detected, regardless of qualified status
-        if (statusData.network_type === 'C-BAND' && statusData.qualification_status === 'complete') {
-          console.log('🎯 C-BAND detected - stopping polling immediately');
-          setQualificationProgress(90);
-          setCurrentStatusMessage('Result found. Loading...');
-          return statusData;
-        }
-
-        if (statusData.status === 'complete') {
-          console.log('✅ SpryFi Database qualification complete');
-          setQualificationProgress(90);
-          setCurrentStatusMessage('Result found. Loading...');
-          return statusData;
-        }
-
-        if (statusData.status === 'failed') {
-          console.log('❌ SpryFi Database qualification failed');
-          throw new Error('SpryFi Database qualification failed');
-        }
-
-        // Still pending, wait 3 seconds before next poll
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        attempts++;
-
-      } catch (error) {
-        console.error('❌ Error polling status:', error);
-        throw error;
-      }
-    }
-
-    throw new Error('SpryFi Database timeout - exceeded maximum polling attempts');
-  };
+  // Note: Polling function removed - edge function now handles all qualification logic internally
 
   const handleAddressSelect = async (address: string) => {
     console.log('🎯 Address selected:', address);
