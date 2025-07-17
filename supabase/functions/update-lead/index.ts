@@ -1,13 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://spryfi-landing-launchpad.lovable.app',
+const allowedOrigins = [
+  'https://spryfi-landing-launchpad.lovable.app',
+  'https://4d53e2aa-d5ec-40fe-b54e-4159a6ed749a.lovableproject.com',
+  // Add more Lovable preview/staging domains as needed
+]
+
+const getCorsHeaders = (origin: string | null) => ({
+  'Access-Control-Allow-Origin': (origin && allowedOrigins.includes(origin)) ? origin : '',
   'Access-Control-Allow-Methods': 'OPTIONS, GET, POST',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey',
-}
+})
 
 serve(async (req) => {
+  const origin = req.headers.get('Origin')
+  const corsHeaders = getCorsHeaders(origin)
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
