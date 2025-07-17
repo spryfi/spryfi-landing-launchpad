@@ -16,11 +16,10 @@ export const RouterSetup = () => {
   };
 
   const generatePassword = () => {
-    const words = ['sun', 'tree', 'moon', 'star', 'blue', 'green', 'fire', 'water', 'gold', 'silver'];
+    const words = ['boat', 'blue', 'fire', 'gold', 'moon', 'star', 'tree', 'what', 'clam', 'wave'];
     const word1 = words[Math.floor(Math.random() * words.length)];
     const word2 = words[Math.floor(Math.random() * words.length)];
-    const randomNum = Math.floor(10 + Math.random() * 90);
-    setWifiPassword(`${word1}${word2}${randomNum}`);
+    setWifiPassword(`${word1}${word2}`);
   };
 
   const handleFinish = async () => {
@@ -169,7 +168,12 @@ export const RouterSetup = () => {
             
             <Button 
               onClick={handleFinish}
-              className="bg-[#0047AB] hover:bg-[#0060D4] text-white flex-1 py-3 text-lg font-semibold transition-all duration-200"
+              disabled={!(wifiName && wifiPassword.length >= 8)}
+              className={`flex-1 py-3 text-lg font-semibold transition-all duration-200 ${
+                !(wifiName && wifiPassword.length >= 8) 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50' 
+                  : 'bg-[#0047AB] hover:bg-[#0060D4] text-white'
+              }`}
             >
               Finish Setup
             </Button>
