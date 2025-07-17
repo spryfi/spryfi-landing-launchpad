@@ -101,69 +101,75 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
       </div>
 
       <div className="grid gap-6 max-w-2xl mx-auto">
-        <div
-          key="spryfi-home"
-          className={`cursor-pointer rounded-2xl p-6 transition-transform duration-200 ease-out bg-gradient-to-br from-blue-700 to-blue-600 text-white shadow-lg hover:shadow-2xl transform hover:-translate-y-1 ${
-            selectedPlan === 'spryfi-home'
-              ? 'ring-4 ring-white'
-              : 'ring-2 ring-transparent'
-          }`}
-          onClick={() => !loading && handlePlanSelect('spryfi-home')}
-        >
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xl font-bold text-white">SpryFi Home</h3>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-white">
-                $99.95/mo
+        <div className="plan-card-wrapper group relative inline-block overflow-visible">
+          <div className="absolute -top-1 -left-1 w-full h-full rounded-2xl bg-gray-50 shadow-lg transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-2xl"></div>
+          <div
+            key="spryfi-home"
+            className={`relative cursor-pointer rounded-2xl p-6 transition-transform duration-200 ease-out bg-gradient-to-br from-blue-700 to-blue-600 text-white shadow-lg group-hover:shadow-2xl group-hover:-translate-y-1 ${
+              selectedPlan === 'spryfi-home'
+                ? 'ring-4 ring-white'
+                : 'ring-2 ring-transparent'
+            }`}
+            onClick={() => !loading && handlePlanSelect('spryfi-home')}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-white">SpryFi Home</h3>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">
+                  $99.95/mo
+                </div>
+                <div className="text-sm text-white/75">
+                  $0 today
+                </div>
               </div>
+            </div>
+            <p className="text-white/90 mb-4">
+              Up to 100 Mbps • Perfect for streaming, video calls, and everyday work-from-home.
+            </p>
+            <div className="flex justify-between items-center">
               <div className="text-sm text-white/75">
-                $0 today
+                Billed monthly starting at activation
               </div>
+              {selectedPlan === 'spryfi-home' && loading && (
+                <div className="text-white">Selecting...</div>
+              )}
             </div>
-          </div>
-          <p className="text-white/90 mb-4">
-            Up to 100 Mbps • Perfect for streaming, video calls, and everyday work-from-home.
-          </p>
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-white/75">
-              Billed monthly starting at activation
-            </div>
-            {selectedPlan === 'spryfi-home' && loading && (
-              <div className="text-white">Selecting...</div>
-            )}
           </div>
         </div>
 
-        <div
-          key="spryfi-home-premium"
-          className={`cursor-pointer rounded-2xl p-6 transition-transform duration-200 ease-out bg-gradient-to-br from-blue-700 to-blue-600 text-white shadow-lg hover:shadow-2xl transform hover:-translate-y-1 ${
-            selectedPlan === 'spryfi-home-premium'
-              ? 'ring-4 ring-white'
-              : 'ring-2 ring-transparent'
-          }`}
-          onClick={() => !loading && handlePlanSelect('spryfi-home-premium')}
-        >
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xl font-bold text-white">SpryFi Home Premium</h3>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-white">
-                $139.95/mo
+        <div className="plan-card-wrapper group relative inline-block overflow-visible">
+          <div className="absolute -top-1 -left-1 w-full h-full rounded-2xl bg-gray-50 shadow-lg transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-2xl"></div>
+          <div
+            key="spryfi-home-premium"
+            className={`relative cursor-pointer rounded-2xl p-6 transition-transform duration-200 ease-out bg-gradient-to-br from-blue-700 to-blue-600 text-white shadow-lg group-hover:shadow-2xl group-hover:-translate-y-1 ${
+              selectedPlan === 'spryfi-home-premium'
+                ? 'ring-4 ring-white'
+                : 'ring-2 ring-transparent'
+            }`}
+            onClick={() => !loading && handlePlanSelect('spryfi-home-premium')}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-white">SpryFi Home Premium</h3>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">
+                  $139.95/mo
+                </div>
+                <div className="text-sm text-white/75">
+                  $0 today
+                </div>
               </div>
+            </div>
+            <p className="text-white/90 mb-4">
+              Up to 200 Mbps • Priority routing, white-glove support, and blazing performance.
+            </p>
+            <div className="flex justify-between items-center">
               <div className="text-sm text-white/75">
-                $0 today
+                Billed monthly starting at activation
               </div>
+              {selectedPlan === 'spryfi-home-premium' && loading && (
+                <div className="text-white">Selecting...</div>
+              )}
             </div>
-          </div>
-          <p className="text-white/90 mb-4">
-            Up to 200 Mbps • Priority routing, white-glove support, and blazing performance.
-          </p>
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-white/75">
-              Billed monthly starting at activation
-            </div>
-            {selectedPlan === 'spryfi-home-premium' && loading && (
-              <div className="text-white">Selecting...</div>
-            )}
           </div>
         </div>
       </div>
