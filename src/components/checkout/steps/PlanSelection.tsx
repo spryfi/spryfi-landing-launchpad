@@ -102,7 +102,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
 
       <div className="grid gap-6 max-w-2xl mx-auto">
         <div className="plan-card-wrapper group relative inline-block overflow-visible">
-          <div className="absolute -top-1 -left-1 w-full h-full rounded-2xl bg-gray-50 shadow-lg transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-2xl"></div>
+          <div className="absolute top-1 left-1 w-full h-full rounded-2xl bg-gray-50 shadow-md transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-lg"></div>
           <div
             key="spryfi-home"
             className={`relative cursor-pointer rounded-2xl p-6 transition-transform duration-200 ease-out bg-gradient-to-br from-blue-700 to-blue-600 text-white shadow-lg group-hover:shadow-2xl group-hover:-translate-y-1 ${
@@ -138,7 +138,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
         </div>
 
         <div className="plan-card-wrapper group relative inline-block overflow-visible">
-          <div className="absolute -top-1 -left-1 w-full h-full rounded-2xl bg-gray-50 shadow-lg transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-2xl"></div>
+          <div className="absolute top-1 left-1 w-full h-full rounded-2xl bg-gray-50 shadow-md transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-lg"></div>
           <div
             key="spryfi-home-premium"
             className={`relative cursor-pointer rounded-2xl p-6 transition-transform duration-200 ease-out bg-gradient-to-br from-blue-700 to-blue-600 text-white shadow-lg group-hover:shadow-2xl group-hover:-translate-y-1 ${
