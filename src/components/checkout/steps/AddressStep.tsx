@@ -400,7 +400,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       const leadId = saveLeadData.lead_id;
       console.log('✅ Lead saved with ID:', leadId);
 
-      // Step 2: Call SpryFi Databases
+      // Step 2: Call SpryFi Databases using Supabase edge function
       console.log('📡 Checking SpryFi Databases...');
       setQualificationProgress(10);
       setCurrentStatusMessage('Checking SpryFi Databases...');
@@ -409,107 +409,35 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       console.log("📍 Address was selected from autosuggest:", !!selectedAddress);
       console.log("🌍 Raw address string:", selectedAddress);
       
-      const databasePayload = {
-        address: {
-          addressLine1: addressLine1,
-          addressLine2: addressLine2 || '',
-          city: city,
-          state: selectedState,
-          zipCode: zipCode
-        },
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        usageType: "residential"
+      const fwaCheckPayload = {
+        lead_id: leadId,
+        anchor_address_id: state.anchorAddressId,
+        address_line1: addressLine1,
+        address_line2: addressLine2 || '',
+        city: city,
+        state: selectedState,
+        zip_code: zipCode,
+        latitude: null,
+        longitude: null
       };
 
       // Log the parsed address payload being sent to fwa-check
-      console.log("📦 Parsed address payload being sent to fwa-check:", databasePayload);
+      console.log("📦 Parsed address payload being sent to fwa-check:", fwaCheckPayload);
 
-      const databaseResponse = await fetch('https://fwa.spry.network/api/fwa-check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(databasePayload)
+      const { data: databaseData, error: fwaError } = await supabase.functions.invoke('fwa-check', {
+        body: fwaCheckPayload
       });
 
-      if (!databaseResponse.ok) {
-        throw new Error('SpryFi Database call failed');
+      if (fwaError) {
+        console.error('🔥 FWA check error:', fwaError);
+        throw new Error(`SpryFi Database call failed: ${fwaError.message}`);
       }
 
-      const databaseData = await databaseResponse.json();
-      console.log('📡 SpryFi Database initial response:', databaseData);
+      console.log('📡 SpryFi Database response:', databaseData);
 
-      // Step 4: Handle SpryFi Database response based on status
-      if (databaseData.status === 'pending' && databaseData.request_id) {
-        // Poll for completion
-        console.log('⏳ SpryFi Database response pending, starting polling...');
-        
-        try {
-          const finalDatabaseResult = await pollSpryFiStatus(databaseData.request_id);
-          
-          // Check for both qualified status and C-BAND detection
-          if (finalDatabaseResult.qualified === true || finalDatabaseResult.network_type === 'C-BAND') {
-            console.log('✅ Qualification successful - sapi1');
-            setQualificationProgress(100);
-            setCurrentStatusMessage('Success!');
-            
-            updateState({
-              address: {
-                addressLine1,
-                addressLine2,
-                city,
-                state: selectedState,
-                zipCode,
-                formattedAddress: selectedAddress
-              },
-              contact: {
-                firstName,
-                lastName,
-                email,
-                phone: ''
-              },
-              leadId,
-              qualified: true,
-              qualificationResult: {
-              source: 'verizon',
-              network_type: finalDatabaseResult.network_type || 'C-BAND',
-                max_speed_mbps: 300
-              },
-              step: 'qualification-success'
-            });
-
-            // Log final saved onboarding state
-            console.log("🧠 Final saved onboarding state:", {
-              qualified: true,
-              address: {
-                addressLine1,
-                addressLine2,
-                city,
-                state: selectedState,
-                zipCode,
-                formattedAddress: selectedAddress
-              },
-              source: 'verizon',
-              network_type: finalDatabaseResult.network_type || 'C-BAND'
-            });
-
-            toast({
-              title: "Great news! 🎉",
-              description: "SpryFi is available in your area!",
-            });
-            return;
-          } else {
-            // SpryFi Database said not qualified, try bot fallback
-            console.log('❌ SpryFi Database not qualified after polling, trying bot fallback...');
-          }
-        } catch (pollError) {
-          console.log('❌ SpryFi Database polling failed, trying bot fallback...', pollError);
-        }
-      } else if (databaseData.qualified === true || databaseData.network_type === 'C-BAND') {
-        // Immediate qualification or C-BAND detection
-        console.log('✅ Qualification successful (immediate) - sapi1');
+      // The edge function already handles qualification internally (SpryFi Database + Bot fallback)
+      if (databaseData.success && databaseData.qualified) {
+        console.log('✅ Qualification successful');
         setQualificationProgress(100);
         setCurrentStatusMessage('Success!');
         
@@ -531,47 +459,16 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           leadId,
           qualified: true,
           qualificationResult: {
-            source: 'verizon',
-            network_type: databaseData.network_type || 'C-BAND',
+            source: databaseData.source || 'verizon',
+            network_type: databaseData.network_type || '5G_HOME',
             max_speed_mbps: 300
           },
           step: 'qualification-success'
         });
 
-        toast({
-          title: "Great news! 🎉",
-          description: "SpryFi is available in your area!",
-        });
-        return;
-      }
-
-      // Step 4: SpryFi Database failed/not qualified, try bot fallback
-      console.log('❌ SpryFi Database not qualified, trying bot fallback...');
-      setQualificationProgress(75);
-      setCurrentStatusMessage('Checking additional coverage options...');
-      
-      const botResponse = await fetch('https://fwa.spry.network/api/bot-check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(databasePayload)
-      });
-
-      if (!botResponse.ok) {
-        throw new Error('Bot API call failed');
-      }
-
-      const botData = await botResponse.json();
-      console.log('🤖 Bot API response:', botData);
-
-      if (botData.qualified === true) {
-        // Bot qualified - sapi2
-        console.log('✅ Bot qualification successful - sapi2');
-        setQualificationProgress(100);
-        setCurrentStatusMessage('Success!');
-        
-        updateState({
+        // Log final saved onboarding state
+        console.log("🧠 Final saved onboarding state:", {
+          qualified: true,
           address: {
             addressLine1,
             addressLine2,
@@ -580,20 +477,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
             zipCode,
             formattedAddress: selectedAddress
           },
-          contact: {
-            firstName,
-            lastName,
-            email,
-            phone: ''
-          },
-          leadId,
-          qualified: true,
-          qualificationResult: {
-            source: 'bot',
-            network_type: botData.network_type || '5G_HOME',
-            max_speed_mbps: botData.max_speed_mbps || 200
-          },
-          step: 'qualification-success'
+          source: databaseData.source || 'verizon',
+          network_type: databaseData.network_type || '5G_HOME'
         });
 
         toast({
@@ -603,8 +488,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         return;
       }
 
-      // Both failed - not qualified
-      console.log('❌ Both SpryFi Database and Bot said not qualified');
+      // Not qualified - edge function already tried all options
+      console.log('❌ Not qualified after checking all options');
       setQualificationProgress(100);
       setCurrentStatusMessage('Check complete');
       
@@ -626,11 +511,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         leadId,
         qualified: false,
         qualificationResult: {
-          source: 'none',
+          source: databaseData.source || 'none',
           network_type: '',
           max_speed_mbps: 0
         },
-        step: 'contact'
+        step: 'not-qualified'
       });
 
       toast({
