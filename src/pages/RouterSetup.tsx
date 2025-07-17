@@ -100,7 +100,7 @@ export const RouterSetup = () => {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <label className="block text-lg font-medium text-gray-700">
-                  WiFi Password
+                  WiFi Passkey
                 </label>
                 <TooltipProvider>
                   <Tooltip>
@@ -109,20 +109,20 @@ export const RouterSetup = () => {
                     </TooltipTrigger>
                     <TooltipContent>
                       <div className="max-w-xs">
-                        <p className="font-medium mb-1">WiFi Password</p>
+                        <p className="font-medium mb-1">WiFi Passkey</p>
                         <p className="text-sm mb-2">This is the key your devices will use to connect securely.</p>
                         <p className="text-sm mb-2">It must be at least 8 characters long and can include letters, numbers, or both.</p>
-                        <p className="text-sm">Avoid using easily guessed words like "password" or "12345678."</p>
+                        <p className="text-sm">This passkey will be printed on your router sticker for easy reference.</p>
                       </div>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
               <input
-                type="password"
+                type="text"
                 value={wifiPassword}
                 onChange={(e) => setWifiPassword(e.target.value)}
-                placeholder="Enter your WiFi password"
+                placeholder="Enter your WiFi passkey"
                 className="w-full px-4 py-3 text-lg rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <button
