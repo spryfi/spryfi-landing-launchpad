@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { CheckoutModal } from '@/components/checkout/CheckoutModal';
 import { useRotatingHook } from '@/hooks/useRotatingHook';
 import SimpleAddressInput from '@/components/SimpleAddressInput';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ParsedAddress {
   address_line1: string;
@@ -261,13 +262,8 @@ export const Hero = () => {
     try {
       // Step 1: Save lead first
       console.log("💾 Saving lead to database...");
-      const leadResponse = await fetch(`https://efrzzqqtmiazlsmwprmt.supabase.co/functions/v1/save-lead`, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data: leadResult, error: leadError } = await supabase.functions.invoke('save-lead', {
+        body: {
           email: formData.email,
           first_name: formData.firstName,
           last_name: formData.lastName,
@@ -276,14 +272,12 @@ export const Hero = () => {
           city: formData.city,
           state: formData.state,
           zip_code: formData.zip_code,
-        }),
+        },
       });
 
-      if (!leadResponse.ok) {
-        throw new Error(`Failed to save lead: ${leadResponse.status}`);
+      if (leadError) {
+        throw new Error(`Failed to save lead: ${leadError.message}`);
       }
-
-      const leadResult = await leadResponse.json();
       console.log("✅ Lead saved:", leadResult);
       leadId = leadResult.lead_id;
 
@@ -366,21 +360,20 @@ export const Hero = () => {
       if (leadId) {
         try {
           console.log("📝 Updating lead with qualification results...");
-          await fetch(`https://efrzzqqtmiazlsmwprmt.supabase.co/functions/v1/update-lead`, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+          const { error: updateError } = await supabase.functions.invoke('update-lead', {
+            body: {
               lead_id: leadId,
               qualified,
               network_type: networkType,
               error_message: errorMessage,
               qualification_source: qualificationSource,
               request_id: requestId
-            }),
+            },
           });
+          
+          if (updateError) {
+            throw updateError;
+          }
           console.log("✅ Lead qualification status updated");
         } catch (updateError) {
           console.error('🔥 Failed to update lead qualification:', updateError);
