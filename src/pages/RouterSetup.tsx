@@ -1,14 +1,38 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { supabase } from '@/integrations/supabase/client';
+import { HelpCircle } from 'lucide-react';
 
 export const RouterSetup = () => {
   const [wifiName, setWifiName] = useState('');
   const [wifiPassword, setWifiPassword] = useState('');
+  const navigate = useNavigate();
 
-  const handleFinish = () => {
-    // Handle completion logic
-    console.log('Setup complete:', { wifiName, wifiPassword });
+  const generateSSID = () => {
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    setWifiName(`SpryFi-${randomNum}`);
+  };
+
+  const generatePassword = () => {
+    const words = ['sun', 'tree', 'moon', 'star', 'blue', 'green', 'fire', 'water', 'gold', 'silver'];
+    const word1 = words[Math.floor(Math.random() * words.length)];
+    const word2 = words[Math.floor(Math.random() * words.length)];
+    const randomNum = Math.floor(10 + Math.random() * 90);
+    setWifiPassword(`${word1}${word2}${randomNum}`);
+  };
+
+  const handleFinish = async () => {
+    try {
+      await supabase.from('provisioning_sessions').insert({
+        ssid: wifiName,
+        passkey: wifiPassword
+      });
+      navigate('/');
+    } catch (error) {
+      console.error('Error saving router setup:', error);
+    }
   };
 
   return (
@@ -38,29 +62,73 @@ export const RouterSetup = () => {
           {/* Router Setup Form */}
           <div className="space-y-6 mb-8">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                WiFi Network Name
-              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className="block text-lg font-medium text-gray-700">
+                  WiFi Network Name
+                </label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>This is the SSID your devices will see.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <input
                 type="text"
                 value={wifiName}
                 onChange={(e) => setWifiName(e.target.value)}
                 placeholder="Enter your WiFi network name"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 text-lg rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+              <button
+                type="button"
+                onClick={generateSSID}
+                className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Generate this for me
+              </button>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                WiFi Password
-              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className="block text-lg font-medium text-gray-700">
+                  WiFi Password
+                </label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>This is your Wi-Fi password. Must be 8+ characters.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <input
                 type="password"
                 value={wifiPassword}
                 onChange={(e) => setWifiPassword(e.target.value)}
                 placeholder="Enter your WiFi password"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 text-lg rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+              <button
+                type="button"
+                onClick={generatePassword}
+                className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Generate this for me
+              </button>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+              <p className="text-sm text-gray-700 italic">
+                <strong>Note:</strong> We'll print these credentials on a sticker on the bottom of your WiFi 7 Router with AI Optimization!
+              </p>
             </div>
 
             <div className="bg-blue-50 p-4 rounded-lg">
@@ -89,14 +157,12 @@ export const RouterSetup = () => {
               </Button>
             </Link>
             
-            <Link to="/" className="flex-1">
-              <Button 
-                onClick={handleFinish}
-                className="bg-[#0047AB] hover:bg-[#0060D4] text-white w-full py-3 text-lg font-semibold transition-all duration-200"
-              >
-                Finish Setup
-              </Button>
-            </Link>
+            <Button 
+              onClick={handleFinish}
+              className="bg-[#0047AB] hover:bg-[#0060D4] text-white flex-1 py-3 text-lg font-semibold transition-all duration-200"
+            >
+              Finish Setup
+            </Button>
           </div>
         </div>
       </div>
