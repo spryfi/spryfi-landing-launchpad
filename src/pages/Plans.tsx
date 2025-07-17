@@ -10,17 +10,15 @@ export const Plans = () => {
       id: 'spryfi-home',
       name: 'SpryFi Home',
       description: 'Perfect for most homes',
-      price: 49,
-      todayCost: 49,
-      features: ['Up to 100 Mbps', 'No contracts', 'Free installation']
+      price: 99.95,
+      features: ['Up to 150 Mbps', 'All online activities (streaming, gaming, video calls)', 'No contracts, no hidden fees']
     },
     {
       id: 'spryfi-home-premium',
       name: 'SpryFi Home Premium',
       description: 'For power users and families',
-      price: 79,
-      todayCost: 79,
-      features: ['Up to 300 Mbps', 'Priority support', 'No contracts', 'Free installation']
+      price: 139.95,
+      features: ['Up to 300 Mbps', 'Best for heavy usage (multiple devices & power users)', 'All online activities (streaming, gaming, video calls)', 'No contracts, no hidden fees']
     }
   ];
 
@@ -73,7 +71,7 @@ export const Plans = () => {
                         <span className="text-3xl font-extrabold">${plan.price}</span>
                         <span className="ml-1 text-sm">/mo</span>
                       </div>
-                      <p className="text-xs opacity-75">${plan.todayCost} today</p>
+                      <p className="text-xs opacity-75 max-w-32 text-right">Amount due today will be calculated at checkout (prorated + discounted shipping)</p>
                     </div>
                   </div>
 
