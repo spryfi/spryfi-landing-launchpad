@@ -393,6 +393,13 @@ async function callGisAPI(addressData: any) {
   
   try {
     console.log('🚀 CRITICAL: About to make fetch call to https://fwa.spry.network/api/fwa-check');
+    console.log('🚀 CRITICAL: Payload being sent:', JSON.stringify({
+      address_line1: addressData.address,
+      city: addressData.city,
+      state: addressData.state,
+      zip_code: addressData.zip
+    }, null, 2));
+    
     const response = await fetch('https://fwa.spry.network/api/fwa-check', {
       method: 'POST',
       headers: {
