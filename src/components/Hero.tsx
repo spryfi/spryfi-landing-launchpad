@@ -33,6 +33,7 @@ export const Hero = () => {
     qualified: boolean;
     source?: string;
     network_type?: string;
+    minsignal?: number;
     error?: boolean;
     message?: string;
   } | null>(null);
@@ -299,51 +300,40 @@ export const Hero = () => {
       let finalResults = null;
 
       try {
-        const response = await fetch('https://fwa.spry.network/api/fwa-check', {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            ...formData,
-            usageType: "residential"
-          })
+        // Use the Supabase edge function for GIS-powered qualification
+        const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
+          body: {
+            address_line1: parsedAddressData.address_line1,
+            address_line2: parsedAddressData.address_line2 || '',
+            city: parsedAddressData.city,
+            state: parsedAddressData.state,
+            zip_code: parsedAddressData.zip_code,
+            lead_id: leadId
+          }
         });
 
-        if (!response.ok) {
-          throw new Error(`FWA API ${response.status}`);
+        if (qualificationError) {
+          console.error('❌ Edge function error:', qualificationError);
+          throw new Error('Unable to check service availability at this time.');
         }
 
-        const data = await response.json();
-        console.log('✅ Landing form API response:', data);
-
-        if (data.status === 'pending' && data.request_id) {
-          console.log('🔄 Status is pending, starting polling...');
-          
-          const polledData = await pollForResults(data.request_id);
-          
-          if (polledData.status === 'timeout') {
-            throw new Error('Request timed out');
-          }
-          
-          finalResults = polledData;
-        } else {
-          finalResults = data;
+        if (!qualificationData || !qualificationData.success) {
+          console.error('❌ Edge function returned unsuccessful result:', qualificationData);
+          throw new Error(qualificationData?.error || 'Service check failed.');
         }
 
-        if (finalResults.source) {
-          qualificationSource = finalResults.source;
-        }
-
-        qualified = finalResults.qualified || false;
-        networkType = finalResults.network_type;
-        requestId = finalResults.request_id;
+        console.log('✅ Edge function response:', qualificationData);
+        
+        finalResults = qualificationData;
+        qualified = qualificationData.qualified || false;
+        networkType = qualificationData.network_type;
+        qualificationSource = qualificationData.source || 'gis';
 
         setQualificationResult({
-          qualified: finalResults.qualified || false,
+          qualified: qualified,
           source: qualificationSource,
-          network_type: finalResults.network_type
+          network_type: networkType,
+          minsignal: qualificationData.minsignal
         });
 
       } catch (fwaError) {

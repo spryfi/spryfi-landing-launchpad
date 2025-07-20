@@ -102,6 +102,15 @@ export type Database = {
           city: string
           created_at: string | null
           first_lead_id: string | null
+          gis_checked_at: string | null
+          gis_coverage_attributes: Json | null
+          gis_coverage_layers: string[] | null
+          gis_coverage_signal: number | null
+          gis_coverage_status: string | null
+          gis_minsignal: number | null
+          gis_qualification_id: string | null
+          gis_qualified: boolean | null
+          gis_query_checked_at: string | null
           id: string
           is_cb_valid: boolean | null
           last_qualified_at: string | null
@@ -127,6 +136,15 @@ export type Database = {
           city: string
           created_at?: string | null
           first_lead_id?: string | null
+          gis_checked_at?: string | null
+          gis_coverage_attributes?: Json | null
+          gis_coverage_layers?: string[] | null
+          gis_coverage_signal?: number | null
+          gis_coverage_status?: string | null
+          gis_minsignal?: number | null
+          gis_qualification_id?: string | null
+          gis_qualified?: boolean | null
+          gis_query_checked_at?: string | null
           id?: string
           is_cb_valid?: boolean | null
           last_qualified_at?: string | null
@@ -152,6 +170,15 @@ export type Database = {
           city?: string
           created_at?: string | null
           first_lead_id?: string | null
+          gis_checked_at?: string | null
+          gis_coverage_attributes?: Json | null
+          gis_coverage_layers?: string[] | null
+          gis_coverage_signal?: number | null
+          gis_coverage_status?: string | null
+          gis_minsignal?: number | null
+          gis_qualification_id?: string | null
+          gis_qualified?: boolean | null
+          gis_query_checked_at?: string | null
           id?: string
           is_cb_valid?: boolean | null
           last_qualified_at?: string | null
@@ -176,6 +203,13 @@ export type Database = {
             columns: ["first_lead_id"]
             isOneToOne: false
             referencedRelation: "leads_fresh"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anchor_address_gis_qualification_id_fkey"
+            columns: ["gis_qualification_id"]
+            isOneToOne: false
+            referencedRelation: "gis_qualifications"
             referencedColumns: ["id"]
           },
         ]
@@ -801,6 +835,69 @@ export type Database = {
         }
         Relationships: []
       }
+      gis_qualifications: {
+        Row: {
+          anchor_address_id: string
+          brandname: string | null
+          created_at: string
+          fid: number | null
+          id: string
+          mindown: number | null
+          minsignal: number | null
+          minup: number | null
+          providerid: string | null
+          qualification_reason: string | null
+          qualified: boolean
+          raw_attributes: Json | null
+          technology: string | null
+        }
+        Insert: {
+          anchor_address_id: string
+          brandname?: string | null
+          created_at?: string
+          fid?: number | null
+          id?: string
+          mindown?: number | null
+          minsignal?: number | null
+          minup?: number | null
+          providerid?: string | null
+          qualification_reason?: string | null
+          qualified: boolean
+          raw_attributes?: Json | null
+          technology?: string | null
+        }
+        Update: {
+          anchor_address_id?: string
+          brandname?: string | null
+          created_at?: string
+          fid?: number | null
+          id?: string
+          mindown?: number | null
+          minsignal?: number | null
+          minup?: number | null
+          providerid?: string | null
+          qualification_reason?: string | null
+          qualified?: boolean
+          raw_attributes?: Json | null
+          technology?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gis_qualifications_anchor_address_id_fkey"
+            columns: ["anchor_address_id"]
+            isOneToOne: false
+            referencedRelation: "anchor_address"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gis_qualifications_anchor_address_id_fkey"
+            columns: ["anchor_address_id"]
+            isOneToOne: false
+            referencedRelation: "lead_qualification_view"
+            referencedColumns: ["anchor_address_id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           created_at: string
@@ -1064,6 +1161,11 @@ export type Database = {
           email: string | null
           fallback_used: boolean | null
           first_name: string | null
+          gis_coverage_attributes: Json | null
+          gis_coverage_layers: string[] | null
+          gis_coverage_signal: number | null
+          gis_coverage_status: string | null
+          gis_query_checked_at: string | null
           household_size: number | null
           id: string
           is_test: boolean | null
@@ -1108,6 +1210,11 @@ export type Database = {
           email?: string | null
           fallback_used?: boolean | null
           first_name?: string | null
+          gis_coverage_attributes?: Json | null
+          gis_coverage_layers?: string[] | null
+          gis_coverage_signal?: number | null
+          gis_coverage_status?: string | null
+          gis_query_checked_at?: string | null
           household_size?: number | null
           id?: string
           is_test?: boolean | null
@@ -1152,6 +1259,11 @@ export type Database = {
           email?: string | null
           fallback_used?: boolean | null
           first_name?: string | null
+          gis_coverage_attributes?: Json | null
+          gis_coverage_layers?: string[] | null
+          gis_coverage_signal?: number | null
+          gis_coverage_status?: string | null
+          gis_query_checked_at?: string | null
           household_size?: number | null
           id?: string
           is_test?: boolean | null

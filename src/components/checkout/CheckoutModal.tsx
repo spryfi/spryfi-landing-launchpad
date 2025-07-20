@@ -35,10 +35,13 @@ export interface CheckoutState {
   totalAmount: number;
   qualified: boolean;
   qualificationResult?: {
+    qualified?: boolean;
     source?: string;
     request_id?: string;
     network_type?: string;
     max_speed_mbps?: number;
+    minsignal?: number;
+    error?: string;
   } | null;
   flow_completed?: boolean;
   preselectedPlan?: string | null;

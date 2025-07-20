@@ -194,79 +194,102 @@ serve(async (req) => {
       console.log('✅ Lead verified:', leadData.id)
     }
 
-    // Step 1: Try SpryFi Databases first
+    // Step 1: Call GIS-powered FastAPI endpoint for qualification
     let qualificationResult = null;
-    let source = 'none';
+    let source = 'gis';
 
     try {
-      console.log('📡 Checking SpryFi Databases...')
+      console.log('📡 Calling GIS-powered FastAPI endpoint...')
       
-      const verizonResponse = await callVerizonAPI({
-        address_line1: addressData.address_line1,
+      const gisResponse = await callGisAPI({
+        address: addressData.address_line1,
         city: addressData.city,
         state: addressData.state,
-        zip_code: addressData.zip_code,
-        latitude: addressData.latitude,
-        longitude: addressData.longitude
+        zip: addressData.zip_code
       });
 
-      console.log('📡 SpryFi Database response:', JSON.stringify(verizonResponse, null, 2));
+      console.log('📡 GIS API response:', JSON.stringify(gisResponse, null, 2));
 
-      // Parse response correctly - qualified is a string, not boolean
-      const isQualified = verizonResponse?.intelligenceResponse?.wirelessCoverages?.fwaCoverage?.[0]?.coverage?.qualified === 'true';
-      
-      console.log('📡 SpryFi Database qualification result:', { 
-        isQualified, 
-        qualified: verizonResponse?.intelligenceResponse?.wirelessCoverages?.fwaCoverage?.[0]?.coverage?.qualified,
-        apiSuccess: verizonResponse.success 
-      });
+      // Check if we have the attributes with minsignal
+      const attributes = gisResponse?.attributes;
+      const minsignal = attributes?.minsignal;
 
-      // Only proceed with SpryFi Database result if API call was successful
-      if (verizonResponse.success) {
-        if (isQualified) {
-          // SpryFi Database qualified - use this result and do NOT fall back to bot
-          qualificationResult = {
-            qualified: true,
-            network_type: '5G_HOME',
-            coverage_type: 'OUTDOOR',
-            max_speed_mbps: 300,
-            source: 'verizon',
-            raw_data: verizonResponse
-          };
-          source = 'verizon';
-          console.log('✅ SpryFi Database qualification successful - QUALIFIED (sapi1)')
-        } else {
-          // SpryFi Database explicitly said not qualified - fallback to bot
-          console.log('❌ SpryFi Database said not qualified, trying bot fallback')
-          throw new Error('SpryFi Database said not qualified, trying bot')
-        }
-      } else {
-        console.log('❌ SpryFi Database failed, trying bot fallback')
-        throw new Error('SpryFi Database call failed')
+      let qualified = false;
+      let qualificationReason = 'No signal data available';
+
+      if (minsignal !== null && minsignal !== undefined) {
+        // If minsignal is present and is -70 or less (e.g., -100, -90, -80, -70), qualify
+        qualified = minsignal <= -70;
+        qualificationReason = qualified 
+          ? `Signal strength ${minsignal} dBm meets qualification criteria (≤ -70 dBm)`
+          : `Signal strength ${minsignal} dBm does not meet qualification criteria (> -70 dBm)`;
       }
-    } catch (verizonError) {
-      console.log('🤖 SpryFi Database failed/unavailable, using Bot Fallback')
-      
-      // Step 2: Fall back to bot logic only if SpryFi Database failed or returned not qualified
-      const botResult = await callBotFallback({
-        address_line1: addressData.address_line1,
-        city: addressData.city,
-        state: addressData.state,
-        zip_code: addressData.zip_code,
-        latitude: addressData.latitude,
-        longitude: addressData.longitude
+
+      console.log('📡 GIS qualification result:', { 
+        qualified, 
+        minsignal,
+        qualificationReason
       });
+
+      // Save GIS qualification data to database
+      let gisQualificationId = null;
+      if (attributes) {
+        try {
+          const { data: gisQual, error: gisError } = await supabase
+            .from('gis_qualifications')
+            .insert({
+              anchor_address_id: anchorAddressId,
+              fid: attributes.fid,
+              providerid: attributes.providerid,
+              technology: attributes.technology,
+              minup: attributes.minup,
+              mindown: attributes.mindown,
+              minsignal: attributes.minsignal,
+              brandname: attributes.brandname,
+              raw_attributes: attributes,
+              qualified: qualified,
+              qualification_reason: qualificationReason
+            })
+            .select('id')
+            .single();
+
+          if (gisError) {
+            console.error('Error saving GIS qualification:', gisError);
+          } else {
+            gisQualificationId = gisQual.id;
+            console.log('✅ GIS qualification saved with ID:', gisQualificationId);
+          }
+        } catch (saveError) {
+          console.error('Error saving GIS data:', saveError);
+        }
+      }
 
       qualificationResult = {
-        qualified: botResult.qualified,
-        network_type: botResult.network_type || '5G_HOME',
-        coverage_type: 'BOT_ANALYZED',
-        max_speed_mbps: botResult.max_speed_mbps || 200,
-        source: 'bot',
-        raw_data: botResult
+        qualified: qualified,
+        network_type: qualified ? '5G_HOME' : null,
+        source: 'gis',
+        minsignal: minsignal,
+        raw_data: gisResponse,
+        qualification_reason: qualificationReason,
+        gis_qualification_id: gisQualificationId
       };
-      source = 'bot';
-      console.log('✅ Bot qualification completed (sapi2)')
+
+      console.log('✅ GIS qualification completed:', { qualified, source: 'gis' });
+
+    } catch (gisError) {
+      console.error('❌ GIS API call failed:', gisError);
+      
+      // If GIS fails, mark as not qualified
+      qualificationResult = {
+        qualified: false,
+        network_type: null,
+        source: 'gis',
+        raw_data: null,
+        qualification_reason: 'GIS service unavailable',
+        error: gisError.message
+      };
+      
+      console.log('❌ GIS qualification failed - marking as not qualified');
     }
 
     console.log('📡 Final qualification result:', { qualified: qualificationResult.qualified, source });
@@ -275,13 +298,15 @@ serve(async (req) => {
     const updateData: any = {
       qualified_cband: qualificationResult.qualified,
       last_qualified_at: new Date().toISOString(),
-      qualification_source: source
+      qualification_source: source,
+      gis_qualified: qualificationResult.qualified,
+      gis_minsignal: qualificationResult.minsignal,
+      gis_checked_at: new Date().toISOString(),
+      gis_qualification_id: qualificationResult.gis_qualification_id
     };
 
-    if (source === 'verizon') {
-      updateData.raw_verizon_data = qualificationResult.raw_data;
-    } else if (source === 'bot') {
-      updateData.raw_bot_data = qualificationResult.raw_data;
+    if (source === 'gis') {
+      updateData.gis_coverage_attributes = qualificationResult.raw_data?.attributes || null;
     }
 
     const { error: updateError } = await supabase
@@ -356,54 +381,34 @@ serve(async (req) => {
   }
 })
 
-// Mock SpryFi Database function - replace with actual implementation
-async function callVerizonAPI(addressData: any) {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
+// GIS-powered FastAPI function
+async function callGisAPI(addressData: any) {
+  console.log('🌍 Calling GIS FastAPI endpoint for:', addressData);
   
-  // Mock realistic SpryFi Database response structure
-  const success = Math.random() > 0.3; // 70% success rate
-  
-  if (success) {
-    const qualified = Math.random() > 0.4; // 60% qualification rate when API succeeds
-    
-    return {
-      success: true,
-      intelligenceResponse: {
-        wirelessCoverages: {
-          fwaCoverage: [{
-            coverage: {
-              qualified: qualified ? 'true' : 'false',
-              networkType: '5G_HOME',
-              maxSpeedMbps: 300,
-              coverageLevel: 'STRONG'
-            }
-          }]
-        }
+  try {
+    const response = await fetch('http://fwa.spry.network/api/fwa-check', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
       },
-      serviceAvailability: true
-    };
-  } else {
-    throw new Error('SpryFi Database unavailable');
-  }
-}
+      body: JSON.stringify({
+        address: addressData.address,
+        city: addressData.city,
+        state: addressData.state,
+        zip: addressData.zip
+      })
+    });
 
-// Bot fallback function
-async function callBotFallback(addressData: any) {
-  console.log('🤖 Running bot analysis for:', addressData.city, addressData.state);
-  
-  // Simulate bot processing delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // Bot logic - higher qualification rate as fallback
-  const qualified = Math.random() > 0.2; // 80% qualification rate for bot
-  
-  return {
-    qualified,
-    network_type: '5G_HOME',
-    max_speed_mbps: qualified ? 200 : 0,
-    analysis_method: 'geographic_proximity',
-    confidence_score: Math.floor(Math.random() * 30) + 70, // 70-100%
-    bot_version: '1.0'
-  };
+    if (!response.ok) {
+      throw new Error(`GIS API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ GIS API response received:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('❌ GIS API call failed:', error);
+    throw error;
+  }
 }

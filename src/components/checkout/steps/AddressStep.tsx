@@ -200,8 +200,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   };
 
-  // Note: Polling function removed - edge function now handles all qualification logic internally
-
   const handleAddressSelect = async (address: string) => {
     console.log('🎯 Address selected:', address);
     setSelectedAddress(address);
@@ -303,78 +301,6 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     return Object.keys(errors).length === 0;
   };
 
-  const pollStatusEndpoint = async (requestId: string): Promise<{qualified: boolean, network_type?: string, status: string}> => {
-    const maxAttempts = 30;
-    let attempts = 0;
-
-    return new Promise((resolve, reject) => {
-      const poll = async () => {
-        attempts++;
-        console.log(`🔄 Polling attempt ${attempts}/${maxAttempts} for request ID: ${requestId}`);
-
-        try {
-          const response = await fetch(`https://fwa.spry.network/api/fwa-status/${requestId}`, {
-            method: 'GET'
-          });
-
-          if (response.status === 404) {
-            // 404 means Verizon callback hasn't arrived yet, treat as pending
-            console.log('📍 404 response - Verizon callback not arrived yet, retrying...');
-            if (attempts < maxAttempts) {
-              setTimeout(poll, 1000);
-              return;
-            } else {
-              reject(new Error('timeout'));
-              return;
-            }
-          }
-
-          if (!response.ok) {
-            console.error('❌ Status polling failed:', response.status, response.statusText);
-            reject(new Error('Unable to check your address at this time. Please retry.'));
-            return;
-          }
-
-          const data = await response.json();
-          console.log(`📊 Status poll response (attempt ${attempts}):`, data);
-
-          if (data.status === 'complete') {
-            console.log('✅ Polling complete with final result');
-            resolve(data);
-            return;
-          }
-
-          if (data.status === 'pending') {
-            console.log('⏳ Status still pending, continuing to poll...');
-            if (attempts < maxAttempts) {
-              setTimeout(poll, 1000);
-              return;
-            } else {
-              reject(new Error('timeout'));
-              return;
-            }
-          }
-
-          // Unknown status
-          console.warn('⚠️ Unknown status received:', data.status);
-          if (attempts < maxAttempts) {
-            setTimeout(poll, 1000);
-            return;
-          } else {
-            reject(new Error('timeout'));
-            return;
-          }
-
-        } catch (error) {
-          console.error('🔥 Polling error:', error);
-          reject(new Error('Unable to check your address at this time. Please retry.'));
-        }
-      };
-
-      // Start the first poll
-      poll();
-    });
-  };
 
   const handleCheckArea = async () => {
     if (!selectedAddress) {
@@ -412,52 +338,37 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
 
     setIsCheckingQualification(true);
-    setQualificationProgress(10);
+    setQualificationProgress(20);
     setCurrentStatusMessage('Checking service availability...');
 
     try {
-      // Step 1: Initial POST to fwa-check
-      console.log('📡 Sending initial FWA check request...');
+      // Call the Supabase edge function for GIS-powered qualification
+      console.log('📡 Calling FWA check edge function...');
       
-      const requestPayload = {
-        address_line1: addressLine1,
-        address_line2: addressLine2 || '',
-        city: city,
-        state: selectedState,
-        zip_code: zipCode,
-        email: email,
-        usageType: 'residential'
-      };
-
-      console.log("📦 Request payload being sent to fwa-check:", requestPayload);
-
-      const response = await fetch('https://fwa.spry.network/api/fwa-check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestPayload)
+      const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
+        body: {
+          anchor_address_id: state.anchorAddressId,
+          address_line1: addressLine1,
+          address_line2: addressLine2 || '',
+          city: city,
+          state: selectedState,
+          zip_code: zipCode
+        }
       });
 
-      if (!response.ok) {
-        console.error('❌ Initial API request failed:', response.status, response.statusText);
-        throw new Error('Sorry, we couldn\'t check your address—please try again.');
+      setQualificationProgress(60);
+
+      if (qualificationError) {
+        console.error('❌ Edge function error:', qualificationError);
+        throw new Error('Unable to check service availability at this time.');
       }
 
-      const initialData = await response.json();
-      console.log('📡 Initial API response:', initialData);
-
-      if (!initialData.request_id) {
-        throw new Error('No request ID received from service');
+      if (!qualificationData || !qualificationData.success) {
+        console.error('❌ Edge function returned unsuccessful result:', qualificationData);
+        throw new Error(qualificationData?.error || 'Service check failed.');
       }
 
-      setQualificationProgress(30);
-      setCurrentStatusMessage('Checking service availability...');
-
-      // Step 2: Start polling for status
-      console.log('🔄 Starting status polling for request ID:', initialData.request_id);
-      
-      const finalResult = await pollStatusEndpoint(initialData.request_id);
+      console.log('📡 Edge function response:', qualificationData);
       
       setQualificationProgress(80);
       
@@ -482,8 +393,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
       setQualificationProgress(100);
 
-      // Step 4: Handle final qualification result
-      if (finalResult.qualified === true) {
+      // Step 3: Handle final qualification result
+      if (qualificationData.qualified === true) {
         console.log('✅ Qualification successful');
         setCurrentStatusMessage('Success!');
         
@@ -505,80 +416,68 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           leadId,
           qualified: true,
           qualificationResult: {
-            request_id: initialData.request_id,
-            network_type: finalResult.network_type || '5G_HOME',
-            max_speed_mbps: 300
+            qualified: true,
+            source: qualificationData.source || 'gis',
+            network_type: qualificationData.network_type,
+            minsignal: qualificationData.minsignal
           },
           step: 'qualification-success'
         });
 
         toast({
           title: "Great news! 🎉",
-          description: "SpryFi is available in your area!",
+          description: "We cover your area! Let's get you connected.",
         });
-        return;
+      } else {
+        console.log('❌ Not qualified');
+        setCurrentStatusMessage('Not available');
+        
+        updateState({
+          qualified: false,
+          qualificationResult: {
+            qualified: false,
+            source: qualificationData.source || 'gis',
+            network_type: qualificationData.network_type,
+            minsignal: qualificationData.minsignal
+          }
+        });
+
+        toast({
+          title: "Service not available",
+          description: "Service not available at this address.",
+          variant: "destructive"
+        });
       }
 
-      // Not qualified
-      console.log('❌ Service not available at this address');
-      setCurrentStatusMessage('Check complete');
-      
-      updateState({
-        address: {
-          addressLine1,
-          addressLine2,
-          city,
-          state: selectedState,
-          zipCode,
-          formattedAddress: selectedAddress
-        },
-        contact: {
-          firstName,
-          lastName,
-          email,
-          phone: ''
-        },
-        leadId,
-        qualified: false,
-        qualificationResult: {
-          request_id: initialData.request_id,
-          network_type: '',
-          max_speed_mbps: 0
-        },
-        step: 'not-qualified'
-      });
-
-      toast({
-        title: "Service not available at this address",
-        description: "We'll notify you when SpryFi becomes available.",
-      });
-
     } catch (error) {
-      console.error('🔥 Check area error:', error);
+      console.error('🔥 Qualification check error:', error);
+      setIsCheckingQualification(false);
       setQualificationProgress(0);
       setCurrentStatusMessage('');
       
-      let errorMessage = "Something went wrong. Please try again.";
+      let errorMessage = 'Unable to check your address at this time. Please retry.';
       
-      if (error instanceof Error) {
-        if (error.message === 'timeout') {
-          errorMessage = "We're still waiting on Verizon—please try again later.";
-        } else {
-          errorMessage = error.message;
-        }
+      if (error instanceof Error && error.message) {
+        errorMessage = error.message;
       }
-      
+
+      updateState({
+        qualified: false,
+        qualificationResult: {
+          qualified: false,
+          source: 'gis',
+          network_type: null,
+          error: errorMessage
+        }
+      });
+
       toast({
-        title: "Error",
+        title: "Service Check Error",
         description: errorMessage,
+        variant: "destructive"
       });
     } finally {
       setIsCheckingQualification(false);
-      // Clear progress after a delay
-      setTimeout(() => {
-        setQualificationProgress(0);
-        setCurrentStatusMessage('');
-      }, 2000);
     }
   };
 
