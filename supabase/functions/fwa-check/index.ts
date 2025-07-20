@@ -194,64 +194,70 @@ serve(async (req) => {
       console.log('✅ Lead verified:', leadData.id)
     }
 
-    // Step 1: Call GIS-powered FastAPI endpoint for qualification
+    // Step 1: Call GIS API for qualification
     let qualificationResult = null;
     let source = 'gis';
 
     try {
-      console.log('📡 Calling GIS-powered FastAPI endpoint...')
+      console.log('📡 Calling GIS-powered API endpoint...')
       console.log('🌍 About to call GIS API with address data:', {
-        address: addressData.address_line1,
+        address_line1: addressData.address_line1,
         city: addressData.city,
         state: addressData.state,
-        zip: addressData.zip_code
+        zip_code: addressData.zip_code
       });
       
       const gisResponse = await callGisAPI({
-        address: addressData.address_line1,
+        address_line1: addressData.address_line1,
         city: addressData.city,
         state: addressData.state,
-        zip: addressData.zip_code
+        zip_code: addressData.zip_code
       });
 
-      console.log('📡 GIS API response:', JSON.stringify(gisResponse, null, 2));
+      console.log('📡 GIS API raw response:', JSON.stringify(gisResponse, null, 2));
 
-      // Check if we have the attributes with minsignal
-      const attributes = gisResponse?.attributes;
+      // Extract minsignal from attributes for qualification
+      const attributes = gisResponse?.attributes || {};
       const minsignal = attributes?.minsignal;
-
+      
       let qualified = false;
       let qualificationReason = 'No signal data available';
 
-      if (minsignal !== null && minsignal !== undefined) {
-        // If minsignal is present and is >= -100 (e.g., -100, -99, -90, -80), qualify
-        qualified = minsignal >= -100;
-        qualificationReason = qualified 
-          ? `Signal strength ${minsignal} dBm meets qualification criteria (≥ -100 dBm)`
-          : `Signal strength ${minsignal} dBm does not meet qualification criteria (< -100 dBm)`;
+      // Qualification logic: minsignal must be a number >= -100
+      if (typeof minsignal === 'number' && minsignal >= -100) {
+        qualified = true;
+        qualificationReason = `Signal strength ${minsignal} dBm meets qualification criteria (≥ -100 dBm)`;
+      } else if (typeof minsignal === 'number') {
+        qualified = false;
+        qualificationReason = `Signal strength ${minsignal} dBm does not meet qualification criteria (< -100 dBm)`;
+      } else {
+        qualified = false;
+        qualificationReason = `No valid signal data available (minsignal: ${minsignal})`;
       }
 
       console.log('📡 GIS qualification result:', { 
         qualified, 
         minsignal,
-        qualificationReason
+        qualificationReason,
+        attributesReceived: !!attributes,
+        fullAttributes: attributes
       });
 
       // Save GIS qualification data to database
       let gisQualificationId = null;
-      if (attributes) {
+      if (attributes && Object.keys(attributes).length > 0) {
         try {
           const { data: gisQual, error: gisError } = await supabase
             .from('gis_qualifications')
             .insert({
               anchor_address_id: anchorAddressId,
-              fid: attributes.fid,
-              providerid: attributes.providerid,
-              technology: attributes.technology,
-              minup: attributes.minup,
-              mindown: attributes.mindown,
-              minsignal: attributes.minsignal,
-              brandname: attributes.brandname,
+              fid: attributes.fid || null,
+              providerid: attributes.providerid ? String(attributes.providerid) : null,
+              technology: attributes.technology ? String(attributes.technology) : null,
+              minup: attributes.minup || null,
+              mindown: attributes.mindown || null,
+              minsignal: attributes.minsignal || null,
+              brandname: attributes.brandname || null,
               raw_attributes: attributes,
               qualified: qualified,
               qualification_reason: qualificationReason
@@ -272,15 +278,21 @@ serve(async (req) => {
 
       qualificationResult = {
         qualified: qualified,
-        network_type: qualified ? '5G_HOME' : null,
-        source: 'gis',
         minsignal: minsignal,
+        network_type: qualified ? (gisResponse?.network_type || '5G_HOME') : null,
+        source: 'gis',
+        attributes: attributes,
         raw_data: gisResponse,
         qualification_reason: qualificationReason,
         gis_qualification_id: gisQualificationId
       };
 
-      console.log('✅ GIS qualification completed:', { qualified, source: 'gis' });
+      console.log('✅ GIS qualification completed:', { 
+        qualified, 
+        minsignal, 
+        source: 'gis',
+        networkType: qualificationResult.network_type 
+      });
 
     } catch (gisError) {
       console.error('❌ GIS API call failed:', gisError);
@@ -288,17 +300,23 @@ serve(async (req) => {
       // If GIS fails, mark as not qualified
       qualificationResult = {
         qualified: false,
+        minsignal: null,
         network_type: null,
         source: 'gis',
+        attributes: {},
         raw_data: null,
-        qualification_reason: 'GIS service unavailable',
+        qualification_reason: `GIS service error: ${gisError.message}`,
         error: gisError.message
       };
       
       console.log('❌ GIS qualification failed - marking as not qualified');
     }
 
-    console.log('📡 Final qualification result:', { qualified: qualificationResult.qualified, source });
+    console.log('📡 Final qualification result:', { 
+      qualified: qualificationResult.qualified, 
+      minsignal: qualificationResult.minsignal,
+      source: qualificationResult.source 
+    });
 
     // Update the anchor_address with qualification results
     const updateData: any = {
@@ -354,7 +372,9 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         qualified: qualificationResult.qualified,
+        minsignal: qualificationResult.minsignal,
         network_type: qualificationResult.network_type,
+        attributes: qualificationResult.attributes,
         source: source,
         anchor_address_id: anchorAddressId,
         raw_data: qualificationResult.raw_data
@@ -394,10 +414,10 @@ async function callGisAPI(addressData: any) {
   try {
     console.log('🚀 CRITICAL: About to make fetch call to https://fwa.spry.network/api/fwa-check');
     console.log('🚀 CRITICAL: Payload being sent:', JSON.stringify({
-      address_line1: addressData.address,
+      address_line1: addressData.address_line1,
       city: addressData.city,
       state: addressData.state,
-      zip_code: addressData.zip
+      zip_code: addressData.zip_code
     }, null, 2));
     
     const response = await fetch('https://fwa.spry.network/api/fwa-check', {
@@ -406,10 +426,10 @@ async function callGisAPI(addressData: any) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        address_line1: addressData.address,
+        address_line1: addressData.address_line1,
         city: addressData.city,
         state: addressData.state,
-        zip_code: addressData.zip
+        zip_code: addressData.zip_code
       })
     });
 
