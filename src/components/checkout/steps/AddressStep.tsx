@@ -265,12 +265,42 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
   };
 
+  // Validation functions
+  const isValidZipCode = (zip: string) => {
+    return /^\d{5}(-\d{4})?$/.test(zip.trim());
+  };
+
   const isValidAddress = () => {
-    return addressLine1.trim() !== '' && city.trim() !== '' && selectedState !== '' && zipCode.trim() !== '';
+    return addressLine1.trim() !== '' && city.trim() !== '' && selectedState !== '' && zipCode.trim() !== '' && isValidZipCode(zipCode);
   };
 
   const isValidContactInfo = () => {
     return firstName.trim() !== '' && lastName.trim() !== '' && email.trim() !== '' && email.includes('@');
+  };
+
+  // Validation state for inline error messages
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+
+  const validateFields = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!addressLine1.trim()) {
+      errors.address_line1 = 'This field is required';
+    }
+    if (!city.trim()) {
+      errors.city = 'This field is required';
+    }
+    if (!selectedState.trim()) {
+      errors.state = 'This field is required';
+    }
+    if (!zipCode.trim()) {
+      errors.zip_code = 'This field is required';
+    } else if (!isValidZipCode(zipCode)) {
+      errors.zip_code = 'Invalid ZIP code';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleCheckArea = async () => {
@@ -282,18 +312,20 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       return;
     }
 
-    if (!isValidAddress()) {
-      toast({
-        title: "Error",
-        description: "Please ensure all address fields are filled.",
-      });
-      return;
-    }
-
+    // Validate contact info first
     if (!isValidContactInfo()) {
       toast({
         title: "Error",
         description: "Please fill in your first name, last name, and email address.",
+      });
+      return;
+    }
+
+    // Validate address fields and show inline errors
+    if (!validateFields()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors below.",
       });
       return;
     }
@@ -308,13 +340,46 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
 
     setIsCheckingQualification(true);
     setQualificationProgress(5);
-    setCurrentStatusMessage('Initializing...');
+    setCurrentStatusMessage('Checking availability...');
 
     try {
-      // Step 1: Save lead to database with anchor_address_id
-      console.log('💾 Saving lead to database...');
-      setCurrentStatusMessage('Saving your information...');
+      // Call new Verizon endpoint directly
+      console.log('📡 Checking availability with Verizon endpoint...');
+      setQualificationProgress(50);
+      setCurrentStatusMessage('Checking availability...');
       
+      const requestPayload = {
+        address_line1: addressLine1,
+        address_line2: addressLine2 || '',
+        city: city,
+        state: selectedState,
+        zip_code: zipCode,
+        email: email,
+        usageType: 'residential'
+      };
+
+      console.log("📦 Request payload being sent to fwa-check:", requestPayload);
+
+      const response = await fetch('https://fwa.spry.network/api/fwa-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestPayload)
+      });
+
+      if (!response.ok) {
+        console.error('❌ API request failed:', response.status, response.statusText);
+        throw new Error('Sorry, we couldn\'t check your address—please try again.');
+      }
+
+      const data = await response.json();
+      console.log('📡 API response:', data);
+
+      setQualificationProgress(90);
+
+      // Save lead to database after successful qualification check
+      console.log('💾 Saving lead to database...');
       const { data: saveLeadData, error: saveLeadError } = await supabase.functions.invoke('save-lead', {
         body: {
           email,
@@ -324,51 +389,16 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         }
       });
 
-      if (saveLeadError || !saveLeadData?.success) {
-        console.error('❌ Save lead error:', saveLeadError);
-        throw new Error('Failed to save lead information');
+      let leadId = null;
+      if (!saveLeadError && saveLeadData?.success) {
+        leadId = saveLeadData.lead_id;
+        console.log('✅ Lead saved with ID:', leadId);
+      } else {
+        console.warn('⚠️ Lead save failed, continuing without lead ID');
       }
 
-      const leadId = saveLeadData.lead_id;
-      console.log('✅ Lead saved with ID:', leadId);
-
-      // Step 2: Call SpryFi Databases using Supabase edge function
-      console.log('📡 Checking SpryFi Databases...');
-      setQualificationProgress(10);
-      setCurrentStatusMessage('Checking SpryFi Databases...');
-      
-      // Log if address was selected from autosuggest
-      console.log("📍 Address was selected from autosuggest:", !!selectedAddress);
-      console.log("🌍 Raw address string:", selectedAddress);
-      
-      const fwaCheckPayload = {
-        lead_id: leadId,
-        anchor_address_id: state.anchorAddressId,
-        address_line1: addressLine1,
-        address_line2: addressLine2 || '',
-        city: city,
-        state: selectedState,
-        zip_code: zipCode,
-        latitude: null,
-        longitude: null
-      };
-
-      // Log the parsed address payload being sent to fwa-check
-      console.log("📦 Parsed address payload being sent to fwa-check:", fwaCheckPayload);
-
-      const { data: databaseData, error: fwaError } = await supabase.functions.invoke('fwa-check', {
-        body: fwaCheckPayload
-      });
-
-      if (fwaError) {
-        console.error('🔥 FWA check error:', fwaError);
-        throw new Error(`SpryFi Database call failed: ${fwaError.message}`);
-      }
-
-      console.log('📡 SpryFi Database response:', databaseData);
-
-      // The edge function already handles qualification internally (SpryFi Database + Bot fallback)
-      if (databaseData.success && databaseData.qualified) {
+      // Handle successful qualification
+      if (data.qualified === true) {
         console.log('✅ Qualification successful');
         setQualificationProgress(100);
         setCurrentStatusMessage('Success!');
@@ -391,26 +421,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           leadId,
           qualified: true,
           qualificationResult: {
-            source: databaseData.source || 'verizon',
-            network_type: databaseData.network_type || '5G_HOME',
+            request_id: data.request_id,
+            network_type: data.network_type || '5G_HOME',
             max_speed_mbps: 300
           },
           step: 'qualification-success'
-        });
-
-        // Log final saved onboarding state
-        console.log("🧠 Final saved onboarding state:", {
-          qualified: true,
-          address: {
-            addressLine1,
-            addressLine2,
-            city,
-            state: selectedState,
-            zipCode,
-            formattedAddress: selectedAddress
-          },
-          source: databaseData.source || 'verizon',
-          network_type: databaseData.network_type || '5G_HOME'
         });
 
         toast({
@@ -420,8 +435,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         return;
       }
 
-      // Not qualified - edge function already tried all options
-      console.log('❌ Not qualified after checking all options');
+      // Not qualified or status pending
+      console.log('❌ Service not available at this address');
       setQualificationProgress(100);
       setCurrentStatusMessage('Check complete');
       
@@ -443,7 +458,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         leadId,
         qualified: false,
         qualificationResult: {
-          source: databaseData.source || 'none',
+          request_id: data.request_id || null,
           network_type: '',
           max_speed_mbps: 0
         },
@@ -451,7 +466,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       });
 
       toast({
-        title: "Not in your area — yet",
+        title: "Service not available at this address",
         description: "We'll notify you when SpryFi becomes available.",
       });
 

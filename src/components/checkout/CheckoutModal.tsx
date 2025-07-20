@@ -35,7 +35,8 @@ export interface CheckoutState {
   totalAmount: number;
   qualified: boolean;
   qualificationResult?: {
-    source: string;
+    source?: string;
+    request_id?: string;
     network_type?: string;
     max_speed_mbps?: number;
   } | null;
