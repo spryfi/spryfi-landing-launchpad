@@ -200,6 +200,12 @@ serve(async (req) => {
 
     try {
       console.log('📡 Calling GIS-powered FastAPI endpoint...')
+      console.log('🌍 About to call GIS API with address data:', {
+        address: addressData.address_line1,
+        city: addressData.city,
+        state: addressData.state,
+        zip: addressData.zip_code
+      });
       
       const gisResponse = await callGisAPI({
         address: addressData.address_line1,
@@ -386,16 +392,17 @@ async function callGisAPI(addressData: any) {
   console.log('🌍 Calling GIS FastAPI endpoint for:', addressData);
   
   try {
+    console.log('🚀 CRITICAL: About to make fetch call to https://fwa.spry.network/api/fwa-check');
     const response = await fetch('https://fwa.spry.network/api/fwa-check', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        address: addressData.address,
+        address_line1: addressData.address,
         city: addressData.city,
         state: addressData.state,
-        zip: addressData.zip
+        zip_code: addressData.zip
       })
     });
 
