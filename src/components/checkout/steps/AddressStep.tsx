@@ -303,6 +303,79 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     return Object.keys(errors).length === 0;
   };
 
+  const pollStatusEndpoint = async (requestId: string): Promise<{qualified: boolean, network_type?: string, status: string}> => {
+    const maxAttempts = 30;
+    let attempts = 0;
+
+    return new Promise((resolve, reject) => {
+      const poll = async () => {
+        attempts++;
+        console.log(`🔄 Polling attempt ${attempts}/${maxAttempts} for request ID: ${requestId}`);
+
+        try {
+          const response = await fetch(`https://fwa.spry.network/api/fwa-status/${requestId}`, {
+            method: 'GET'
+          });
+
+          if (response.status === 404) {
+            // 404 means Verizon callback hasn't arrived yet, treat as pending
+            console.log('📍 404 response - Verizon callback not arrived yet, retrying...');
+            if (attempts < maxAttempts) {
+              setTimeout(poll, 1000);
+              return;
+            } else {
+              reject(new Error('timeout'));
+              return;
+            }
+          }
+
+          if (!response.ok) {
+            console.error('❌ Status polling failed:', response.status, response.statusText);
+            reject(new Error('Unable to check your address at this time. Please retry.'));
+            return;
+          }
+
+          const data = await response.json();
+          console.log(`📊 Status poll response (attempt ${attempts}):`, data);
+
+          if (data.status === 'complete') {
+            console.log('✅ Polling complete with final result');
+            resolve(data);
+            return;
+          }
+
+          if (data.status === 'pending') {
+            console.log('⏳ Status still pending, continuing to poll...');
+            if (attempts < maxAttempts) {
+              setTimeout(poll, 1000);
+              return;
+            } else {
+              reject(new Error('timeout'));
+              return;
+            }
+          }
+
+          // Unknown status
+          console.warn('⚠️ Unknown status received:', data.status);
+          if (attempts < maxAttempts) {
+            setTimeout(poll, 1000);
+            return;
+          } else {
+            reject(new Error('timeout'));
+            return;
+          }
+
+        } catch (error) {
+          console.error('🔥 Polling error:', error);
+          reject(new Error('Unable to check your address at this time. Please retry.'));
+        }
+      };
+
+      // Start the first poll
+      poll();
+    });
+  };
+
   const handleCheckArea = async () => {
     if (!selectedAddress) {
       toast({
@@ -339,14 +412,12 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     }
 
     setIsCheckingQualification(true);
-    setQualificationProgress(5);
-    setCurrentStatusMessage('Checking availability...');
+    setQualificationProgress(10);
+    setCurrentStatusMessage('Checking service availability...');
 
     try {
-      // Call new Verizon endpoint directly
-      console.log('📡 Checking availability with Verizon endpoint...');
-      setQualificationProgress(50);
-      setCurrentStatusMessage('Checking availability...');
+      // Step 1: Initial POST to fwa-check
+      console.log('📡 Sending initial FWA check request...');
       
       const requestPayload = {
         address_line1: addressLine1,
@@ -369,16 +440,28 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       });
 
       if (!response.ok) {
-        console.error('❌ API request failed:', response.status, response.statusText);
+        console.error('❌ Initial API request failed:', response.status, response.statusText);
         throw new Error('Sorry, we couldn\'t check your address—please try again.');
       }
 
-      const data = await response.json();
-      console.log('📡 API response:', data);
+      const initialData = await response.json();
+      console.log('📡 Initial API response:', initialData);
 
-      setQualificationProgress(90);
+      if (!initialData.request_id) {
+        throw new Error('No request ID received from service');
+      }
 
-      // Save lead to database after successful qualification check
+      setQualificationProgress(30);
+      setCurrentStatusMessage('Checking service availability...');
+
+      // Step 2: Start polling for status
+      console.log('🔄 Starting status polling for request ID:', initialData.request_id);
+      
+      const finalResult = await pollStatusEndpoint(initialData.request_id);
+      
+      setQualificationProgress(80);
+      
+      // Step 3: Save lead to database after successful qualification check
       console.log('💾 Saving lead to database...');
       const { data: saveLeadData, error: saveLeadError } = await supabase.functions.invoke('save-lead', {
         body: {
@@ -397,10 +480,11 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         console.warn('⚠️ Lead save failed, continuing without lead ID');
       }
 
-      // Handle successful qualification
-      if (data.qualified === true) {
+      setQualificationProgress(100);
+
+      // Step 4: Handle final qualification result
+      if (finalResult.qualified === true) {
         console.log('✅ Qualification successful');
-        setQualificationProgress(100);
         setCurrentStatusMessage('Success!');
         
         updateState({
@@ -421,8 +505,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           leadId,
           qualified: true,
           qualificationResult: {
-            request_id: data.request_id,
-            network_type: data.network_type || '5G_HOME',
+            request_id: initialData.request_id,
+            network_type: finalResult.network_type || '5G_HOME',
             max_speed_mbps: 300
           },
           step: 'qualification-success'
@@ -435,9 +519,8 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         return;
       }
 
-      // Not qualified or status pending
+      // Not qualified
       console.log('❌ Service not available at this address');
-      setQualificationProgress(100);
       setCurrentStatusMessage('Check complete');
       
       updateState({
@@ -458,7 +541,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         leadId,
         qualified: false,
         qualificationResult: {
-          request_id: data.request_id || null,
+          request_id: initialData.request_id,
           network_type: '',
           max_speed_mbps: 0
         },
@@ -474,9 +557,20 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       console.error('🔥 Check area error:', error);
       setQualificationProgress(0);
       setCurrentStatusMessage('');
+      
+      let errorMessage = "Something went wrong. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message === 'timeout') {
+          errorMessage = "We're still waiting on Verizon—please try again later.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        description: errorMessage,
       });
     } finally {
       setIsCheckingQualification(false);
