@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 
 interface QualificationBadgeProps {
-  source: 'verizon' | 'bot' | 'none' | string;
+  source: 'gis' | 'none' | string;
   className?: string;
 }
 
@@ -13,17 +13,11 @@ export const QualificationBadge: React.FC<QualificationBadgeProps> = ({
 }) => {
   const getBadgeContent = () => {
     switch (source) {
-      case 'verizon':
+      case 'gis':
         return {
           icon: '✓',
-          text: 'SpryFi DB',
+          text: 'GIS Qualified',
           className: 'bg-green-100 text-green-700 border-green-200'
-        };
-      case 'bot':
-        return {
-          icon: '✓+',
-          text: 'Bot',
-          className: 'bg-blue-100 text-blue-700 border-blue-200'
         };
       default:
         return {

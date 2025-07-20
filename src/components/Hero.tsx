@@ -613,7 +613,7 @@ export const Hero = () => {
               color: 'rgba(255, 255, 255, 0.6)'
             }}
           >
-            {qualificationResult?.source === 'verizon' ? 'sapi1' : 'sapi2'}
+            gis-api
           </div>
 
           <div className="px-6 py-6 h-full flex flex-col justify-center text-center relative">
@@ -646,7 +646,7 @@ export const Hero = () => {
                   Great news! SpryFi is available
                 </h2>
                 <p className="text-blue-100 text-sm mb-6">
-                   We found {qualificationResult.source === 'verizon' ? 'excellent' : 'good'} coverage at your address
+                   We found excellent coverage at your address
                 </p>
                 <button
                   onClick={handleGetStarted}

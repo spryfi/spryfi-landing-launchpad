@@ -37,8 +37,7 @@ export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ stat
   // Determine internal qualification code based on source
   const getQualificationCode = () => {
     const source = state.qualificationResult?.source;
-    if (source === 'verizon') return 'sapi1';
-    if (source === 'bot') return 'sapi2';
+    if (source === 'gis') return 'gis-api';
     return '';
   };
 
