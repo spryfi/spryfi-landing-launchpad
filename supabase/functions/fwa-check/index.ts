@@ -218,11 +218,11 @@ serve(async (req) => {
       let qualificationReason = 'No signal data available';
 
       if (minsignal !== null && minsignal !== undefined) {
-        // If minsignal is present and is -70 or less (e.g., -100, -90, -80, -70), qualify
-        qualified = minsignal <= -70;
+        // If minsignal is present and is >= -100 (e.g., -100, -99, -90, -80), qualify
+        qualified = minsignal >= -100;
         qualificationReason = qualified 
-          ? `Signal strength ${minsignal} dBm meets qualification criteria (≤ -70 dBm)`
-          : `Signal strength ${minsignal} dBm does not meet qualification criteria (> -70 dBm)`;
+          ? `Signal strength ${minsignal} dBm meets qualification criteria (≥ -100 dBm)`
+          : `Signal strength ${minsignal} dBm does not meet qualification criteria (< -100 dBm)`;
       }
 
       console.log('📡 GIS qualification result:', { 
