@@ -386,7 +386,7 @@ async function callGisAPI(addressData: any) {
   console.log('🌍 Calling GIS FastAPI endpoint for:', addressData);
   
   try {
-    const response = await fetch('http://fwa.spry.network/api/fwa-check', {
+    const response = await fetch('https://fwa.spry.network/api/fwa-check', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
