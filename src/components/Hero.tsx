@@ -647,7 +647,12 @@ export const Hero = () => {
                 </h2>
                 <p className="text-blue-100 text-sm mb-6">
                    We found excellent coverage at your address
-                </p>
+                 </p>
+                {qualificationResult?.minsignal !== undefined && typeof qualificationResult.minsignal === 'number' && (
+                  <div className="text-xs text-gray-300 mb-4">
+                    Signal Strength: {qualificationResult.minsignal}
+                  </div>
+                )}
                 <button
                   onClick={handleGetStarted}
                   className="w-full py-3 bg-blue-200 hover:bg-blue-100 text-blue-700 font-semibold text-base rounded-lg transition-colors"
