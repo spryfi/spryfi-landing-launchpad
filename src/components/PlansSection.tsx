@@ -26,7 +26,10 @@ export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
       features: ["No contracts, no credit checks"],
       popular: false,
       style: "basic",
-      planType: "spryfi-home"
+      planType: saleActive ? "home-10" : "spryfi-home",
+      planCode: saleActive ? "home-10" : "spryfi-home",
+      lockedPrice: saleActive ? "$89.95/mo" : "$99.95/mo",
+      isSpecialPricing: saleActive
     },
     {
       name: "SpryFi Premium",
@@ -39,7 +42,10 @@ export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
       features: ["Great for streaming, Zoom, and gaming"],
       popular: true,
       style: "premium",
-      planType: "spryfi-home-premium"
+      planType: saleActive ? "premium-10" : "spryfi-home-premium",
+      planCode: saleActive ? "premium-10" : "spryfi-home-premium",
+      lockedPrice: saleActive ? "$129.95/mo" : "$139.95/mo",
+      isSpecialPricing: saleActive
     }
   ];
 
