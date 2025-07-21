@@ -175,7 +175,7 @@ export const RouterSetup = () => {
                   : 'bg-[#0047AB] hover:bg-[#0060D4] text-white'
               }`}
             >
-              Finish Setup
+              Go to Checkout
             </Button>
           </div>
         </div>

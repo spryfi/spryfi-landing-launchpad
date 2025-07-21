@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import { AddressSuccess } from "./pages/AddressSuccess";
 import { Plans } from "./pages/Plans";
 import { RouterSetup } from "./pages/RouterSetup";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/address-success" element={<AddressSuccess />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/router-setup" element={<RouterSetup />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/loyalty-savings" element={<LoyaltySavings />} />
           <Route path="/loyalty-terms" element={<LoyaltyTerms />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
