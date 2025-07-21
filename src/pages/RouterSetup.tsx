@@ -28,7 +28,7 @@ export const RouterSetup = () => {
         ssid: wifiName,
         passkey: wifiPassword
       });
-      navigate('/');
+      navigate('/checkout');
     } catch (error) {
       console.error('Error saving router setup:', error);
     }
