@@ -648,42 +648,80 @@ export type Database = {
       }
       customers: {
         Row: {
+          activation_fee_paid: number | null
           address: string | null
-          agreement_length: number | null
-          base_price: number | null
+          address_line1: string | null
+          address_line2: string | null
+          checkout_completed_at: string | null
+          city: string | null
           created_at: string | null
-          discount_applied: number | null
+          created_from_payment_id: string | null
           email: string | null
+          first_name: string | null
           id: string
-          industry: string | null
-          plan_selected: string | null
-          wfh: boolean | null
+          last_name: string | null
+          lead_id: string | null
+          phone: string | null
+          shipping_cost_paid: number | null
+          state: string | null
+          status: string | null
+          stripe_customer_id: string | null
+          updated_at: string | null
+          zip_code: string | null
         }
         Insert: {
+          activation_fee_paid?: number | null
           address?: string | null
-          agreement_length?: number | null
-          base_price?: number | null
+          address_line1?: string | null
+          address_line2?: string | null
+          checkout_completed_at?: string | null
+          city?: string | null
           created_at?: string | null
-          discount_applied?: number | null
+          created_from_payment_id?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
-          industry?: string | null
-          plan_selected?: string | null
-          wfh?: boolean | null
+          last_name?: string | null
+          lead_id?: string | null
+          phone?: string | null
+          shipping_cost_paid?: number | null
+          state?: string | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
         }
         Update: {
+          activation_fee_paid?: number | null
           address?: string | null
-          agreement_length?: number | null
-          base_price?: number | null
+          address_line1?: string | null
+          address_line2?: string | null
+          checkout_completed_at?: string | null
+          city?: string | null
           created_at?: string | null
-          discount_applied?: number | null
+          created_from_payment_id?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
-          industry?: string | null
-          plan_selected?: string | null
-          wfh?: boolean | null
+          last_name?: string | null
+          lead_id?: string | null
+          phone?: string | null
+          shipping_cost_paid?: number | null
+          state?: string | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_fresh"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       drip_marketing: {
         Row: {
@@ -1552,6 +1590,60 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "service_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_records: {
+        Row: {
+          amount: number
+          created_at: string | null
+          customer_id: string | null
+          id: string
+          lead_id: string | null
+          metadata: Json | null
+          payment_type: string
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_payment_intent_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          lead_id?: string | null
+          metadata?: Json | null
+          payment_type: string
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          lead_id?: string | null
+          metadata?: Json | null
+          payment_type?: string
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_records_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_records_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_fresh"
             referencedColumns: ["id"]
           },
         ]
@@ -2903,6 +2995,16 @@ export type Database = {
       calculate_social_credit_amount: {
         Args: { p_platform: string; p_customer_id?: string; p_lead_id?: string }
         Returns: number
+      }
+      convert_lead_to_customer: {
+        Args: {
+          p_lead_id: string
+          p_stripe_payment_intent_id: string
+          p_stripe_customer_id: string
+          p_shipping_cost: number
+          p_activation_fee?: number
+        }
+        Returns: string
       }
       create_user_invitation: {
         Args: {

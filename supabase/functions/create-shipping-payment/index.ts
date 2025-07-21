@@ -13,27 +13,38 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, customerEmail, customerName, shippingAddress } = await req.json();
+    const { amount, customerEmail, customerName, shippingAddress, leadId } = await req.json();
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
 
-    console.log(`Creating payment intent for shipping: $${(amount / 100).toFixed(2)} to ${customerEmail}`);
+    console.log(`Creating payment intent for setup: $${(amount / 100).toFixed(2)} shipping + activation fee to ${customerEmail}`);
 
-    // Create a payment intent for shipping only
+    // Calculate total amount (shipping + activation fee with 90% discount)
+    const activationFee = 99.00; // Original $99 activation fee
+    const discountPercent = 90;
+    const discountedActivationFee = activationFee * ((100 - discountPercent) / 100); // $9.90
+    const totalAmount = amount + (discountedActivationFee * 100); // Convert to cents
+
+    // Create a payment intent for shipping + discounted activation fee
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount, // amount in cents
+      amount: totalAmount, // total amount in cents (shipping + discounted activation fee)
       currency: "usd",
-      description: `SpryFi Shipping to ${shippingAddress.city}, ${shippingAddress.state}`,
+      description: `SpryFi Setup: Shipping + Activation Fee to ${shippingAddress.city}, ${shippingAddress.state}`,
       receipt_email: customerEmail,
       metadata: {
         customer_name: customerName,
         shipping_city: shippingAddress.city,
         shipping_state: shippingAddress.state,
         shipping_zip: shippingAddress.zipCode,
-        charge_type: "shipping_only"
+        charge_type: "setup_payment",
+        lead_id: leadId || '',
+        shipping_cost: (amount / 100).toString(),
+        activation_fee_original: activationFee.toString(),
+        activation_fee_discounted: discountedActivationFee.toString(),
+        discount_percent: discountPercent.toString()
       },
       automatic_payment_methods: {
         enabled: true,

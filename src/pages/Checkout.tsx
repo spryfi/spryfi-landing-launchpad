@@ -116,12 +116,16 @@ function PaymentForm({
     setIsProcessing(true);
 
     try {
+      // Get lead ID from session storage
+      const leadId = sessionStorage.getItem('leadId');
+      
       // Create payment intent on server
       const { data, error } = await supabase.functions.invoke('create-shipping-payment', {
         body: {
           amount: Math.round(shippingCost * 100), // Convert to cents
           customerEmail: customerData.email,
           customerName: `${customerData.firstName} ${customerData.lastName}`,
+          leadId: leadId,
           shippingAddress: {
             city: customerData.city,
             state: customerData.state,
@@ -151,6 +155,28 @@ function PaymentForm({
       if (confirmError) {
         onPaymentError(confirmError.message || 'Payment failed');
       } else if (paymentIntent?.status === 'succeeded') {
+        // Convert lead to customer after successful payment
+        const leadId = sessionStorage.getItem('leadId');
+        if (leadId) {
+          const { data: conversionData, error: conversionError } = await supabase.functions.invoke('convert-lead-to-customer', {
+            body: {
+              leadId: leadId,
+              paymentIntentId: paymentIntent.id,
+              customerData: customerData,
+              shippingCost: shippingCost,
+              activationFee: 9.90 // $99 with 90% discount
+            }
+          });
+          
+          if (conversionError) {
+            console.error('Lead conversion error:', conversionError);
+            onPaymentError('Payment succeeded but customer setup failed. Please contact support.');
+            return;
+          }
+          
+          console.log('Lead converted to customer:', conversionData);
+        }
+        
         onPaymentSuccess(paymentIntent.id);
       }
     } catch (error: any) {
@@ -160,9 +186,45 @@ function PaymentForm({
     }
   };
 
+  // Calculate totals
+  const activationFee = 99.00;
+  const discountPercent = 90;
+  const discountedActivationFee = activationFee * ((100 - discountPercent) / 100); // $9.90
+  const totalAmount = shippingCost + discountedActivationFee;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Order Summary */}
       <div className="p-4 border rounded-lg bg-card">
+        <h3 className="font-semibold mb-3">Order Summary</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span>Shipping & Handling</span>
+            <span>${shippingCost.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>Activation Fee</span>
+            <span className="line-through">${activationFee.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-green-600">
+            <span>Activation Fee Discount ({discountPercent}% off)</span>
+            <span>-${(activationFee - discountedActivationFee).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Discounted Activation Fee</span>
+            <span>${discountedActivationFee.toFixed(2)}</span>
+          </div>
+          <hr className="my-2" />
+          <div className="flex justify-between font-semibold">
+            <span>Total Due Today</span>
+            <span>${totalAmount.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Method */}
+      <div className="p-4 border rounded-lg bg-card">
+        <h3 className="font-semibold mb-3">Payment Information</h3>
         <CardElement
           options={{
             style: {
@@ -178,18 +240,27 @@ function PaymentForm({
         />
       </div>
       
-      <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-center gap-2">
-          <Lock className="w-4 h-4 text-blue-600" />
-          <span className="text-sm text-blue-800">
-            Your card will be charged <strong>${shippingCost.toFixed(2)}</strong> for shipping today.
-          </span>
+      {/* Important Notices */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-blue-600" />
+            <span className="text-sm text-blue-800">
+              Your card will be charged <strong>${totalAmount.toFixed(2)}</strong> today and saved for recurring billing.
+            </span>
+          </div>
+        </div>
+        
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <Shield className="w-4 h-4 text-green-600 mt-0.5" />
+            <div className="text-sm text-green-800">
+              <p className="font-medium">Welcome to SpryFi Home Internet!</p>
+              <p>No equipment or service charges until activation. Monthly billing begins after device setup.</p>
+            </div>
+          </div>
         </div>
       </div>
-      
-      <p className="text-sm text-muted-foreground">
-        No charges for your SpryFi service or equipment until activation. Service billing begins after device activation.
-      </p>
       
       <Button 
         onClick={handlePayment} 
@@ -197,7 +268,7 @@ function PaymentForm({
         className="w-full"
         size="lg"
       >
-        {isProcessing ? "Processing..." : `Pay $${shippingCost.toFixed(2)} for Shipping`}
+        {isProcessing ? "Processing..." : `Complete Setup - Pay $${totalAmount.toFixed(2)}`}
       </Button>
     </div>
   );
@@ -367,8 +438,8 @@ export default function Checkout() {
               <Shield className="w-8 h-8 text-green-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Order Confirmed!</h1>
-              <p className="text-muted-foreground">Your SpryFi Home device will ship soon</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to SpryFi Home Internet!</h1>
+              <p className="text-muted-foreground">Your setup is complete and your device will ship soon</p>
             </div>
             
             <Card>
@@ -376,6 +447,14 @@ export default function Checkout() {
                 <div className="flex justify-between">
                   <span>Shipping Cost:</span>
                   <span className="font-semibold">${shipping?.cost.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Activation Fee (90% discount applied):</span>
+                  <span className="font-semibold">$9.90</span>
+                </div>
+                <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                  <span>Total Paid:</span>
+                  <span>${((shipping?.cost || 0) + 9.90).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Payment ID:</span>
@@ -388,7 +467,7 @@ export default function Checkout() {
                 
                 <div className="pt-4 border-t">
                   <p className="text-sm text-muted-foreground">
-                    You'll receive tracking information via email. Service billing will begin after device activation.
+                    <strong>Next Steps:</strong> You'll receive tracking information via email. Your card is now saved for monthly service billing, which begins after device activation and setup.
                   </p>
                 </div>
               </CardContent>
