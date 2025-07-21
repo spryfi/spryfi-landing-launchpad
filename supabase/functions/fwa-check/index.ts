@@ -398,10 +398,13 @@ serve(async (req) => {
         qualified: qualificationResult.qualified,
         minsignal: qualificationResult.minsignal,
         network_type: qualificationResult.network_type,
+        brandname: qualificationResult.brandname,
         attributes: qualificationResult.attributes,
         source: source,
         anchor_address_id: anchorAddressId,
-        raw_data: qualificationResult.raw_data
+        raw_data: qualificationResult.raw_data,
+        qualification_reason: qualificationResult.qualification_reason,
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: { 
