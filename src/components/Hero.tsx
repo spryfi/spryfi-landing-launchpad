@@ -317,9 +317,9 @@ export const Hero = () => {
           throw new Error('Unable to check service availability at this time.');
         }
 
-        if (!qualificationData || !qualificationData.success) {
-          console.error('❌ Edge function returned unsuccessful result:', qualificationData);
-          throw new Error(qualificationData?.error || 'Service check failed.');
+        if (!qualificationData) {
+          console.error('❌ Edge function returned no data');
+          throw new Error('Service check failed.');
         }
 
         console.log('✅ Edge function response:', qualificationData);
