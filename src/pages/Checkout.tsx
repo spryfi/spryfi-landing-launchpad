@@ -361,18 +361,29 @@ export default function Checkout() {
       'firstName', 'lastName', 'address', 'city', 'state', 'zipCode', 'phone'
     ];
     
+    const missingFields = [];
     for (const field of requiredFields) {
-      if (!formValues[field as keyof CheckoutForm]) return false;
+      if (!formValues[field as keyof CheckoutForm]) {
+        missingFields.push(field);
+      }
     }
 
     if (watchedBillingType === 'different') {
       const billingFields = ['billingFirstName', 'billingLastName', 'billingAddress', 'billingCity', 'billingState', 'billingZipCode'];
       for (const field of billingFields) {
-        if (!formValues[field as keyof CheckoutForm]) return false;
+        if (!formValues[field as keyof CheckoutForm]) {
+          missingFields.push(field);
+        }
       }
     }
 
-    return true;
+    // Debug: log missing fields
+    if (missingFields.length > 0) {
+      console.log('🔍 Missing required fields:', missingFields);
+      console.log('📝 Current form values:', formValues);
+    }
+
+    return missingFields.length === 0;
   };
 
   const handleCompleteOrder = async (data: CheckoutForm) => {
