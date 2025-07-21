@@ -1,13 +1,29 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function AddressSuccess() {
   const navigate = useNavigate();
+  const [minsignal, setMinsignal] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Get qualification data from sessionStorage
+    const qualificationData = sessionStorage.getItem('qualification_result');
+    if (qualificationData) {
+      try {
+        const data = JSON.parse(qualificationData);
+        if (data.qualified && typeof data.minsignal === 'number') {
+          setMinsignal(data.minsignal);
+        }
+      } catch (error) {
+        console.error('Error parsing qualification data:', error);
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-blue-900 to-blue-500 text-white">
       <h1 className="text-3xl font-bold mb-4 text-white">
-        Address Qualified!
+        Welcome to SpryFi Home!
       </h1>
       <p className="text-lg text-white">
         Great news—your address is covered by SpryFi Home.
@@ -18,6 +34,14 @@ export function AddressSuccess() {
       >
         Choose Your Plan
       </button>
+      
+      {minsignal !== null && (
+        <div className="mt-4">
+          <p className="text-sm text-gray-300">
+            Signal Strength: {minsignal}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -385,6 +385,12 @@ export const Hero = () => {
       // Redirect to address-success page if qualified, otherwise show results modal
       if (qualified) {
         console.log("✅ User qualified - redirecting to address-success page");
+        // Save qualification data for AddressSuccess page
+        sessionStorage.setItem('qualification_result', JSON.stringify({
+          qualified: true,
+          minsignal: finalResults?.minsignal,
+          network_type: finalResults?.network_type
+        }));
         navigate('/address-success');
       } else {
         setShowResultsModal(true);
