@@ -36,9 +36,9 @@ export function AddressSuccess() {
       </button>
       
       {minsignal !== null && (
-        <div className="mt-4">
-          <p className="text-sm text-gray-300">
-            Signal Strength: {minsignal}
+        <div className="absolute bottom-4 right-4">
+          <p className="text-xs text-gray-400">
+            SS{minsignal}
           </p>
         </div>
       )}
