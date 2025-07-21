@@ -1,520 +1,568 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HelpCircle, MapPin } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Shield, Truck } from 'lucide-react';
 import { getShippingRate } from '@/utils/shipping';
+import { states } from '@/constants/states';
+import { useToast } from '@/hooks/use-toast';
 
-interface ShippingRate {
-  cost: number;
-  estimatedDays: string;
-  zoneName: string;
-}
+const months = [
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
 
-const Checkout = () => {
-  // Contact information
-  const [email, setEmail] = useState('');
-  const [birthMonth, setBirthMonth] = useState('');
-  const [birthDay, setBirthDay] = useState('');
-  const [birthYear, setBirthYear] = useState('');
-  const [emailOffers, setEmailOffers] = useState(false);
-
-  // Delivery information
-  const [country, setCountry] = useState('United States');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [company, setCompany] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
-  const [apartment, setApartment] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [zipCode, setZipCode] = useState('');
-  const [phone, setPhone] = useState('');
-  const [saveInfo, setSaveInfo] = useState(false);
-  const [textOffers, setTextOffers] = useState(false);
-
-  // Shipping
-  const [shippingRate, setShippingRate] = useState<ShippingRate | null>(null);
-  const [selectedShipping, setSelectedShipping] = useState('standard');
-
+const checkoutSchema = z.object({
+  // Contact
+  email: z.string().email('Please enter a valid email address'),
+  emailOffers: z.boolean().default(true),
+  birthMonth: z.string().min(1, 'Month is required'),
+  birthDay: z.string().min(1, 'Day is required'),
+  birthYear: z.string().min(1, 'Year is required'),
+  
+  // Delivery
+  country: z.string().default('US'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  company: z.string().optional(),
+  address: z.string().min(1, 'Address is required'),
+  apartment: z.string().optional(),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  zipCode: z.string().min(5, 'ZIP code is required'),
+  phone: z.string().min(10, 'Phone number is required'),
+  saveInfo: z.boolean().default(false),
+  textOffers: z.boolean().default(false),
+  
   // Billing
-  const [sameAsBilling, setSameAsBilling] = useState(true);
-  const [billingFirstName, setBillingFirstName] = useState('');
-  const [billingLastName, setBillingLastName] = useState('');
-  const [billingCompany, setBillingCompany] = useState('');
-  const [billingStreetAddress, setBillingStreetAddress] = useState('');
-  const [billingApartment, setBillingApartment] = useState('');
-  const [billingCity, setBillingCity] = useState('');
-  const [billingState, setBillingState] = useState('');
-  const [billingZipCode, setBillingZipCode] = useState('');
+  billingAddressType: z.enum(['same', 'different']).default('same'),
+  billingFirstName: z.string().optional(),
+  billingLastName: z.string().optional(),
+  billingCompany: z.string().optional(),
+  billingAddress: z.string().optional(),
+  billingApartment: z.string().optional(),
+  billingCity: z.string().optional(),
+  billingState: z.string().optional(),
+  billingZipCode: z.string().optional(),
+});
 
-  // Terms
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+type CheckoutForm = z.infer<typeof checkoutSchema>;
 
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+export default function Checkout() {
+  const { toast } = useToast();
+  const [shipping, setShipping] = useState<{cost: number; estimatedDays: string; zoneName: string} | null>(null);
+  const [isLoadingShipping, setIsLoadingShipping] = useState(false);
+  
+  const form = useForm<CheckoutForm>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      country: 'US',
+      emailOffers: true,
+      saveInfo: false,
+      textOffers: false,
+      billingAddressType: 'same',
+    },
+  });
 
-  const states = [
-    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
-  ];
+  const watchedState = form.watch('state');
+  const watchedBillingType = form.watch('billingAddressType');
+  const formValues = form.watch();
 
-  // Calculate shipping rate when state changes
+  // Calculate shipping when state changes
   useEffect(() => {
-    if (state) {
-      getShippingRate(state).then(setShippingRate);
+    if (watchedState) {
+      setIsLoadingShipping(true);
+      getShippingRate(watchedState)
+        .then(setShipping)
+        .catch(console.error)
+        .finally(() => setIsLoadingShipping(false));
     }
-  }, [state]);
+  }, [watchedState]);
 
-  // Order summary calculations
-  const simCost = 0;
-  const routerCost = 0;
-  const planCost = 99.95;
-  const shippingCost = shippingRate?.cost || 0;
-  const taxRate = 0.08;
-  const subtotal = simCost + routerCost + shippingCost;
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
-
-  // Form validation
-  const isFormValid = 
-    email &&
-    firstName &&
-    lastName &&
-    streetAddress &&
-    city &&
-    state &&
-    zipCode &&
-    phone &&
-    agreedToTerms;
-
-  const handleCompleteOrder = () => {
-    if (!isFormValid) return;
+  const isFormValid = () => {
+    const requiredFields = [
+      'email', 'birthMonth', 'birthDay', 'birthYear',
+      'firstName', 'lastName', 'address', 'city', 'state', 'zipCode', 'phone'
+    ];
     
-    // Handle order completion - integrate with Stripe here
-    console.log('Order completed');
+    for (const field of requiredFields) {
+      if (!formValues[field as keyof CheckoutForm]) return false;
+    }
+
+    if (watchedBillingType === 'different') {
+      const billingFields = ['billingFirstName', 'billingLastName', 'billingAddress', 'billingCity', 'billingState', 'billingZipCode'];
+      for (const field of billingFields) {
+        if (!formValues[field as keyof CheckoutForm]) return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleCompleteOrder = async (data: CheckoutForm) => {
+    try {
+      // Here you would submit to your backend/Supabase
+      console.log('Order data:', { ...data, shipping });
+      
+      toast({
+        title: "Order Submitted!",
+        description: "Your SpryFi Home device will ship soon. You'll receive tracking information via email.",
+      });
+    } catch (error) {
+      console.error('Order submission error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit order. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Form */}
-          <div className="lg:col-span-2">
-            <Card className="bg-card shadow-lg">
-              <CardContent className="p-8">
-                <h1 className="text-3xl font-bold text-foreground mb-8">Checkout</h1>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-2">Complete Your Order</h1>
+          <p className="text-muted-foreground">Final step before your SpryFi Home device ships</p>
+        </div>
 
-                {/* Contact Information */}
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Contact</h2>
-                  <div className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleCompleteOrder)} className="space-y-8">
+          {/* Contact Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...form.register('email')}
+                  className="mt-1"
+                />
+                {form.formState.errors.email && (
+                  <p className="text-sm text-destructive mt-1">{form.formState.errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="emailOffers"
+                  checked={form.watch('emailOffers')}
+                  onCheckedChange={(checked) => form.setValue('emailOffers', !!checked)}
+                />
+                <Label htmlFor="emailOffers" className="text-sm">Email me with news and offers</Label>
+              </div>
+
+              <div>
+                <Label>Date of Birth *</Label>
+                <div className="grid grid-cols-3 gap-3 mt-1">
+                  <Select onValueChange={(value) => form.setValue('birthMonth', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select onValueChange={(value) => form.setValue('birthDay', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Day" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                        <SelectItem key={day} value={day.toString().padStart(2, '0')}>
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select onValueChange={(value) => form.setValue('birthYear', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="text-center pt-2">
+                <button type="button" className="text-sm text-primary hover:underline">
+                  Already have an account? Log in
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Delivery Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Delivery</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="country">Country/Region</Label>
+                <Select defaultValue="US" onValueChange={(value) => form.setValue('country', value)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="US">United States</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">First name *</Label>
+                  <Input
+                    id="firstName"
+                    {...form.register('firstName')}
+                    className="mt-1"
+                  />
+                  {form.formState.errors.firstName && (
+                    <p className="text-sm text-destructive mt-1">{form.formState.errors.firstName.message}</p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="lastName">Last name *</Label>
+                  <Input
+                    id="lastName"
+                    {...form.register('lastName')}
+                    className="mt-1"
+                  />
+                  {form.formState.errors.lastName && (
+                    <p className="text-sm text-destructive mt-1">{form.formState.errors.lastName.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="company">Company (optional)</Label>
+                <Input
+                  id="company"
+                  {...form.register('company')}
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="address">Address *</Label>
+                <Input
+                  id="address"
+                  {...form.register('address')}
+                  className="mt-1"
+                />
+                {form.formState.errors.address && (
+                  <p className="text-sm text-destructive mt-1">{form.formState.errors.address.message}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="apartment">Apartment, suite, etc. (optional)</Label>
+                <Input
+                  id="apartment"
+                  {...form.register('apartment')}
+                  className="mt-1"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="city">City *</Label>
+                  <Input
+                    id="city"
+                    {...form.register('city')}
+                    className="mt-1"
+                  />
+                  {form.formState.errors.city && (
+                    <p className="text-sm text-destructive mt-1">{form.formState.errors.city.message}</p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="state">State *</Label>
+                  <Select onValueChange={(value) => form.setValue('state', value)}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {states.map((state) => (
+                        <SelectItem key={state.value} value={state.value}>
+                          {state.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.state && (
+                    <p className="text-sm text-destructive mt-1">{form.formState.errors.state.message}</p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="zipCode">ZIP code *</Label>
+                  <Input
+                    id="zipCode"
+                    {...form.register('zipCode')}
+                    className="mt-1"
+                  />
+                  {form.formState.errors.zipCode && (
+                    <p className="text-sm text-destructive mt-1">{form.formState.errors.zipCode.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="phone">Phone *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  {...form.register('phone')}
+                  className="mt-1"
+                />
+                {form.formState.errors.phone && (
+                  <p className="text-sm text-destructive mt-1">{form.formState.errors.phone.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="saveInfo"
+                    checked={form.watch('saveInfo')}
+                    onCheckedChange={(checked) => form.setValue('saveInfo', !!checked)}
+                  />
+                  <Label htmlFor="saveInfo" className="text-sm">Save this information for next time</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="textOffers"
+                    checked={form.watch('textOffers')}
+                    onCheckedChange={(checked) => form.setValue('textOffers', !!checked)}
+                  />
+                  <Label htmlFor="textOffers" className="text-sm">Text me with news and offers</Label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Shipping Method */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="w-5 h-5" />
+                Shipping Method
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {watchedState && !isLoadingShipping && shipping ? (
+                <div className="border rounded-lg p-4 bg-muted/50">
+                  <div className="flex justify-between items-center">
                     <div>
-                      <Label htmlFor="email">Email address *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Enter your email"
-                        required
-                      />
+                      <p className="font-medium">{shipping.zoneName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Estimated delivery: {shipping.estimatedDays} business days from Buda, TX
+                      </p>
                     </div>
-                    
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="birthMonth">Birth Month</Label>
-                        <Select value={birthMonth} onValueChange={setBirthMonth}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Month" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {months.map((month, index) => (
-                              <SelectItem key={month} value={(index + 1).toString()}>
-                                {month}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="birthDay">Birth Day</Label>
-                        <Select value={birthDay} onValueChange={setBirthDay}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Day" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                              <SelectItem key={day} value={day.toString()}>
-                                {day}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="birthYear">Birth Year</Label>
-                        <Select value={birthYear} onValueChange={setBirthYear}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Year" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                              <SelectItem key={year} value={year.toString()}>
-                                {year}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="emailOffers"
-                        checked={emailOffers}
-                        onCheckedChange={(checked) => setEmailOffers(checked === true)}
-                      />
-                      <Label htmlFor="emailOffers">Email me with news and offers</Label>
-                    </div>
+                    <p className="font-semibold">${shipping.cost.toFixed(2)}</p>
                   </div>
                 </div>
+              ) : (
+                <div className="border rounded-lg p-4 bg-muted/10 border-dashed text-center">
+                  <p className="text-muted-foreground">
+                    {!watchedState 
+                      ? "Enter your shipping address to view available shipping methods"
+                      : isLoadingShipping 
+                      ? "Calculating shipping rates..."
+                      : "Unable to calculate shipping"
+                    }
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-                {/* Delivery Information */}
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Delivery</h2>
-                  <div className="space-y-4">
+          {/* Payment */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Payment
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <p className="text-green-800 font-semibold mb-2">Your order is free</p>
+                <p className="text-green-700 text-sm">
+                  No payment is required at this step. No charges until your device is activated. 
+                  Once activated, you'll be charged the prorated amount for the rest of the month.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Shield className="w-4 h-4" />
+                <span>All information is securely encrypted</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Billing Address */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Billing Address</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup
+                value={watchedBillingType}
+                onValueChange={(value: 'same' | 'different') => form.setValue('billingAddressType', value)}
+                className="space-y-3"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="same" id="same" />
+                  <Label htmlFor="same">Same as shipping address</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="different" id="different" />
+                  <Label htmlFor="different">Use a different billing address</Label>
+                </div>
+              </RadioGroup>
+
+              {watchedBillingType === 'different' && (
+                <div className="mt-6 space-y-4 border-t pt-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="country">Country/Region</Label>
-                      <Select value={country} onValueChange={setCountry}>
-                        <SelectTrigger>
-                          <SelectValue />
+                      <Label htmlFor="billingFirstName">First name *</Label>
+                      <Input
+                        id="billingFirstName"
+                        {...form.register('billingFirstName')}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="billingLastName">Last name *</Label>
+                      <Input
+                        id="billingLastName"
+                        {...form.register('billingLastName')}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="billingCompany">Company (optional)</Label>
+                    <Input
+                      id="billingCompany"
+                      {...form.register('billingCompany')}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="billingAddress">Address *</Label>
+                    <Input
+                      id="billingAddress"
+                      {...form.register('billingAddress')}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="billingApartment">Apartment, suite, etc. (optional)</Label>
+                    <Input
+                      id="billingApartment"
+                      {...form.register('billingApartment')}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="billingCity">City *</Label>
+                      <Input
+                        id="billingCity"
+                        {...form.register('billingCity')}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="billingState">State *</Label>
+                      <Select onValueChange={(value) => form.setValue('billingState', value)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select state" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="United States">United States</SelectItem>
+                          {states.map((state) => (
+                            <SelectItem key={state.value} value={state.value}>
+                              {state.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="firstName">First name *</Label>
-                        <Input
-                          id="firstName"
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
-                          placeholder="First name"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="lastName">Last name *</Label>
-                        <Input
-                          id="lastName"
-                          value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
-                          placeholder="Last name"
-                          required
-                        />
-                      </div>
-                    </div>
-
                     <div>
-                      <Label htmlFor="company">Company (optional)</Label>
+                      <Label htmlFor="billingZipCode">ZIP code *</Label>
                       <Input
-                        id="company"
-                        value={company}
-                        onChange={(e) => setCompany(e.target.value)}
-                        placeholder="Company"
+                        id="billingZipCode"
+                        {...form.register('billingZipCode')}
+                        className="mt-1"
                       />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="streetAddress" className="flex items-center gap-2">
-                        Address *
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                      </Label>
-                      <Input
-                        id="streetAddress"
-                        value={streetAddress}
-                        onChange={(e) => setStreetAddress(e.target.value)}
-                        placeholder="Address"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="apartment">Apartment, suite, etc. (optional)</Label>
-                      <Input
-                        id="apartment"
-                        value={apartment}
-                        onChange={(e) => setApartment(e.target.value)}
-                        placeholder="Apartment, suite, etc."
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="city">City *</Label>
-                        <Input
-                          id="city"
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          placeholder="City"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="state">State *</Label>
-                        <Select value={state} onValueChange={setState}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="State" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {states.map((state) => (
-                              <SelectItem key={state} value={state}>
-                                {state}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="zipCode">ZIP code *</Label>
-                        <Input
-                          id="zipCode"
-                          value={zipCode}
-                          onChange={(e) => setZipCode(e.target.value)}
-                          placeholder="ZIP code"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="phone">Phone *</Label>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>We need your phone number for delivery updates and notifications</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="Phone number"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="saveInfo"
-                          checked={saveInfo}
-                          onCheckedChange={(checked) => setSaveInfo(checked === true)}
-                        />
-                        <Label htmlFor="saveInfo">Save this information for next time</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="textOffers"
-                          checked={textOffers}
-                          onCheckedChange={(checked) => setTextOffers(checked === true)}
-                        />
-                        <Label htmlFor="textOffers">Text me with news and offers</Label>
-                      </div>
                     </div>
                   </div>
                 </div>
+              )}
+            </CardContent>
+          </Card>
 
-                {/* Shipping Method */}
-                {shippingRate && (
-                  <div className="mb-8">
-                    <h2 className="text-xl font-semibold text-foreground mb-4">Shipping method</h2>
-                    <div className="border border-border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="standard"
-                            name="shipping"
-                            value="standard"
-                            checked={selectedShipping === 'standard'}
-                            onChange={(e) => setSelectedShipping(e.target.value)}
-                          />
-                          <Label htmlFor="standard">{shippingRate.zoneName}</Label>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">${shippingRate.cost.toFixed(2)}</div>
-                          <div className="text-sm text-muted-foreground">{shippingRate.estimatedDays} business days</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Payment */}
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Payment</h2>
-                  {total === 0 ? (
-                    <div className="bg-muted p-4 rounded-lg">
-                      <p className="text-foreground">Your order is free. No payment is required.</p>
-                    </div>
-                  ) : (
-                    <div className="border border-border rounded-lg p-4">
-                      <p className="text-muted-foreground">Stripe payment integration would go here</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Billing Address */}
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Billing address</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="sameAsBilling"
-                        name="billing"
-                        checked={sameAsBilling}
-                        onChange={() => setSameAsBilling(true)}
-                      />
-                      <Label htmlFor="sameAsBilling">Same as shipping address</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="differentBilling"
-                        name="billing"
-                        checked={!sameAsBilling}
-                        onChange={() => setSameAsBilling(false)}
-                      />
-                      <Label htmlFor="differentBilling">Use a different billing address</Label>
-                    </div>
-
-                    {!sameAsBilling && (
-                      <div className="space-y-4 pl-6">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="billingFirstName">First name *</Label>
-                            <Input
-                              id="billingFirstName"
-                              value={billingFirstName}
-                              onChange={(e) => setBillingFirstName(e.target.value)}
-                              placeholder="First name"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="billingLastName">Last name *</Label>
-                            <Input
-                              id="billingLastName"
-                              value={billingLastName}
-                              onChange={(e) => setBillingLastName(e.target.value)}
-                              placeholder="Last name"
-                            />
-                          </div>
-                        </div>
-                        {/* Additional billing fields would go here */}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Terms of Service */}
-                <div className="mb-8">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="terms"
-                      checked={agreedToTerms}
-                      onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-                    />
-                    <Label htmlFor="terms">
-                      I agree to the{' '}
-                      <a href="/terms" className="text-primary underline">
-                        Terms of Service
-                      </a>
-                    </Label>
-                  </div>
-                </div>
-
-                {/* Complete Order Button */}
-                <Button
-                  onClick={handleCompleteOrder}
-                  disabled={!isFormValid}
-                  className="w-full h-12 text-lg font-semibold"
-                >
-                  Complete Order
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Complete Order */}
+          <div className="flex justify-center pt-6">
+            <Button
+              type="submit"
+              size="lg"
+              disabled={!isFormValid()}
+              className="w-full max-w-md bg-green-600 hover:bg-green-700 text-white"
+            >
+              Complete Order
+            </Button>
           </div>
+        </form>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="bg-card shadow-lg sticky top-8">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-6">Order summary</h2>
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span>SIM & Activation Kit</span>
-                    <span className="font-medium">FREE</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span>Router</span>
-                    <span className="font-medium">$0 today</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span>Plan</span>
-                    <span className="font-medium">${planCost}/mo</span>
-                  </div>
-                  
-                  {shippingRate && (
-                    <div className="flex justify-between">
-                      <span>Shipping</span>
-                      <span className="font-medium">${shippingRate.cost.toFixed(2)}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between">
-                    <span>Tax</span>
-                    <span className="font-medium">${tax.toFixed(2)}</span>
-                  </div>
-                  
-                  <hr className="border-border" />
-                  
-                  <div className="flex justify-between text-lg font-semibold">
-                    <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Footer Links */}
+        <footer className="mt-12 pt-8 border-t">
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+            <a href="#" className="hover:text-foreground">Refund policy</a>
+            <a href="#" className="hover:text-foreground">Privacy policy</a>
+            <a href="#" className="hover:text-foreground">Terms of service</a>
+            <a href="#" className="hover:text-foreground">Cancellation policy</a>
           </div>
-        </div>
+        </footer>
       </div>
     </div>
   );
-};
-
-export default Checkout;
+}
