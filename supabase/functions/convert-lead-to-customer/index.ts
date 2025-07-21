@@ -91,6 +91,27 @@ serve(async (req) => {
 
     console.log(`Successfully converted lead ${leadId} to customer ${customerId}`);
 
+    // Send confirmation email
+    try {
+      const emailResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-confirmation-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        },
+        body: JSON.stringify({ customerId: customerId }),
+      });
+
+      if (!emailResponse.ok) {
+        console.error("Failed to send confirmation email:", await emailResponse.text());
+      } else {
+        console.log("Confirmation email sent successfully");
+      }
+    } catch (emailError) {
+      console.error("Error sending confirmation email:", emailError);
+      // Don't fail the conversion if email fails
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
