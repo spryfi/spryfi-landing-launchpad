@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
+import { saveUserData } from '@/utils/userDataUtils';
 
 interface ContactStepProps {
   state: CheckoutState;
@@ -52,6 +53,13 @@ export const ContactStep: React.FC<ContactStepProps> = ({ state, updateState }) 
 
       console.log('✅ Lead saved successfully:', data);
       console.log('✅ Lead ID:', data.lead_id);
+
+      // Save user data for later use
+      saveUserData({
+        firstName,
+        lastName,
+        email
+      });
 
       // Update state with contact info and lead ID
       updateState({

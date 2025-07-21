@@ -13,6 +13,8 @@ import { Shield, Truck } from 'lucide-react';
 import { getShippingRate } from '@/utils/shipping';
 import { states } from '@/constants/states';
 import { useToast } from '@/hooks/use-toast';
+import { loadUserData, hasUserData } from '@/utils/userDataUtils';
+import { Info } from 'lucide-react';
 
 const months = [
   { value: '01', label: 'January' },
@@ -69,6 +71,7 @@ export default function Checkout() {
   const { toast } = useToast();
   const [shipping, setShipping] = useState<{cost: number; estimatedDays: string; zoneName: string} | null>(null);
   const [isLoadingShipping, setIsLoadingShipping] = useState(false);
+  const [showAutoFillMessage, setShowAutoFillMessage] = useState(false);
   
   const form = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
@@ -85,6 +88,28 @@ export default function Checkout() {
   const watchedBillingType = form.watch('billingAddressType');
   const formValues = form.watch();
 
+  // Auto-populate fields on component mount
+  useEffect(() => {
+    const userData = loadUserData();
+    if (hasUserData()) {
+      // Auto-populate available fields
+      if (userData.email) form.setValue('email', userData.email);
+      if (userData.firstName) form.setValue('firstName', userData.firstName);
+      if (userData.lastName) form.setValue('lastName', userData.lastName);
+      
+      // Auto-populate address fields if available
+      if (userData.address?.addressLine1) form.setValue('address', userData.address.addressLine1);
+      if (userData.address?.addressLine2) form.setValue('apartment', userData.address.addressLine2);
+      if (userData.address?.city) form.setValue('city', userData.address.city);
+      if (userData.address?.state) form.setValue('state', userData.address.state);
+      if (userData.address?.zipCode) form.setValue('zipCode', userData.address.zipCode);
+      if (userData.address?.phone) form.setValue('phone', userData.address.phone);
+      
+      setShowAutoFillMessage(true);
+      console.log('✅ Auto-populated checkout form with user data:', userData);
+    }
+  }, [form]);
+
   // Calculate shipping when state changes
   useEffect(() => {
     if (watchedState) {
@@ -95,6 +120,30 @@ export default function Checkout() {
         .finally(() => setIsLoadingShipping(false));
     }
   }, [watchedState]);
+
+  const useMySignupInformation = () => {
+    const userData = loadUserData();
+    
+    // Populate all available fields, overwriting current values
+    if (userData.email) form.setValue('email', userData.email);
+    if (userData.firstName) form.setValue('firstName', userData.firstName);
+    if (userData.lastName) form.setValue('lastName', userData.lastName);
+    
+    // Populate address fields
+    if (userData.address?.addressLine1) form.setValue('address', userData.address.addressLine1);
+    if (userData.address?.addressLine2) form.setValue('apartment', userData.address.addressLine2);
+    if (userData.address?.city) form.setValue('city', userData.address.city);
+    if (userData.address?.state) form.setValue('state', userData.address.state);
+    if (userData.address?.zipCode) form.setValue('zipCode', userData.address.zipCode);
+    if (userData.address?.phone) form.setValue('phone', userData.address.phone);
+    
+    setShowAutoFillMessage(true);
+    
+    toast({
+      title: "Information filled",
+      description: "We've populated your details from your signup information.",
+    });
+  };
 
   const isFormValid = () => {
     const requiredFields = [
@@ -142,6 +191,28 @@ export default function Checkout() {
           <h1 className="text-3xl font-bold text-foreground mb-2">Complete Your Order</h1>
           <p className="text-muted-foreground">Final step before your SpryFi Home device ships</p>
         </div>
+
+        {/* Auto-fill message and button */}
+        {hasUserData() && (
+          <div className="mb-6">
+            {showAutoFillMessage && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                <Info className="w-4 h-4 text-blue-600" />
+                <p className="text-blue-800 text-sm">
+                  We've filled in your details from your signup/qualification. Please confirm or edit if needed.
+                </p>
+              </div>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={useMySignupInformation}
+              className="w-full max-w-md mx-auto flex"
+            >
+              Use my signup information
+            </Button>
+          </div>
+        )}
 
         <form onSubmit={form.handleSubmit(handleCompleteOrder)} className="space-y-8">
           {/* Contact Information */}

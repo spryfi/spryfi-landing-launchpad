@@ -6,6 +6,7 @@ import { CheckoutModal } from '@/components/checkout/CheckoutModal';
 import { useRotatingHook } from '@/hooks/useRotatingHook';
 import SimpleAddressInput from '@/components/SimpleAddressInput';
 import { supabase } from '@/integrations/supabase/client';
+import { saveUserData } from '@/utils/userDataUtils';
 
 interface ParsedAddress {
   address_line1: string;
@@ -382,6 +383,20 @@ export const Hero = () => {
 
       setShowContactModal(false);
       
+      // Save user data for later use
+      saveUserData({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        address: {
+          addressLine1: formData.address_line1,
+          addressLine2: formData.address_line2,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zip_code
+        }
+      });
+
       // Redirect to address-success page if qualified, otherwise show results modal
       if (qualified) {
         console.log("✅ User qualified - redirecting to address-success page");
