@@ -70,8 +70,8 @@ const checkoutSchema = z.object({
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;
 
-// Initialize Stripe
-const stripePromise = loadStripe('pk_test_TL4B2E2kOvBED6iNgYP5v00f');
+// Initialize Stripe - Replace with your actual publishable key
+const stripePromise = loadStripe('pk_test_51XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'); // Replace with your actual publishable key
 
 // Payment form component
 function PaymentForm({ 
@@ -377,10 +377,14 @@ export default function Checkout() {
       }
     }
 
-    // Debug: log missing fields
+    // Debug: log missing fields with details
     if (missingFields.length > 0) {
       console.log('🔍 Missing required fields:', missingFields);
       console.log('📝 Current form values:', formValues);
+      console.log('📋 Specific missing fields:');
+      missingFields.forEach(field => {
+        console.log(`  - ${field}: "${formValues[field as keyof CheckoutForm] || 'EMPTY'}"`);
+      });
     }
 
     return missingFields.length === 0;
