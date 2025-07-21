@@ -70,8 +70,8 @@ const checkoutSchema = z.object({
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;
 
-// Initialize Stripe - Replace with your actual publishable key
-const stripePromise = loadStripe('pk_test_51XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'); // Replace with your actual publishable key
+// Initialize Stripe
+const stripePromise = loadStripe('pk_live_YrdEVqxsPoHuhkpq74UbqqjM');
 
 // Payment form component
 function PaymentForm({ 
