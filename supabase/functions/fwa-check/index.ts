@@ -24,6 +24,7 @@ serve(async (req) => {
     const body = await req.json()
     console.log("Request body:", body);
     
+    // Extract address fields from request body for GIS API call
     const { 
       lead_id,
       anchor_address_id,
@@ -37,6 +38,39 @@ serve(async (req) => {
       latitude, 
       longitude 
     } = body
+
+    // Support both nested and flat address payloads (defensive coding)
+    let gisAddress = { address_line1, city, state, zip_code };
+    if (body.address) {
+      // If sent as { address: {...} }
+      gisAddress = {
+        address_line1: body.address.address_line1,
+        city: body.address.city,
+        state: body.address.state,
+        zip_code: body.address.zip_code
+      };
+    }
+
+    // Validate all required fields for GIS API
+    if (!gisAddress.address_line1 || !gisAddress.city || !gisAddress.state || !gisAddress.zip_code) {
+      console.error("❌ Missing required address fields for GIS API!", gisAddress);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Missing address fields for qualification",
+          received_fields: gisAddress
+        }),
+        { 
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          }
+        }
+      )
+    }
+
+    console.log("✅ Address fields extracted for GIS API:", gisAddress);
 
     // Validate required inputs first
     if (!lead_id && !anchor_address_id) {
@@ -200,19 +234,9 @@ serve(async (req) => {
 
     try {
       console.log('📡 Calling GIS-powered API endpoint...')
-      console.log('🌍 About to call GIS API with address data:', {
-        address_line1: addressData.address_line1,
-        city: addressData.city,
-        state: addressData.state,
-        zip_code: addressData.zip_code
-      });
+      console.log('🌍 About to call GIS API with validated address data:', gisAddress);
       
-      const gisResponse = await callGisAPI({
-        address_line1: addressData.address_line1,
-        city: addressData.city,
-        state: addressData.state,
-        zip_code: addressData.zip_code
-      });
+      const gisResponse = await callGisAPI(gisAddress);
 
       console.log('📡 GIS API raw response:', JSON.stringify(gisResponse, null, 2));
 
