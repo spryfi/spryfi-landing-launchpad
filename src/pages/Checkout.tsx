@@ -93,6 +93,51 @@ function PaymentForm({
   const elements = useElements();
   const { toast } = useToast();
 
+  // Function to create lead and store in sessionStorage
+  const createAndStoreLeadId = async (customerData: any) => {
+    console.log('🆔 STEP A: Creating lead for checkout page...');
+    console.log('🆔 Customer data for lead creation:', JSON.stringify(customerData, null, 2));
+    
+    try {
+      const { data: leadResult, error: leadError } = await supabase.functions.invoke('save-lead', {
+        body: {
+          email: customerData.email,
+          first_name: customerData.firstName,
+          last_name: customerData.lastName,
+          address_line1: customerData.address,
+          address_line2: customerData.apartment || '',
+          city: customerData.city,
+          state: customerData.state,
+          zip_code: customerData.zipCode,
+          phone: customerData.phone,
+          started_at: new Date().toISOString(),
+          status: 'checkout_started'
+        }
+      });
+
+      if (leadError) {
+        console.error('❌ Failed to create lead:', leadError);
+        throw new Error(`Failed to create lead: ${leadError.message}`);
+      }
+
+      if (!leadResult?.lead_id) {
+        console.error('❌ No lead_id returned from save-lead function');
+        throw new Error('No lead ID returned from server');
+      }
+
+      console.log('✅ STEP B: Lead created successfully:', leadResult.lead_id);
+      
+      // Store in sessionStorage
+      sessionStorage.setItem('leadId', leadResult.lead_id);
+      console.log('✅ STEP C: Lead ID stored in sessionStorage:', leadResult.lead_id);
+      
+      return leadResult.lead_id;
+    } catch (error) {
+      console.error('❌ Error creating lead:', error);
+      throw error;
+    }
+  };
+
   const handlePayment = async () => {
     console.log('🚨🚨🚨 CHECKOUT PAGE PAYMENT HANDLER - EXTREME DEBUG MODE 🚨🚨🚨');
     console.log('💳 STEP 1: Payment handler initiated on /checkout page');
@@ -124,9 +169,24 @@ function PaymentForm({
     console.log('💳 STEP 4: Processing state set to true');
 
     try {
-      // Get lead ID from session storage
-      const leadId = sessionStorage.getItem('leadId');
+      // CRITICAL FIX: Create lead if it doesn't exist
+      let leadId = sessionStorage.getItem('leadId');
       console.log('💳 STEP 5: Retrieved leadId from sessionStorage:', leadId);
+      
+      if (!leadId) {
+        console.log('🆔 STEP 5A: No leadId found, creating new lead...');
+        try {
+          leadId = await createAndStoreLeadId(customerData);
+          console.log('✅ STEP 5B: Successfully created and stored leadId:', leadId);
+        } catch (leadError) {
+          console.error('❌ CRITICAL: Failed to create lead:', leadError);
+          onPaymentError('Failed to create customer record. Please try again.');
+          return;
+        }
+      } else {
+        console.log('✅ STEP 5C: Using existing leadId from sessionStorage');
+      }
+      
       console.log('💳 leadId type:', typeof leadId);
       console.log('💳 leadId truthy?:', !!leadId);
       console.log('💳 customerData:', JSON.stringify(customerData, null, 2));
