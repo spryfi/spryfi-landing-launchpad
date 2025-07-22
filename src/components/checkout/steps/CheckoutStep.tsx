@@ -147,6 +147,8 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ state, updateState, 
 
   const handleSubmit = async () => {
     console.log("🧾 Checkout form submission started");
+    console.log("🧾 CRITICAL: leadId at checkout transition:", state.leadId);
+    console.log("🧾 CRITICAL: Full state at checkout transition:", state);
     
     if (!isFormValid) {
       alert('Please fill in all required fields.');
@@ -154,6 +156,7 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ state, updateState, 
     }
 
     // Navigate to payment step instead of submitting directly
+    console.log("🧾 Transitioning to payment step with leadId:", state.leadId);
     updateState({ step: 'payment' });
   };
 

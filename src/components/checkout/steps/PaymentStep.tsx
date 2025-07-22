@@ -39,6 +39,11 @@ function PaymentForm({
   const { toast } = useToast();
 
   const handlePayment = async () => {
+    console.log('💳 PAYMENT HANDLER STARTED');
+    console.log('💳 leadId at payment start:', leadId);
+    console.log('💳 leadId type:', typeof leadId);
+    console.log('💳 leadId truthy?:', !!leadId);
+
     if (!stripe || !elements) {
       toast({
         title: "Error",
@@ -224,6 +229,13 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ state, updateState, on
   const [isProcessing, setIsProcessing] = useState(false);
   const [shippingCost, setShippingCost] = useState(16.95); // Default shipping cost
   const { toast } = useToast();
+
+  // CRITICAL: Debug leadId presence
+  console.log('🚨 PAYMENT STEP - CRITICAL LEAD DEBUG:');
+  console.log('- state.leadId:', state.leadId);
+  console.log('- state.leadId type:', typeof state.leadId);
+  console.log('- state.leadId truthy?:', !!state.leadId);
+  console.log('- Full state:', state);
 
   const customerData = {
     email: state.contact?.email || '',
