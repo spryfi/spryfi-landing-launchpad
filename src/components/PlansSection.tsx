@@ -1,18 +1,36 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
-import { CheckoutModal } from './checkout/CheckoutModal';
-import { useCheckoutModal } from '@/hooks/useCheckoutModal';
+import SimpleAddressInput from '@/components/SimpleAddressInput';
+import { supabase } from '@/integrations/supabase/client';
+import { saveUserData } from '@/utils/userDataUtils';
 
 interface PlansSectionProps {
   saleActive?: boolean;
 }
 
+interface ParsedAddress {
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  full_address: string;
+}
+
 export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
-  const { isOpen, openModal, closeModal } = useCheckoutModal();
-  const [selectedPlan, setSelectedPlan] = React.useState<string | null>(null);
+  const navigate = useNavigate();
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState('');
+  const [parsedAddressData, setParsedAddressData] = useState<ParsedAddress | null>(null);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const plans = [
     {
@@ -65,16 +83,232 @@ export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
     "14-day money-back guarantee"
   ];
 
+  // Address parsing function (same as Hero)
+  const parseMapboxAddress = (fullAddress: string): ParsedAddress => {
+    console.log('🔍 Parsing Mapbox address:', fullAddress);
+    
+    const parts = fullAddress.split(',').map(part => part.trim()).filter(part => part !== 'United States');
+    console.log('📝 Address parts after filtering:', parts);
+    
+    if (parts.length < 3) {
+      console.error('❌ Address has insufficient parts:', parts.length);
+      return {
+        address_line1: fullAddress,
+        city: '',
+        state: '',
+        zip_code: '',
+        full_address: fullAddress
+      };
+    }
+
+    const street = parts[0] || '';
+    const cityPart = parts[parts.length - 2] || '';
+    const lastPart = parts[parts.length - 1];
+    
+    let statePart = '';
+    let zipPart = '';
+    
+    const stateNameToAbbrev: { [key: string]: string } = {
+      'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+      'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+      'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+      'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+      'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+      'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+      'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+      'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+      'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+      'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
+    };
+    
+    const zipMatch = lastPart.match(/(\d{5}(?:-\d{4})?)/);
+    if (zipMatch) {
+      zipPart = zipMatch[1];
+      const stateText = lastPart.replace(zipMatch[0], '').trim();
+      
+      if (stateText.length === 2 && /^[A-Z]{2}$/i.test(stateText)) {
+        statePart = stateText.toUpperCase();
+      } else {
+        const foundState = Object.keys(stateNameToAbbrev).find(stateName => 
+          stateName.toLowerCase() === stateText.toLowerCase()
+        );
+        
+        if (foundState) {
+          statePart = stateNameToAbbrev[foundState];
+        } else {
+          statePart = stateText;
+        }
+      }
+    }
+    
+    return {
+      address_line1: street,
+      address_line2: '',
+      city: cityPart,
+      state: statePart,
+      zip_code: zipPart,
+      full_address: fullAddress
+    };
+  };
+
+  const handleAddressSelect = async (fullAddress: string) => {
+    console.log('🎯 Address selected for plan:', selectedPlan, 'Address:', fullAddress);
+    
+    const parsedAddress = parseMapboxAddress(fullAddress);
+    console.log('📝 Parsed address data:', parsedAddress);
+    
+    setSelectedAddress(fullAddress);
+    setParsedAddressData(parsedAddress);
+    
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setShowAddressModal(false);
+    setShowContactModal(true);
+  };
+
+  const handleContactSubmit = async () => {
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    if (!parsedAddressData || !selectedPlan) {
+      alert('Please select a valid address and plan');
+      return;
+    }
+
+    console.log("📬 Plan selection form submission started for plan:", selectedPlan);
+    const formData = {
+      address_line1: parsedAddressData.address_line1,
+      address_line2: parsedAddressData.address_line2 || '',
+      city: parsedAddressData.city,
+      state: parsedAddressData.state,
+      zip_code: parsedAddressData.zip_code,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim()
+    };
+
+    setIsSubmitting(true);
+
+    try {
+      // Save lead
+      const { data: leadResult, error: leadError } = await supabase.functions.invoke('save-lead', {
+        body: {
+          email: formData.email,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          address_line1: formData.address_line1,
+          address_line2: formData.address_line2,
+          city: formData.city,
+          state: formData.state,
+          zip_code: formData.zip_code,
+        },
+      });
+
+      if (leadError) {
+        throw new Error(`Failed to save lead: ${leadError.message}`);
+      }
+      
+      const leadId = leadResult.lead_id;
+
+      // Check qualification
+      const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
+        body: {
+          address_line1: parsedAddressData.address_line1,
+          address_line2: parsedAddressData.address_line2 || '',
+          city: parsedAddressData.city,
+          state: parsedAddressData.state,
+          zip_code: parsedAddressData.zip_code,
+          lead_id: leadId
+        }
+      });
+
+      if (qualificationError) {
+        console.error('❌ Edge function error:', qualificationError);
+        throw new Error('Unable to check service availability at this time.');
+      }
+
+      const qualified = qualificationData?.qualified || false;
+
+      // Update lead with qualification results
+      await supabase.functions.invoke('update-lead', {
+        body: {
+          lead_id: leadId,
+          qualified,
+          network_type: qualificationData?.network_type,
+          qualification_source: qualificationData?.source || 'gis',
+        },
+      });
+
+      // Save user data
+      saveUserData({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        address: {
+          addressLine1: formData.address_line1,
+          addressLine2: formData.address_line2,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zip_code
+        }
+      });
+
+      // Save qualification and plan data for AddressSuccess page
+      sessionStorage.setItem('qualification_result', JSON.stringify({
+        qualified: qualified,
+        minsignal: qualificationData?.minsignal,
+        network_type: qualificationData?.network_type,
+        preselectedPlan: selectedPlan // Include plan selection
+      }));
+      
+      console.log("✅ Redirecting to address-success with plan:", selectedPlan);
+      navigate('/address-success');
+      
+    } catch (error) {
+      console.error('❌ API Error:', error);
+      alert('Something went wrong checking availability. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handlePlanClick = (planType: string) => {
     console.log('🎯 Plan clicked from landing page:', planType);
     setSelectedPlan(planType);
-    openModal();
+    setShowAddressModal(true);
   };
 
-  const handleModalClose = () => {
-    setSelectedPlan(null);
-    closeModal();
-  };
+  const renderModal3D = (children: React.ReactNode, modalHeight = '500px') => (
+    <div 
+      className="fixed inset-0 flex items-center justify-center z-50 modal-backdrop"
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)'
+      }}
+    >
+      <div 
+        className="relative rounded-xl overflow-hidden modal-container"
+        style={{
+          width: '480px',
+          height: modalHeight,
+          backgroundColor: '#0047AB',
+          transform: 'none',
+          borderRadius: '12px',
+          boxShadow: `
+            0 25px 50px rgba(0, 0, 0, 0.6),
+            0 10px 20px rgba(0, 0, 0, 0.3),
+            0 0 20px rgba(0, 71, 171, 0.15)
+          `,
+          filter: 'drop-shadow(0 8px 16px rgba(0, 71, 171, 0.2))'
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -209,11 +443,118 @@ export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
         </div>
       </section>
 
-      <CheckoutModal 
-        isOpen={isOpen} 
-        onClose={handleModalClose} 
-        preselectedPlan={selectedPlan}
-      />
+      {showAddressModal && renderModal3D(
+        <>
+          <button
+            onClick={() => setShowAddressModal(false)}
+            className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10 transition-all duration-200 hover:scale-110"
+          >
+            ×
+          </button>
+
+          <div className="px-6 py-6 h-full flex flex-col justify-center text-center relative">
+            <div className="text-center mb-6">
+              <div className="text-white text-3xl font-bold mb-2">
+                SpryFi
+              </div>
+              <div className="text-blue-100 text-sm font-medium">
+                Internet that just works
+              </div>
+            </div>
+
+            <h2 className="text-white text-xl font-bold mb-2 leading-tight">
+              See if our award-winning internet has arrived<br />
+              in your neighborhood
+            </h2>
+
+            <p className="text-blue-100 text-base mb-6">
+              Selected Plan: {plans.find(p => p.planType === selectedPlan)?.name || selectedPlan}
+            </p>
+
+            <div className="relative z-40 mb-4" style={{ overflow: 'visible' }}>
+              <SimpleAddressInput
+                onAddressSelect={(address) => handleAddressSelect(address)}
+                placeholder="Enter your street address"
+              />
+            </div>
+
+            <p className="text-blue-100 text-sm">
+              Results in 10 seconds
+            </p>
+          </div>
+        </>
+      )}
+
+      {showContactModal && renderModal3D(
+        <>
+          <button
+            onClick={() => setShowContactModal(false)}
+            className="absolute top-4 right-4 text-white hover:text-gray-200 text-xl font-light z-10 transition-all duration-200 hover:scale-110"
+          >
+            ×
+          </button>
+
+          <div className="px-6 py-6 h-full flex flex-col justify-center text-center relative">
+            <div className="text-center mb-4">
+              <div className="text-white text-3xl font-bold mb-2">
+                SpryFi
+              </div>
+              <div className="text-blue-100 text-sm font-medium">
+                Internet that just works
+              </div>
+            </div>
+
+            {selectedAddress && (
+              <div className="mb-6 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-300">
+                <p className="text-sm text-blue-600 font-medium mb-1">Selected Address:</p>
+                <p className="text-blue-800 font-semibold text-sm">{selectedAddress}</p>
+                <p className="text-sm text-blue-600 font-medium mt-2">Selected Plan:</p>
+                <p className="text-blue-800 font-semibold text-sm">{plans.find(p => p.planType === selectedPlan)?.name || selectedPlan}</p>
+              </div>
+            )}
+
+            <h2 className="text-white text-xl font-bold mb-2 leading-tight">
+              Let's get your results
+            </h2>
+
+            <p className="text-blue-100 text-sm mb-6">
+              We'll check availability and show your results immediately
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <input
+                type="text"
+                placeholder="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg text-gray-800 text-base placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+              <input
+                type="text"
+                placeholder="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg text-gray-800 text-base placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg text-gray-800 text-base placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+            </div>
+
+            <button
+              onClick={handleContactSubmit}
+              disabled={isSubmitting}
+              className="w-full bg-white text-blue-600 font-bold py-3 px-6 rounded-lg hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Checking availability...' : 'Check Availability & Continue'}
+            </button>
+          </div>
+        </>
+      )}
     </>
   );
 };
