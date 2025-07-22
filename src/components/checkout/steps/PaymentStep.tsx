@@ -15,7 +15,8 @@ interface PaymentStepProps {
 }
 
 // Initialize Stripe
-const stripePromise = loadStripe('pk_live_YrdEVqxsPoHuhkpq74UbqqjM');
+// Use test key for development - NO REAL CHARGES
+const stripePromise = loadStripe('pk_test_51234567890...');
 
 function PaymentForm({ 
   shippingCost, 
