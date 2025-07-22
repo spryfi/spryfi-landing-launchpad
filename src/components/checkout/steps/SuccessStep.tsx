@@ -63,9 +63,23 @@ export const SuccessStep: React.FC<SuccessStepProps> = ({ state, onClose }) => {
           </div>
         </div>
 
-        <Button onClick={onClose} className="w-full" size="lg">
-          Close
-        </Button>
+        <div className="flex flex-col gap-3">
+          <Button 
+            onClick={() => window.location.href = '/'} 
+            className="w-full" 
+            size="lg"
+          >
+            Go to SpryFi Home
+          </Button>
+          <Button 
+            onClick={onClose} 
+            className="w-full" 
+            size="lg" 
+            variant="outline"
+          >
+            Close
+          </Button>
+        </div>
       </div>
     </div>
   );
