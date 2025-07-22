@@ -27,9 +27,15 @@ export function AddressSuccess() {
 
   const handleChoosePlan = () => {
     if (preselectedPlan) {
-      // If we have a preselected plan, go straight to checkout with that plan
-      console.log('🚀 Navigating to checkout with preselected plan:', preselectedPlan);
-      navigate('/checkout', { state: { preselectedPlan } });
+      // If we have a preselected plan, go to router setup next
+      console.log('🚀 Navigating to router setup with preselected plan:', preselectedPlan);
+      // Store the plan data for router setup and checkout
+      sessionStorage.setItem('selected_plan', JSON.stringify({
+        planType: preselectedPlan,
+        planName: getPlanDisplayInfo(preselectedPlan).name,
+        planPrice: getPlanDisplayInfo(preselectedPlan).price
+      }));
+      navigate('/router-setup');
     } else {
       // Fallback to plans page if no preselected plan
       navigate('/plans');
@@ -80,7 +86,7 @@ export function AddressSuccess() {
         onClick={handleChoosePlan}
         className="mt-4 px-8 py-4 bg-white text-blue-700 font-semibold rounded-lg hover:bg-gray-100 transition text-lg"
       >
-        {preselectedPlan ? 'Continue to Checkout' : 'Choose Your Plan'}
+        {preselectedPlan ? 'Continue to Router Setup' : 'Choose Your Plan'}
       </button>
       
       {minsignal !== null && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,7 +8,22 @@ import { HelpCircle } from 'lucide-react';
 export const RouterSetup = () => {
   const [wifiName, setWifiName] = useState('');
   const [wifiPassword, setWifiPassword] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    // Get selected plan data from sessionStorage
+    const planData = sessionStorage.getItem('selected_plan');
+    if (planData) {
+      try {
+        const plan = JSON.parse(planData);
+        setSelectedPlan(plan);
+        console.log('🎯 Selected plan loaded in router setup:', plan);
+      } catch (error) {
+        console.error('Error parsing selected plan data:', error);
+      }
+    }
+  }, []);
 
   const generateSSID = () => {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -28,7 +43,14 @@ export const RouterSetup = () => {
         ssid: wifiName,
         passkey: wifiPassword
       });
-      navigate('/checkout');
+      
+      // Navigate to checkout with the selected plan
+      if (selectedPlan) {
+        console.log('🚀 Navigating to checkout with plan:', selectedPlan);
+        navigate('/checkout', { state: { preselectedPlan: selectedPlan.planType } });
+      } else {
+        navigate('/checkout');
+      }
     } catch (error) {
       console.error('Error saving router setup:', error);
     }
