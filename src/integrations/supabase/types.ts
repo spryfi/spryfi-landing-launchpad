@@ -662,6 +662,9 @@ export type Database = {
           last_name: string | null
           lead_id: string | null
           phone: string | null
+          provisioning_status:
+            | Database["public"]["Enums"]["provisioning_status_type"]
+            | null
           shipping_cost_paid: number | null
           state: string | null
           status: string | null
@@ -684,6 +687,9 @@ export type Database = {
           last_name?: string | null
           lead_id?: string | null
           phone?: string | null
+          provisioning_status?:
+            | Database["public"]["Enums"]["provisioning_status_type"]
+            | null
           shipping_cost_paid?: number | null
           state?: string | null
           status?: string | null
@@ -706,6 +712,9 @@ export type Database = {
           last_name?: string | null
           lead_id?: string | null
           phone?: string | null
+          provisioning_status?:
+            | Database["public"]["Enums"]["provisioning_status_type"]
+            | null
           shipping_cost_paid?: number | null
           state?: string | null
           status?: string | null
@@ -3122,6 +3131,13 @@ export type Database = {
       }
     }
     Enums: {
+      provisioning_status_type:
+        | "pending_provisioning"
+        | "provisioning"
+        | "pending_shipping"
+        | "shipped"
+        | "activated"
+        | "cancelled"
       user_role: "admin" | "office" | "customer"
     }
     CompositeTypes: {
@@ -3266,6 +3282,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      provisioning_status_type: [
+        "pending_provisioning",
+        "provisioning",
+        "pending_shipping",
+        "shipped",
+        "activated",
+        "cancelled",
+      ],
       user_role: ["admin", "office", "customer"],
     },
   },
