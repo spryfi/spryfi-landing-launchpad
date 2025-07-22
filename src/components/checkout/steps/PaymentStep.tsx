@@ -15,8 +15,8 @@ interface PaymentStepProps {
 }
 
 // Initialize Stripe
-// Use test key for development - NO REAL CHARGES
-const stripePromise = loadStripe('pk_test_51234567890...');
+// Initialize Stripe (keeping live key as user requested)
+const stripePromise = loadStripe('pk_live_YrdEVqxsPoHuhkpq74UbqqjM');
 
 function PaymentForm({ 
   shippingCost, 
@@ -40,12 +40,16 @@ function PaymentForm({
   const { toast } = useToast();
 
   const handlePayment = async () => {
-    console.log('💳 PAYMENT HANDLER STARTED');
+    console.log('🚨🚨🚨 PAYMENT HANDLER STARTING - FULL DEBUG MODE 🚨🚨🚨');
+    console.log('💳 STEP 1: Payment handler initiated');
     console.log('💳 leadId at payment start:', leadId);
     console.log('💳 leadId type:', typeof leadId);
     console.log('💳 leadId truthy?:', !!leadId);
+    console.log('💳 customerData:', JSON.stringify(customerData, null, 2));
+    console.log('💳 shippingCost:', shippingCost);
 
     if (!stripe || !elements) {
+      console.error('❌ CRITICAL: Stripe or elements not available');
       toast({
         title: "Error",
         description: "Stripe is not loaded. Please refresh the page.",
@@ -53,9 +57,11 @@ function PaymentForm({
       });
       return;
     }
+    console.log('✅ STEP 2: Stripe and elements verified');
 
     const cardElement = elements.getElement(CardElement);
     if (!cardElement) {
+      console.error('❌ CRITICAL: Card element not found');
       toast({
         title: "Error", 
         description: "Card information is required.",
@@ -63,10 +69,25 @@ function PaymentForm({
       });
       return;
     }
+    console.log('✅ STEP 3: Card element verified');
 
     setIsProcessing(true);
+    console.log('💳 STEP 4: Processing state set to true');
 
     try {
+      console.log('💳 STEP 5: About to create payment intent');
+      console.log('💳 Payment intent payload:', {
+        amount: Math.round(shippingCost * 100),
+        customerEmail: customerData.email,
+        customerName: `${customerData.firstName} ${customerData.lastName}`,
+        leadId: leadId,
+        shippingAddress: {
+          city: customerData.city,
+          state: customerData.state,
+          zipCode: customerData.zipCode
+        }
+      });
+
       // Create payment intent on server
       const { data, error } = await supabase.functions.invoke('create-shipping-payment', {
         body: {
@@ -82,11 +103,20 @@ function PaymentForm({
         }
       });
 
+      console.log('💳 STEP 6: Payment intent creation response');
+      console.log('💳 Payment intent data:', data);
+      console.log('💳 Payment intent error:', error);
+
       if (error) {
+        console.error('❌ CRITICAL: Payment intent creation failed:', error);
         throw new Error(error.message);
       }
 
+      console.log('✅ STEP 7: Payment intent created successfully');
+      console.log('💳 Client secret received:', data.clientSecret);
+
       // Confirm payment with Stripe
+      console.log('💳 STEP 8: About to confirm payment with Stripe');
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
         data.clientSecret,
         {
@@ -100,19 +130,34 @@ function PaymentForm({
         }
       );
 
+      console.log('💳 STEP 9: Payment confirmation response');
+      console.log('💳 Confirm error:', confirmError);
+      console.log('💳 Payment intent:', paymentIntent);
+
       if (confirmError) {
+        console.error('❌ CRITICAL: Payment confirmation failed:', confirmError);
         onPaymentError(confirmError.message || 'Payment failed');
       } else if (paymentIntent?.status === 'succeeded') {
-        console.log('💳 Payment succeeded! Starting customer conversion process...');
+        console.log('🎉 STEP 10: Payment succeeded! Starting customer conversion process...');
         console.log('💳 Payment Intent ID:', paymentIntent.id);
         console.log('💳 Lead ID for conversion:', leadId);
-        console.log('💳 Customer data for conversion:', customerData);
+        console.log('💳 Customer data for conversion:', JSON.stringify(customerData, null, 2));
         
         // Convert lead to customer after successful payment
         if (leadId) {
-          console.log('💳 About to invoke convert-lead-to-customer function...');
+          console.log('💳 STEP 11: About to invoke convert-lead-to-customer function...');
+          console.log('💳 Function payload:', {
+            leadId: leadId,
+            paymentIntentId: paymentIntent.id,
+            customerData: customerData,
+            shippingCost: shippingCost,
+            activationFee: 9.90
+          });
           
           try {
+            console.log('💳 STEP 12: Invoking convert-lead-to-customer function...');
+            const startTime = Date.now();
+            
             const { data: conversionData, error: conversionError } = await supabase.functions.invoke('convert-lead-to-customer', {
               body: {
                 leadId: leadId,
@@ -123,35 +168,45 @@ function PaymentForm({
               }
             });
             
-            console.log('💳 Function invocation completed');
-            console.log('💳 Conversion data:', conversionData);
-            console.log('💳 Conversion error:', conversionError);
+            const endTime = Date.now();
+            console.log(`💳 STEP 13: Function invocation completed in ${endTime - startTime}ms`);
+            console.log('💳 Conversion data:', JSON.stringify(conversionData, null, 2));
+            console.log('💳 Conversion error:', JSON.stringify(conversionError, null, 2));
             
             if (conversionError) {
-              console.error('❌ Lead conversion error:', conversionError);
+              console.error('❌ CRITICAL: Lead conversion error:', conversionError);
               console.error('❌ Full error object:', JSON.stringify(conversionError, null, 2));
               onPaymentError('Payment succeeded but customer setup failed. Please contact support.');
               return;
             }
             
-            console.log('✅ Lead converted to customer successfully:', conversionData);
+            console.log('🎉 STEP 14: Lead converted to customer successfully!');
+            console.log('✅ Conversion result:', conversionData);
           } catch (functionError) {
-            console.error('❌ Function invocation failed:', functionError);
+            console.error('❌ CRITICAL: Function invocation failed:', functionError);
             console.error('❌ Function error details:', JSON.stringify(functionError, null, 2));
+            console.error('❌ Function error stack:', functionError.stack);
             onPaymentError('Payment succeeded but customer setup failed due to system error. Please contact support.');
             return;
           }
         } else {
           console.error('❌ CRITICAL: Payment succeeded but no leadId found! Cannot create customer.');
+          console.error('❌ leadId value:', leadId);
+          console.error('❌ leadId type:', typeof leadId);
           onPaymentError('Payment succeeded but customer setup failed due to missing lead information. Please contact support.');
           return;
         }
         
+        console.log('🎉 STEP 15: All steps completed successfully! Calling onPaymentSuccess');
         onPaymentSuccess(paymentIntent.id);
       }
     } catch (error: any) {
+      console.error('❌ CRITICAL: Payment processing failed:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
       onPaymentError(error.message || 'Payment processing failed');
     } finally {
+      console.log('💳 STEP FINAL: Setting processing to false');
       setIsProcessing(false);
     }
   };
