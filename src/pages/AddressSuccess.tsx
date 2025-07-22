@@ -38,8 +38,8 @@ export function AddressSuccess() {
 
   const getPlanDisplayInfo = (planCode: string) => {
     const planInfo = {
-      'home-10': { name: 'SpryFi Essential', price: '$89.95/mo', originalPrice: '$99.95/mo' },
-      'premium-10': { name: 'SpryFi Premium', price: '$129.95/mo', originalPrice: '$139.95/mo' },
+      'home-10': { name: 'SpryFi Essential', price: '$89.99/mo', originalPrice: '$99.95/mo' },
+      'premium-10': { name: 'SpryFi Premium', price: '$129.99/mo', originalPrice: '$139.95/mo' },
       'spryfi-home': { name: 'SpryFi Essential', price: '$99.95/mo', originalPrice: null },
       'spryfi-home-premium': { name: 'SpryFi Premium', price: '$139.95/mo', originalPrice: null }
     };

@@ -36,8 +36,8 @@ export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
     {
       name: "SpryFi Essential",
       originalPrice: "$99.95/mo",
-      salePrice: "$89.95/mo",
-      price: saleActive ? "$89.95/mo" : "$99.95/mo",
+      salePrice: "$89.99/mo",
+      price: saleActive ? "$89.99/mo" : "$99.95/mo",
       speed: "100+ Mbps",
       description: "Stream shows, browse freely",
       subtitle: "Works great for 1–2 people",
@@ -46,14 +46,14 @@ export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
       style: "basic",
       planType: saleActive ? "home-10" : "spryfi-home",
       planCode: saleActive ? "home-10" : "spryfi-home",
-      lockedPrice: saleActive ? "$89.95/mo" : "$99.95/mo",
+      lockedPrice: saleActive ? "$89.99/mo" : "$99.95/mo",
       isSpecialPricing: saleActive
     },
     {
       name: "SpryFi Premium",
       originalPrice: "$139.95/mo",
-      salePrice: "$129.95/mo", 
-      price: saleActive ? "$129.95/mo" : "$139.95/mo",
+      salePrice: "$129.99/mo", 
+      price: saleActive ? "$129.99/mo" : "$139.95/mo",
       speed: "200+ Mbps",
       description: "Perfect for families & remote work",
       subtitle: "No throttling, no limits",
@@ -62,7 +62,7 @@ export const PlansSection = ({ saleActive = false }: PlansSectionProps) => {
       style: "premium",
       planType: saleActive ? "premium-10" : "spryfi-home-premium",
       planCode: saleActive ? "premium-10" : "spryfi-home-premium",
-      lockedPrice: saleActive ? "$129.95/mo" : "$139.95/mo",
+      lockedPrice: saleActive ? "$129.99/mo" : "$139.95/mo",
       isSpecialPricing: saleActive
     }
   ];
