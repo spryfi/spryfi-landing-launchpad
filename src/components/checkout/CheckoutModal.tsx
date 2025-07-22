@@ -8,6 +8,8 @@ import { PlanSelection } from './steps/PlanSelection';
 import { WiFiSetupStep } from './steps/WiFiSetupStep';
 import { RouterOffer } from './steps/RouterOffer';
 import { CheckoutStep } from './steps/CheckoutStep';
+import { PaymentStep } from './steps/PaymentStep';
+import { SuccessStep } from './steps/SuccessStep';
 
 export interface CheckoutState {
   step: string;
@@ -45,6 +47,7 @@ export interface CheckoutState {
   } | null;
   flow_completed?: boolean;
   preselectedPlan?: string | null;
+  paymentIntentId?: string;
 }
 
 interface CheckoutModalProps {
@@ -285,6 +288,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
       case 'checkout':
         console.log('🔍 Rendering CheckoutStep');
         return <CheckoutStep state={state} updateState={updateState} onClose={onClose} />;
+      case 'payment':
+        console.log('🔍 Rendering PaymentStep');
+        return <PaymentStep state={state} updateState={updateState} onClose={onClose} />;
+      case 'success':
+        console.log('🔍 Rendering SuccessStep');
+        return <SuccessStep state={state} updateState={updateState} onClose={onClose} />;
       case 'not-qualified':
         console.log('🔍 Rendering not-qualified');
         return (
