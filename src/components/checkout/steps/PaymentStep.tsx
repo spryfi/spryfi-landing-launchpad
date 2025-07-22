@@ -99,6 +99,7 @@ function PaymentForm({
       } else if (paymentIntent?.status === 'succeeded') {
         // Convert lead to customer after successful payment
         if (leadId) {
+          console.log('💳 Payment succeeded, converting lead to customer:', leadId);
           const { data: conversionData, error: conversionError } = await supabase.functions.invoke('convert-lead-to-customer', {
             body: {
               leadId: leadId,
@@ -110,12 +111,16 @@ function PaymentForm({
           });
           
           if (conversionError) {
-            console.error('Lead conversion error:', conversionError);
+            console.error('❌ Lead conversion error:', conversionError);
             onPaymentError('Payment succeeded but customer setup failed. Please contact support.');
             return;
           }
           
-          console.log('Lead converted to customer:', conversionData);
+          console.log('✅ Lead converted to customer successfully:', conversionData);
+        } else {
+          console.error('❌ CRITICAL: Payment succeeded but no leadId found! Cannot create customer.');
+          onPaymentError('Payment succeeded but customer setup failed due to missing lead information. Please contact support.');
+          return;
         }
         
         onPaymentSuccess(paymentIntent.id);

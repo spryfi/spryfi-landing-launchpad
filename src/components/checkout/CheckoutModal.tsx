@@ -132,7 +132,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
       
       // If we have qualification data but no leadId, create a lead
       if (qualificationData?.qualified && qualificationData?.contact && !initialState.leadId) {
+        console.log('🔄 Attempting to create lead for qualified user with contact:', qualificationData.contact);
         createLeadForQualifiedUser(qualificationData.contact);
+      } else {
+        console.log('🔍 Lead creation skipped - qualified:', qualificationData?.qualified, 'contact:', !!qualificationData?.contact, 'leadId:', initialState.leadId);
       }
       
       console.log('✅ Flow state reset complete - starting from step:', initialState.step);
@@ -164,7 +167,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
 
       if (!firstName || !lastName || !email) {
         console.error('❌ Missing contact information:', { firstName, lastName, email });
-        return;
+        return null;
       }
       
       const { data, error } = await supabase.functions.invoke('save-lead', {
@@ -178,15 +181,22 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
       });
 
       if (error) {
-        console.error('Error creating lead:', error);
-        return;
+        console.error('❌ Error creating lead:', error);
+        return null;
       }
 
       console.log('✅ Lead created successfully:', data);
-      updateState({ leadId: data.lead_id });
+      const leadId = data?.lead_id;
+      if (leadId) {
+        updateState({ leadId: leadId });
+        return leadId;
+      }
+      
+      return null;
       
     } catch (error) {
-      console.error('Error creating lead for qualified user:', error);
+      console.error('❌ Error creating lead for qualified user:', error);
+      return null;
     }
   };
 
@@ -194,7 +204,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, p
   const ensureLeadExists = async () => {
     if (!state.leadId && state.qualified && state.contact) {
       console.log('🔄 No leadId found, creating lead...');
-      await createLeadForQualifiedUser(state.contact);
+      const leadId = await createLeadForQualifiedUser(state.contact);
+      if (!leadId) {
+        console.error('❌ CRITICAL: Failed to create lead before payment step');
+      }
+    } else if (!state.leadId) {
+      console.error('❌ CRITICAL: No leadId and missing required data - qualified:', state.qualified, 'contact:', !!state.contact);
     }
   };
 
