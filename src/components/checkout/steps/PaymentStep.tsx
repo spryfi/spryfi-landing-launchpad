@@ -102,26 +102,44 @@ function PaymentForm({
       if (confirmError) {
         onPaymentError(confirmError.message || 'Payment failed');
       } else if (paymentIntent?.status === 'succeeded') {
+        console.log('💳 Payment succeeded! Starting customer conversion process...');
+        console.log('💳 Payment Intent ID:', paymentIntent.id);
+        console.log('💳 Lead ID for conversion:', leadId);
+        console.log('💳 Customer data for conversion:', customerData);
+        
         // Convert lead to customer after successful payment
         if (leadId) {
-          console.log('💳 Payment succeeded, converting lead to customer:', leadId);
-          const { data: conversionData, error: conversionError } = await supabase.functions.invoke('convert-lead-to-customer', {
-            body: {
-              leadId: leadId,
-              paymentIntentId: paymentIntent.id,
-              customerData: customerData,
-              shippingCost: shippingCost,
-              activationFee: 9.90
-            }
-          });
+          console.log('💳 About to invoke convert-lead-to-customer function...');
           
-          if (conversionError) {
-            console.error('❌ Lead conversion error:', conversionError);
-            onPaymentError('Payment succeeded but customer setup failed. Please contact support.');
+          try {
+            const { data: conversionData, error: conversionError } = await supabase.functions.invoke('convert-lead-to-customer', {
+              body: {
+                leadId: leadId,
+                paymentIntentId: paymentIntent.id,
+                customerData: customerData,
+                shippingCost: shippingCost,
+                activationFee: 9.90
+              }
+            });
+            
+            console.log('💳 Function invocation completed');
+            console.log('💳 Conversion data:', conversionData);
+            console.log('💳 Conversion error:', conversionError);
+            
+            if (conversionError) {
+              console.error('❌ Lead conversion error:', conversionError);
+              console.error('❌ Full error object:', JSON.stringify(conversionError, null, 2));
+              onPaymentError('Payment succeeded but customer setup failed. Please contact support.');
+              return;
+            }
+            
+            console.log('✅ Lead converted to customer successfully:', conversionData);
+          } catch (functionError) {
+            console.error('❌ Function invocation failed:', functionError);
+            console.error('❌ Function error details:', JSON.stringify(functionError, null, 2));
+            onPaymentError('Payment succeeded but customer setup failed due to system error. Please contact support.');
             return;
           }
-          
-          console.log('✅ Lead converted to customer successfully:', conversionData);
         } else {
           console.error('❌ CRITICAL: Payment succeeded but no leadId found! Cannot create customer.');
           onPaymentError('Payment succeeded but customer setup failed due to missing lead information. Please contact support.');
