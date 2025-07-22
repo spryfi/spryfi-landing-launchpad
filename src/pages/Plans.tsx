@@ -26,6 +26,22 @@ export const Plans = () => {
     setSelectedPlan(planId);
   };
 
+  const handleContinueToRouterSetup = () => {
+    if (selectedPlan) {
+      // Get plan details
+      const selectedPlanData = plans.find(plan => plan.id === selectedPlan);
+      if (selectedPlanData) {
+        // Save selected plan data to sessionStorage for router setup and checkout
+        sessionStorage.setItem('selected_plan', JSON.stringify({
+          planType: selectedPlan, // Use the actual plan ID from the Plans page
+          planName: selectedPlanData.name,
+          planPrice: `$${selectedPlanData.price}/mo`
+        }));
+        console.log('🎯 Plan selected and saved:', selectedPlanData.name);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-6">
       <div className="max-w-4xl w-full">
@@ -102,6 +118,7 @@ export const Plans = () => {
           <div className="text-center">
             <Link to="/router-setup">
               <Button 
+                onClick={handleContinueToRouterSetup}
                 className="bg-[#0047AB] hover:bg-[#0060D4] text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all duration-200 w-full max-w-md"
                 disabled={!selectedPlan}
               >
