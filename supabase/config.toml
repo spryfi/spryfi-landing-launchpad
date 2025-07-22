@@ -1,1 +1,25 @@
 project_id = "efrzzqqtmiazlsmwprmt"
+
+[functions.convert-lead-to-customer]
+verify_jwt = true
+
+[functions.create-shipping-payment]
+verify_jwt = true
+
+[functions.enroll-drip-leads]
+verify_jwt = false
+
+[functions.fwa-check]
+verify_jwt = false
+
+[functions.notify-new-customer]
+verify_jwt = false
+
+[functions.save-lead]
+verify_jwt = false
+
+[functions.send-confirmation-email]
+verify_jwt = false
+
+[functions.update-lead]
+verify_jwt = false
