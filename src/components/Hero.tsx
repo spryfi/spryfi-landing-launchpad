@@ -320,8 +320,48 @@ export const Hero = () => {
           throw new Error(`Verizon API error: ${response.status}`);
         }
 
-        const qualificationData = await response.json();
+        let qualificationData = await response.json();
         console.log('✅ Verizon API response:', qualificationData);
+        
+        // Check if we need to poll for results
+        if (qualificationData.qualified === null && qualificationData.status === 'pending' && qualificationData.request_id) {
+          console.log('⏳ Response is pending, starting polling...');
+          requestId = qualificationData.request_id;
+          
+          // Poll for up to 30 seconds
+          const pollStartTime = Date.now();
+          const pollTimeout = 30000; // 30 seconds
+          const pollInterval = 1500; // 1.5 seconds
+          
+          while (Date.now() - pollStartTime < pollTimeout) {
+            await new Promise(resolve => setTimeout(resolve, pollInterval));
+            
+            console.log('🔄 Polling Verizon API...');
+            const pollResponse = await fetch('https://fwa.spry.network/api/fwa-check', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                request_id: requestId
+              })
+            });
+
+            if (!pollResponse.ok) {
+              console.error('❌ Polling error:', pollResponse.status);
+              break;
+            }
+
+            const pollData = await pollResponse.json();
+            console.log('🔄 Poll response:', pollData);
+            
+            if (pollData.status === 'complete') {
+              qualificationData = pollData;
+              console.log('✅ Polling completed with final result:', qualificationData);
+              break;
+            }
+          }
+        }
         
         finalResults = qualificationData;
         qualified = qualificationData.qualified || false;
