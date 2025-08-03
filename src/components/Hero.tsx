@@ -285,50 +285,49 @@ export const Hero = () => {
       console.log("✅ Lead saved:", leadResult);
       leadId = leadResult.lead_id;
 
-      // Step 2: Check availability with robust error handling
-      console.log('📤 Submitting to FWA API...');
-      console.log("📦 FWA Check Submission Payload:", {
-        address: parsedAddressData,
-        email: formData.email,
-        usageType: "residential"
+      // Step 2: Check availability using Verizon API directly
+      console.log('📤 Submitting to Verizon FWA API...');
+      console.log("📦 Verizon API Submission Payload:", {
+        address_line1: parsedAddressData.address_line1,
+        city: parsedAddressData.city,
+        state: parsedAddressData.state,
+        zip_code: parsedAddressData.zip_code
       });
 
       let qualified = false;
       let networkType = null;
       let errorMessage = null;
-      let qualificationSource = 'fwa-api';
+      let qualificationSource = 'verizon';
       let requestId = null;
       let finalResults = null;
 
       try {
-        // Use the Supabase edge function for GIS-powered qualification
-        const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
-          body: {
+        // Call Verizon API directly
+        const response = await fetch('https://fwa.spry.network/api/fwa-check', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             address_line1: parsedAddressData.address_line1,
-            address_line2: parsedAddressData.address_line2 || '',
             city: parsedAddressData.city,
             state: parsedAddressData.state,
-            zip_code: parsedAddressData.zip_code,
-            lead_id: leadId
-          }
+            zip_code: parsedAddressData.zip_code
+          })
         });
 
-        if (qualificationError) {
-          console.error('❌ Edge function error:', qualificationError);
-          throw new Error('Unable to check service availability at this time.');
+        if (!response.ok) {
+          throw new Error(`Verizon API error: ${response.status}`);
         }
 
-        if (!qualificationData) {
-          console.error('❌ Edge function returned no data');
-          throw new Error('Service check failed.');
-        }
-
-        console.log('✅ Edge function response:', qualificationData);
+        const qualificationData = await response.json();
+        console.log('✅ Verizon API response:', qualificationData);
         
         finalResults = qualificationData;
         qualified = qualificationData.qualified || false;
         networkType = qualificationData.network_type;
-        qualificationSource = qualificationData.source || 'gis';
+        requestId = qualificationData.request_id;
+        qualificationSource = 'verizon';
 
         setQualificationResult({
           qualified: qualified,
