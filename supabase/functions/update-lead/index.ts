@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const allowedOrigins = [
   'https://spryfi-landing-launchpad.lovable.app',
   'https://4d53e2aa-d5ec-40fe-b54e-4159a6ed749a.lovableproject.com',
+  'https://spryfi.net',
   // Add more Lovable preview/staging domains as needed
 ]
 
