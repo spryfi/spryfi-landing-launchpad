@@ -342,33 +342,87 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
     setCurrentStatusMessage('Checking service availability...');
 
     try {
-      // Call the Supabase edge function for GIS-powered qualification
-      console.log('📡 Calling FWA check edge function...');
+      // Call Verizon API directly for qualification
+      console.log('📡 FWA API Request:', {
+        address_line1: addressLine1,
+        city: city,
+        state: selectedState,
+        zip_code: zipCode
+      });
       
-      const { data: qualificationData, error: qualificationError } = await supabase.functions.invoke('fwa-check', {
-        body: {
-          anchor_address_id: state.anchorAddressId,
+      const response = await fetch('https://fwa.spry.network/api/fwa-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           address_line1: addressLine1,
-          address_line2: addressLine2 || '',
           city: city,
           state: selectedState,
           zip_code: zipCode
-        }
+        })
       });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const verizonData = await response.json();
+      console.log('📥 FWA API Response:', verizonData);
 
       setQualificationProgress(60);
 
-      if (qualificationError) {
-        console.error('❌ Edge function error:', qualificationError);
-        throw new Error('Unable to check service availability at this time.');
+      let finalResults = verizonData;
+      
+      // If initial response is pending, start polling
+      if (verizonData.qualified === null && verizonData.status === 'pending') {
+        console.log('⏳ Response is pending, starting polling...');
+        const requestId = verizonData.request_id;
+        
+        if (!requestId) {
+          throw new Error('No request ID received for polling');
+        }
+
+        // Poll for up to 30 seconds
+        const pollStartTime = Date.now();
+        const pollTimeout = 30000; // 30 seconds
+        const pollInterval = 1500; // 1.5 seconds
+        
+        while (Date.now() - pollStartTime < pollTimeout) {
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
+          
+          console.log('🔄 Polling Verizon API...');
+          const pollResponse = await fetch('https://fwa.spry.network/api/fwa-check', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              request_id: requestId
+            })
+          });
+
+          if (!pollResponse.ok) {
+            console.error('🔥 Polling request failed:', pollResponse.status);
+            break;
+          }
+
+          const pollData = await pollResponse.json();
+          console.log('🔄 Poll response:', pollData);
+
+          if (pollData.status === 'complete') {
+            finalResults = pollData;
+            console.log('✅ Polling completed with final result:', finalResults);
+            break;
+          }
+          
+          if (pollData.status === 'failed') {
+            throw new Error('Qualification check failed');
+          }
+        }
       }
 
-      if (!qualificationData || !qualificationData.success) {
-        console.error('❌ Edge function returned unsuccessful result:', qualificationData);
-        throw new Error(qualificationData?.error || 'Service check failed.');
-      }
-
-      console.log('📡 Edge function response:', qualificationData);
+      console.log('📡 Final qualification results:', finalResults);
       
       setQualificationProgress(80);
       
@@ -394,7 +448,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       setQualificationProgress(100);
 
       // Step 3: Handle final qualification result
-      if (qualificationData.qualified === true) {
+      if (finalResults.qualified === true) {
         console.log('✅ Qualification successful');
         setCurrentStatusMessage('Success!');
         
@@ -417,9 +471,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           qualified: true,
           qualificationResult: {
             qualified: true,
-            source: qualificationData.source || 'gis',
-            network_type: qualificationData.network_type,
-            minsignal: qualificationData.minsignal
+            source: 'verizon',
+            network_type: finalResults.network_type,
+            minsignal: null
           },
           step: 'qualification-success'
         });
@@ -436,9 +490,9 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           qualified: false,
           qualificationResult: {
             qualified: false,
-            source: qualificationData.source || 'gis',
-            network_type: qualificationData.network_type,
-            minsignal: qualificationData.minsignal
+            source: 'verizon',
+            network_type: finalResults.network_type,
+            minsignal: null
           }
         });
 
@@ -450,7 +504,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
       }
 
     } catch (error) {
-      console.error('🔥 Qualification check error:', error);
+      console.error('🔥 FWA API Error:', error);
       setIsCheckingQualification(false);
       setQualificationProgress(0);
       setCurrentStatusMessage('');
@@ -465,7 +519,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         qualified: false,
         qualificationResult: {
           qualified: false,
-          source: 'gis',
+          source: 'verizon',
           network_type: null,
           error: errorMessage
         }
