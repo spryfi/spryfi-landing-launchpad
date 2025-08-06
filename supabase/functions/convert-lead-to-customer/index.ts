@@ -202,8 +202,51 @@ serve(async (req) => {
       // Don't fail the conversion if email fails
     }
 
-    // The database trigger should automatically send the newcustomer@spryfi.net notification
-    console.log('🔔 STEP 21: Database trigger should automatically notify newcustomer@spryfi.net');
+    // Send staff notification with additional data
+    console.log('🔔 STEP 21: Sending staff notification with provisioning details...');
+    try {
+      // Get provisioning session data for SSID and passkey
+      const { data: provisioningData } = await supabase
+        .from('provisioning_sessions')
+        .select('ssid, passkey')
+        .eq('lead_id', leadId)
+        .single();
+
+      const notificationUrl = `${supabaseUrl}/functions/v1/notify-new-customer`;
+      const notificationPayload = {
+        first_name: customerData.firstName,
+        last_name: customerData.lastName,
+        email: customerData.email,
+        phone: customerData.phone,
+        address_line1: customerData.address,
+        address_line2: customerData.apartment,
+        city: customerData.city,
+        state: customerData.state,
+        zip_code: customerData.zipCode,
+        checkout_completed_at: new Date().toISOString(),
+        customer_id: customerId,
+        lead_id: leadId,
+        ssid: provisioningData?.ssid,
+        passkey: provisioningData?.passkey
+      };
+
+      const notificationResponse = await fetch(notificationUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        },
+        body: JSON.stringify(notificationPayload),
+      });
+
+      if (notificationResponse.ok) {
+        console.log("✅ Staff notification sent successfully");
+      } else {
+        console.error("❌ Failed to send staff notification:", await notificationResponse.text());
+      }
+    } catch (notificationError) {
+      console.error("❌ Error sending staff notification:", notificationError);
+    }
 
     const successResponse = {
       success: true,

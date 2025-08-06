@@ -52,32 +52,15 @@ serve(async (req) => {
     const totalPaid = customerData.activation_fee_paid + customerData.shipping_cost_paid;
 
     const emailContent = `
-Hi ${customerData.first_name},
+Hi ${customerData.first_name} ${customerData.last_name},
 
-Welcome to SpryFi Home Internet! Your onboarding is complete and we're excited to get you connected.
+🎉 Thanks for choosing SpryFi! Your order (ID: ${customerData.id}) is confirmed.
+• We're provisioning your service now and will whitelist your device shortly.
+• You'll receive a "Connected!" confirmation when your internet is live.
+• Need help? Reply to this email or call 1-800-SPRYFI.
 
-**Order Summary:**
-- Device: WiFi 7 AI Router
-- Activation Fee: $${originalActivationFee.toFixed(2)}
-- Activation Fee Discount: -$${activationDiscount.toFixed(2)}
-- Shipping: $${customerData.shipping_cost_paid.toFixed(2)}
-- Total Paid: $${totalPaid.toFixed(2)}
-
-Your payment has been received. Your equipment will ship soon. You can manage your account anytime at our customer portal.
-
-**Have questions or need help?**
-Reach us at support@spryfi.net or simply reply to this email.
-
-Thank you for choosing SpryFi!
-
-— The SpryFi Home Internet Team
-
-**Order Details:**
-- Customer ID: ${customerData.id}
-- Order Date: ${new Date(customerData.checkout_completed_at).toLocaleDateString()}
-- Payment Reference: ${customerData.created_from_payment_id}
-
-[Terms of Service: https://spryfi.net/terms]
+Welcome aboard!
+The SpryFi Team
     `;
 
     // Send email via SendGrid
@@ -97,7 +80,7 @@ Thank you for choosing SpryFi!
           email: "onboarding@spryfi.net"
         }
       ],
-      subject: "Welcome to SpryFi Home Internet – Your Order Confirmation",
+      subject: "Welcome to SpryFi – Your Internet Is On The Way!",
       content: [
         {
           type: "text/plain",
