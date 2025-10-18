@@ -24,13 +24,15 @@ export const Footer = () => {
               </div>
               <div className="flex items-center">
                 <Mail className="w-5 h-5 mr-3 text-blue-400" />
-                <a href="mailto:support@spryfi.net" className="text-gray-300 hover:text-white transition-colors">
-                  support@spryfi.net
+                <a href="mailto:support@sprywireless.com" className="text-gray-300 hover:text-white transition-colors">
+                  support@sprywireless.com
                 </a>
               </div>
               <div className="flex items-center">
                 <Phone className="w-5 h-5 mr-3 text-blue-400" />
-                <span className="text-gray-300">1-800-SPRYFI-1</span>
+                <a href="tel:+15127297797" className="text-gray-300 hover:text-white transition-colors">
+                  1-512-729-7797
+                </a>
               </div>
             </div>
           </div>
