@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutState } from '../CheckoutModal';
@@ -13,6 +13,7 @@ interface PlanSelectionProps {
 export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState, onPlanSelected }) => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(state.preselectedPlan || null);
   const [loading, setLoading] = useState(false);
+  const nextButtonRef = useRef<HTMLDivElement>(null);
 
   // Auto-select preselected plan on component mount
   useEffect(() => {
@@ -35,6 +36,11 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
     
     setSelectedPlan(planType);
     console.log('Selected plan:', planType);
+    
+    // Scroll to show the Next button
+    setTimeout(() => {
+      nextButtonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
     
     // Check if state actually updated
     setTimeout(() => {
@@ -196,9 +202,11 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
           <div key={plan.id} className="plan-card-wrapper group relative inline-block overflow-visible">
             <div className="absolute top-1 left-1 w-full h-full rounded-2xl bg-gray-50 shadow-md transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-lg"></div>
             <div
-              className={`relative cursor-pointer rounded-2xl p-6 transition-transform duration-200 ease-out bg-gradient-to-br from-blue-700 to-blue-600 text-white shadow-lg group-hover:shadow-2xl group-hover:-translate-y-1 ${
+              className={`relative cursor-pointer rounded-2xl p-6 transition-all duration-300 ease-out bg-gradient-to-br from-blue-700 to-blue-600 text-white shadow-lg group-hover:shadow-2xl group-hover:-translate-y-1 ${
                 selectedPlan === plan.id
-                  ? 'ring-4 ring-white'
+                  ? 'ring-4 ring-green-500 shadow-[0_0_30px_rgba(34,197,94,0.5)] animate-pulse'
+                  : selectedPlan && selectedPlan !== plan.id
+                  ? 'opacity-50 blur-[1px]'
                   : 'ring-2 ring-transparent'
               }`}
               onClick={() => !loading && handlePlanSelect(plan.id)}
@@ -233,8 +241,10 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
                 <div className="text-sm text-white/75">
                   Billed monthly starting at activation
                 </div>
-                {selectedPlan === plan.id && loading && (
-                  <div className="text-white">Selecting...</div>
+                {selectedPlan === plan.id && (
+                  <div className="text-green-300 font-semibold flex items-center">
+                    <span className="mr-2">✓</span> Selected
+                  </div>
                 )}
               </div>
             </div>
@@ -250,7 +260,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
         </div>
       </div>
 
-      <div className="mt-8">
+      <div ref={nextButtonRef} className="mt-8">
         <Button
           onClick={handleContinue}
           variant="default"
