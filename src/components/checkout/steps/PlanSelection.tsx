@@ -165,7 +165,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
             <div
               className={`relative cursor-pointer rounded-2xl p-6 transition-all duration-300 ease-out bg-gradient-to-br from-blue-700 to-blue-600 text-white shadow-lg group-hover:shadow-2xl group-hover:-translate-y-1 ${
                 selectedPlan === plan.id
-                  ? 'ring-4 ring-green-500 shadow-[0_0_30px_rgba(34,197,94,0.5)] animate-pulse'
+                  ? 'ring-4 ring-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]'
                   : selectedPlan && selectedPlan !== plan.id
                   ? 'opacity-50 blur-[1px]'
                   : 'ring-2 ring-transparent'
