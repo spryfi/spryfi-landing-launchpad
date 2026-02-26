@@ -20,7 +20,7 @@ interface CoverageData {
   serviceable: boolean;
 }
 
-export const VerizonService = () => {
+export const ServicePlans = () => {
   const navigate = useNavigate();
   const [coverageData, setCoverageData] = useState<CoverageData | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -47,8 +47,8 @@ export const VerizonService = () => {
       "qualification_result",
       JSON.stringify({
         qualified: true,
-        network_type: "verizon",
-        provider: "verizon",
+        network_type: "spryfi",
+        provider: "spryfi",
       })
     );
     setShowCheckout(true);
@@ -120,7 +120,7 @@ export const VerizonService = () => {
           You're covered!
         </h1>
         <p className="text-lg text-blue-100 mb-2 text-center max-w-lg">
-          Your address is serviceable through our Verizon 5G partnership — same great SpryFi experience, powered by Verizon.
+          Your address qualifies for SpryFi Home Internet — fast, reliable, and truly unlimited.
         </p>
 
         {/* Address */}
@@ -200,7 +200,7 @@ export const VerizonService = () => {
         {/* Trust */}
         <div className="grid grid-cols-3 gap-4 max-w-md w-full mb-8">
           {[
-            { icon: "📡", label: "Verizon 5G" },
+            { icon: "📡", label: "5G network" },
             { icon: "🔒", label: "No contracts" },
             { icon: "📦", label: "Free router" },
           ].map((item) => (
@@ -241,8 +241,8 @@ export const VerizonService = () => {
             },
             qualificationResult: {
               qualified: true,
-              source: "verizon",
-              network_type: "verizon",
+              source: "spryfi",
+              network_type: "spryfi",
             },
           }}
         />

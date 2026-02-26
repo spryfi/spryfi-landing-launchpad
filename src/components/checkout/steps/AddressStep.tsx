@@ -471,7 +471,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           qualified: true,
           qualificationResult: {
             qualified: true,
-            source: 'verizon',
+            source: 'spryfi',
             network_type: finalResults.network_type,
             minsignal: null
           },
@@ -490,7 +490,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
           qualified: false,
           qualificationResult: {
             qualified: false,
-            source: 'verizon',
+            source: 'spryfi',
             network_type: finalResults.network_type,
             minsignal: null
           }
@@ -519,7 +519,7 @@ export const AddressStep: React.FC<AddressStepProps> = ({ state, updateState }) 
         qualified: false,
         qualificationResult: {
           qualified: false,
-          source: 'verizon',
+          source: 'spryfi',
           network_type: null,
           error: errorMessage
         }

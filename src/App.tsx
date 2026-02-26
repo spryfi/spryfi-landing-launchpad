@@ -12,7 +12,7 @@ import { Plans } from "./pages/Plans";
 import { RouterSetup } from "./pages/RouterSetup";
 import Checkout from "./pages/Checkout";
 import { SpryFiService } from "./pages/SpryFiService";
-import { VerizonService } from "./pages/VerizonService";
+import { ServicePlans } from "./pages/ServicePlans";
 import { NotServiceable } from "./pages/NotServiceable";
 
 const queryClient = new QueryClient();
@@ -30,7 +30,7 @@ const App = () => (
           <Route path="/router-setup" element={<RouterSetup />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/spryfi-service" element={<SpryFiService />} />
-          <Route path="/verizon-service" element={<VerizonService />} />
+          <Route path="/service-plans" element={<ServicePlans />} />
           <Route path="/not-serviceable" element={<NotServiceable />} />
           <Route path="/loyalty-savings" element={<LoyaltySavings />} />
           <Route path="/loyalty-terms" element={<LoyaltyTerms />} />

@@ -37,7 +37,7 @@ export const QualificationSuccess: React.FC<QualificationSuccessProps> = ({ stat
   // Determine internal qualification code based on source
   const getQualificationCode = () => {
     const source = state.qualificationResult?.source;
-    if (source === 'verizon') return 'verizon-api';
+    if (source === 'spryfi' || source === 'verizon') return 'qualified';
     return '';
   };
 
