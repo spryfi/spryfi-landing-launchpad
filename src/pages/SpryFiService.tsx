@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
-import { CheckoutModal } from "@/components/checkout/CheckoutModal";
+import { DirectCheckoutModal } from "@/components/checkout/DirectCheckoutModal";
 
 interface CoverageData {
   address: {
@@ -41,14 +41,6 @@ export const SpryFiService = () => {
   if (!coverageData) return null;
 
   const handleGetStarted = () => {
-    sessionStorage.setItem(
-      "qualification_result",
-      JSON.stringify({
-        qualified: true,
-        network_type: "spryfi",
-        provider: "spryfi",
-      })
-    );
     setShowCheckout(true);
   };
 
@@ -115,9 +107,9 @@ export const SpryFiService = () => {
             {[
               'Truly unlimited — no data caps, ever',
               'No contracts, cancel anytime',
-              'WiFi router included free',
-              'No equipment or activation fees',
-              'Simple setup — plug in and go',
+              'Professional installation included',
+              'All equipment configured on-site',
+              'One-time $69 installation fee',
               '14-day money-back guarantee',
             ].map((feature, i) => (
               <div key={i} className="flex items-start gap-3">
@@ -138,9 +130,9 @@ export const SpryFiService = () => {
         {/* Trust signals */}
         <div className="grid grid-cols-3 gap-4 max-w-md w-full mb-8">
           {[
-            { icon: '✨', label: 'Simple setup' },
+            { icon: '🔧', label: 'Pro install' },
             { icon: '🔒', label: 'No contracts' },
-            { icon: '📦', label: 'Free router' },
+            { icon: '💰', label: '$69 setup' },
           ].map((item) => (
             <div key={item.label} className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center border border-white/20">
               <div className="text-xl mb-0.5">{item.icon}</div>
@@ -158,29 +150,20 @@ export const SpryFiService = () => {
       </div>
 
       {showCheckout && (
-        <CheckoutModal
+        <DirectCheckoutModal
           isOpen={showCheckout}
           onClose={() => setShowCheckout(false)}
-          qualificationData={{
-            qualified: true,
-            address: {
-              addressLine1: coverageData.address.addressLine1,
-              addressLine2: coverageData.address.addressLine2 || '',
-              city: coverageData.address.city,
-              state: coverageData.address.state,
-              zipCode: coverageData.address.zipCode,
-            },
-            contact: {
-              firstName: coverageData.contact.firstName,
-              lastName: coverageData.contact.lastName,
-              email: coverageData.contact.email,
-              phone: '',
-            },
-            qualificationResult: {
-              qualified: true,
-              source: 'spryfi',
-              network_type: 'spryfi',
-            },
+          address={{
+            addressLine1: coverageData.address.addressLine1,
+            addressLine2: coverageData.address.addressLine2 || '',
+            city: coverageData.address.city,
+            state: coverageData.address.state,
+            zipCode: coverageData.address.zipCode,
+          }}
+          contact={{
+            firstName: coverageData.contact.firstName,
+            lastName: coverageData.contact.lastName,
+            email: coverageData.contact.email,
           }}
         />
       )}
