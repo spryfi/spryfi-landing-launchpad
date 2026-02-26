@@ -16,6 +16,7 @@ interface InstallationLead {
   city: string;
   state: string;
   zipCode: string;
+  managedRouter?: boolean;
 }
 
 serve(async (req) => {
@@ -60,6 +61,8 @@ serve(async (req) => {
   <tr><td style="padding:6px 12px;font-weight:bold;border-bottom:1px solid #eee;">Phone</td><td style="padding:6px 12px;border-bottom:1px solid #eee;"><a href="tel:${data.phone}">${data.phone}</a></td></tr>
   <tr><td style="padding:6px 12px;font-weight:bold;border-bottom:1px solid #eee;">Service Address</td><td style="padding:6px 12px;border-bottom:1px solid #eee;">${fullAddress}</td></tr>
   <tr><td style="padding:6px 12px;font-weight:bold;border-bottom:1px solid #eee;">Plan</td><td style="padding:6px 12px;border-bottom:1px solid #eee;">SpryFi Home — $89.99/mo</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:bold;border-bottom:1px solid #eee;">Managed Router</td><td style="padding:6px 12px;border-bottom:1px solid #eee;">${data.managedRouter ? '✅ Yes (+$8/mo)' : '❌ No'}</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:bold;border-bottom:1px solid #eee;">Monthly Total</td><td style="padding:6px 12px;border-bottom:1px solid #eee;">${data.managedRouter ? '$97.99/mo' : '$89.99/mo'}</td></tr>
   <tr><td style="padding:6px 12px;font-weight:bold;border-bottom:1px solid #eee;">Paid</td><td style="padding:6px 12px;border-bottom:1px solid #eee;">$69.00 installation fee</td></tr>
   <tr><td style="padding:6px 12px;font-weight:bold;">Submitted</td><td style="padding:6px 12px;">${now}</td></tr>
 </table>
@@ -77,6 +80,8 @@ Email:           ${data.email}
 Phone:           ${data.phone}
 Service Address: ${fullAddress}
 Plan:            SpryFi Home — $89.99/mo
+Managed Router:  ${data.managedRouter ? 'Yes (+$8/mo)' : 'No'}
+Monthly Total:   ${data.managedRouter ? '$97.99/mo' : '$89.99/mo'}
 Paid:            $69.00 installation fee
 Submitted:       ${now}
 

@@ -75,7 +75,7 @@ export const SpryFiService = () => {
           Great news! SpryFi is<br />available at your address
         </h1>
         <p className="text-lg text-blue-100 mb-2 text-center max-w-lg">
-          You qualify for our direct SpryFi network — the best price we offer.
+          You qualify for our direct SpryFi network — faster and less expensive than Starlink or ViaSat, with zero data limits.
         </p>
 
         {/* Address */}
@@ -103,12 +103,12 @@ export const SpryFiService = () => {
             <p className="text-sm text-gray-500 mt-2">Unlimited home internet</p>
           </div>
 
-          <div className="space-y-3 mb-8">
+          <div className="space-y-3 mb-6">
             {[
               'Truly unlimited — no data caps, ever',
               'No contracts, cancel anytime',
-              'Professional installation included',
-              'All equipment configured on-site',
+              'Professional on-site installation',
+              'All equipment configured & tested',
               'One-time $69 installation fee',
               '14-day money-back guarantee',
             ].map((feature, i) => (
@@ -117,6 +117,17 @@ export const SpryFiService = () => {
                 <span className="text-sm text-gray-700">{feature}</span>
               </div>
             ))}
+          </div>
+
+          {/* Managed Router Add-on */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-semibold text-blue-800">Managed WiFi Router</p>
+              <span className="text-sm font-bold text-blue-700">+$8/mo</span>
+            </div>
+            <p className="text-xs text-gray-600">
+              We provide and fully manage your WiFi router — unlimited support included. The #1 issue people have is their router; let us handle it.
+            </p>
           </div>
 
           <button
@@ -128,10 +139,11 @@ export const SpryFiService = () => {
         </div>
 
         {/* Trust signals */}
-        <div className="grid grid-cols-3 gap-4 max-w-md w-full mb-8">
+        <div className="grid grid-cols-4 gap-3 max-w-md w-full mb-8">
           {[
             { icon: '🔧', label: 'Pro install' },
             { icon: '🔒', label: 'No contracts' },
+            { icon: '📶', label: 'Managed WiFi' },
             { icon: '💰', label: '$69 setup' },
           ].map((item) => (
             <div key={item.label} className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center border border-white/20">

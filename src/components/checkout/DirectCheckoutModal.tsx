@@ -8,7 +8,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Check, CreditCard, Lock, Shield, MapPin, Calendar, ArrowLeft } from 'lucide-react';
+import { Check, CreditCard, Lock, Shield, MapPin, Calendar, ArrowLeft, Wifi } from 'lucide-react';
 
 const stripePromise = loadStripe('pk_live_YrdEVqxsPoHuhkpq74UbqqjM');
 
@@ -40,6 +40,7 @@ function InstallPaymentForm({
   setIsProcessing,
   leadId,
   customerData,
+  addRouter,
 }: {
   onSuccess: (paymentIntentId: string) => void;
   onError: (msg: string) => void;
@@ -56,6 +57,7 @@ function InstallPaymentForm({
     state: string;
     zipCode: string;
   };
+  addRouter: boolean;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -123,6 +125,7 @@ function InstallPaymentForm({
               city: customerData.city,
               state: customerData.state,
               zipCode: customerData.zipCode,
+              managedRouter: addRouter,
             },
           });
         } catch (emailErr) {
@@ -164,9 +167,23 @@ function InstallPaymentForm({
           <span>Total Due Today</span>
           <span>$69.00</span>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Monthly service of $89.99/mo begins after installation &amp; activation.
-        </p>
+        <div className="mt-2 pt-2 border-t border-dashed space-y-1">
+          <p className="text-xs text-gray-500 font-medium">Monthly charges after activation:</p>
+          <div className="flex justify-between text-xs text-gray-600">
+            <span>SpryFi Home</span>
+            <span>$89.99/mo</span>
+          </div>
+          {addRouter && (
+            <div className="flex justify-between text-xs text-gray-600">
+              <span>Managed WiFi Router</span>
+              <span>$8.00/mo</span>
+            </div>
+          )}
+          <div className="flex justify-between text-xs font-semibold text-gray-800">
+            <span>Monthly Total</span>
+            <span>{addRouter ? '$97.99/mo' : '$89.99/mo'}</span>
+          </div>
+        </div>
       </div>
 
       {/* Stripe card element */}
@@ -194,7 +211,7 @@ function InstallPaymentForm({
           <Shield className="w-4 h-4 flex-shrink-0 text-green-600 mt-0.5" />
           <div>
             <p className="font-medium">No monthly charges until activation</p>
-            <p className="text-xs mt-0.5">Your $89.99/mo plan begins only after we install and activate your service.</p>
+            <p className="text-xs mt-0.5">Your {addRouter ? '$97.99' : '$89.99'}/mo plan begins only after we install and activate your service.</p>
           </div>
         </div>
       </div>
@@ -212,6 +229,7 @@ export const DirectCheckoutModal: React.FC<DirectCheckoutProps> = ({ isOpen, onC
   const [leadId, setLeadId] = useState<string | null>(null);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [addRouter, setAddRouter] = useState(false);
   const { toast } = useToast();
 
   // Editable contact fields
@@ -223,6 +241,7 @@ export const DirectCheckoutModal: React.FC<DirectCheckoutProps> = ({ isOpen, onC
       setStep('confirm');
       setPaymentId(null);
       setIsProcessing(false);
+      setAddRouter(false);
       setPhone(contact.phone || '');
       // Create or update lead
       createLead();
@@ -339,6 +358,7 @@ export const DirectCheckoutModal: React.FC<DirectCheckoutProps> = ({ isOpen, onC
             'All equipment configured & tested',
             'Truly unlimited — no data caps, ever',
             'No contracts, cancel anytime',
+            'Faster & cheaper than Starlink or ViaSat',
             '14-day money-back guarantee',
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-2 text-sm text-gray-700">
@@ -349,11 +369,59 @@ export const DirectCheckoutModal: React.FC<DirectCheckoutProps> = ({ isOpen, onC
         </div>
       </div>
 
+      {/* Managed Router Add-on */}
+      <div
+        onClick={() => setAddRouter(!addRouter)}
+        className={`cursor-pointer p-4 rounded-xl border-2 transition-all ${
+          addRouter
+            ? 'border-blue-500 bg-blue-50 shadow-sm'
+            : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+              addRouter ? 'bg-blue-500 border-blue-500' : 'border-gray-300 bg-white'
+            }`}>
+              {addRouter && <Check className="w-3 h-3 text-white" />}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                <Wifi className="w-4 h-4 text-blue-500" /> Managed WiFi Router
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                We provide & fully manage your router — unlimited WiFi support included
+              </p>
+            </div>
+          </div>
+          <span className="text-sm font-bold text-blue-700 whitespace-nowrap">+$8/mo</span>
+        </div>
+      </div>
+
       {/* Installation fee callout */}
       <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
         <Calendar className="w-4 h-4 flex-shrink-0 text-amber-600" />
         <span>One-time <strong>$69 installation fee</strong> — we'll schedule a time that works for you.</span>
       </div>
+
+      {/* Monthly summary */}
+      {addRouter && (
+        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+          <div className="flex justify-between text-gray-600">
+            <span>SpryFi Home</span>
+            <span>$89.99/mo</span>
+          </div>
+          <div className="flex justify-between text-gray-600">
+            <span>Managed WiFi Router</span>
+            <span>$8.00/mo</span>
+          </div>
+          <hr className="my-1.5" />
+          <div className="flex justify-between font-semibold text-gray-900">
+            <span>Monthly Total</span>
+            <span>$97.99/mo</span>
+          </div>
+        </div>
+      )}
 
       <Button
         onClick={() => setStep('payment')}
@@ -381,6 +449,7 @@ export const DirectCheckoutModal: React.FC<DirectCheckoutProps> = ({ isOpen, onC
           setIsProcessing={setIsProcessing}
           leadId={leadId}
           customerData={customerData}
+          addRouter={addRouter}
         />
       </Elements>
 
@@ -410,6 +479,12 @@ export const DirectCheckoutModal: React.FC<DirectCheckoutProps> = ({ isOpen, onC
             <span className="text-gray-500">Plan</span>
             <span className="font-semibold">SpryFi Home — $89.99/mo</span>
           </div>
+          {addRouter && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">Managed WiFi Router</span>
+              <span className="font-semibold">+$8.00/mo</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-gray-500">Installation Fee</span>
             <span className="font-semibold">$69.00 (paid)</span>
