@@ -11,6 +11,9 @@ import { AddressSuccess } from "./pages/AddressSuccess";
 import { Plans } from "./pages/Plans";
 import { RouterSetup } from "./pages/RouterSetup";
 import Checkout from "./pages/Checkout";
+import { SpryFiService } from "./pages/SpryFiService";
+import { VerizonService } from "./pages/VerizonService";
+import { NotServiceable } from "./pages/NotServiceable";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +29,9 @@ const App = () => (
           <Route path="/plans" element={<Plans />} />
           <Route path="/router-setup" element={<RouterSetup />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/spryfi-service" element={<SpryFiService />} />
+          <Route path="/verizon-service" element={<VerizonService />} />
+          <Route path="/not-serviceable" element={<NotServiceable />} />
           <Route path="/loyalty-savings" element={<LoyaltySavings />} />
           <Route path="/loyalty-terms" element={<LoyaltyTerms />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

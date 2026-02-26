@@ -59,57 +59,34 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
     setLoading(true);
     
     try {
-      // Save plan selection to database with special pricing logic
+      // Save plan selection to database
       const getPlanData = (planType: string) => {
         switch (planType) {
-          case 'home-10':
-            return {
-              plan_selected: 'SpryFi Home (Special-10)',
-              plan_code: 'home-10',
-              plan_price: 89.95,
-              plan_speed: '100+ Mbps',
-              special_pricing: true,
-              locked_price: '$89.95/mo',
-              pricing_note: 'LOCKED FOR LIFE - Special $10 off forever'
-            };
-          case 'premium-10':
-            return {
-              plan_selected: 'SpryFi Premium (Special-10)',
-              plan_code: 'premium-10',
-              plan_price: 129.95,
-              plan_speed: '200+ Mbps',
-              special_pricing: true,
-              locked_price: '$129.95/mo',
-              pricing_note: 'LOCKED FOR LIFE - Special $10 off forever'
-            };
           case 'spryfi-home':
             return {
               plan_selected: 'SpryFi Home',
               plan_code: 'spryfi-home',
-              plan_price: 99.95,
-              plan_speed: '100+ Mbps',
+              plan_price: 89.00,
               special_pricing: false,
-              locked_price: '$99.95/mo',
+              locked_price: '$89/mo',
               pricing_note: 'Standard pricing'
             };
           case 'spryfi-home-premium':
             return {
-              plan_selected: 'SpryFi Home Premium',
+              plan_selected: 'SpryFi Home (Larger Household)',
               plan_code: 'spryfi-home-premium',
-              plan_price: 139.95,
-              plan_speed: '200+ Mbps',
+              plan_price: 129.00,
               special_pricing: false,
-              locked_price: '$139.95/mo',
+              locked_price: '$129/mo',
               pricing_note: 'Standard pricing'
             };
           default:
             return {
               plan_selected: 'SpryFi Home',
               plan_code: 'spryfi-home',
-              plan_price: 99.95,
-              plan_speed: '100+ Mbps',
+              plan_price: 89.00,
               special_pricing: false,
-              locked_price: '$99.95/mo',
+              locked_price: '$89/mo',
               pricing_note: 'Standard pricing'
             };
         }
@@ -153,31 +130,20 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
     }
   };
 
-  // Determine if showing special pricing plans
-  const isSpecialPricing = selectedPlan === 'home-10' || selectedPlan === 'premium-10';
-  const essentialPlanId = isSpecialPricing ? 'home-10' : 'spryfi-home';
-  const premiumPlanId = isSpecialPricing ? 'premium-10' : 'spryfi-home-premium';
-
   const plans = [
     {
-      id: essentialPlanId,
-      name: "SpryFi Essential",
-      price: isSpecialPricing ? "$89.95/mo" : "$99.95/mo",
-      originalPrice: isSpecialPricing ? "$99.95/mo" : null,
-      speed: "100+ Mbps",
-      description: "Perfect for streaming, video calls, and everyday work-from-home",
-      specialPricing: isSpecialPricing,
-      lockedNote: isSpecialPricing ? "LOCKED FOR LIFE" : null
+      id: 'spryfi-home',
+      name: "SpryFi Home",
+      price: "$89/mo",
+      subtitle: "Great for 1-3 people",
+      description: "Perfect for everyday browsing, streaming, and working from home.",
     },
     {
-      id: premiumPlanId,
-      name: "SpryFi Premium", 
-      price: isSpecialPricing ? "$129.95/mo" : "$139.95/mo",
-      originalPrice: isSpecialPricing ? "$139.95/mo" : null,
-      speed: "200+ Mbps",
-      description: "Priority routing, white-glove support, and blazing performance",
-      specialPricing: isSpecialPricing,
-      lockedNote: isSpecialPricing ? "LOCKED FOR LIFE" : null
+      id: 'spryfi-home-premium',
+      name: "SpryFi Home",
+      price: "$129/mo",
+      subtitle: "Built for bigger households",
+      description: "More bandwidth for families and homes with lots of devices.",
     }
   ];
 
@@ -185,16 +151,11 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
     <div className="p-8" data-testid="plan-selection">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          {isSpecialPricing ? "Confirm Your Special Pricing Plan" : "Pick Your Plan — No Contracts, No Surprises"}
+          Pick Your Plan
         </h2>
         <p className="text-gray-600">
-          {isSpecialPricing ? "Your forever locked-in pricing is ready to activate" : "Choose the speed that works for your home"}
+          No contracts, no surprises. Cancel anytime.
         </p>
-        {isSpecialPricing && (
-          <div className="mt-4 px-4 py-2 bg-red-100 text-red-800 rounded-lg font-semibold text-sm inline-block">
-            🔥 FLASH SALE PRICING - $10 OFF FOREVER 🔥
-          </div>
-        )}
       </div>
 
       <div className="grid gap-6 max-w-2xl mx-auto">
@@ -214,18 +175,9 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                  {plan.specialPricing && (
-                    <div className="text-xs text-yellow-200 font-semibold mt-1">
-                      {plan.lockedNote}
-                    </div>
-                  )}
+                  <div className="text-sm text-white/75 mt-0.5">{plan.subtitle}</div>
                 </div>
                 <div className="text-right">
-                  {plan.specialPricing && plan.originalPrice && (
-                    <div className="text-sm text-white/50 line-through">
-                      {plan.originalPrice}
-                    </div>
-                  )}
                   <div className="text-2xl font-bold text-white">
                     {plan.price}
                   </div>
@@ -235,7 +187,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ state, updateState
                 </div>
               </div>
               <p className="text-white/90 mb-4">
-                Up to {plan.speed} • {plan.description}
+                {plan.description}
               </p>
               <div className="flex justify-between items-center">
                 <div className="text-sm text-white/75">
