@@ -16,7 +16,7 @@ interface CoverageData {
     firstName: string;
     lastName: string;
     email: string;
-    phone?: string;
+    phone: string;
   };
   provider: string;
   serviceable: boolean;
@@ -27,7 +27,6 @@ export const SpryFiService = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [coverageData, setCoverageData] = useState<CoverageData | null>(null);
-  const [phone, setPhone] = useState("");
   const [contactPreference, setContactPreference] = useState<"call" | "text">("call");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,9 +39,6 @@ export const SpryFiService = () => {
     try {
       const data = JSON.parse(raw);
       setCoverageData(data);
-      if (data.contact?.phone) {
-        setPhone(data.contact.phone);
-      }
     } catch {
       navigate("/");
     }
@@ -51,15 +47,6 @@ export const SpryFiService = () => {
   if (!coverageData) return null;
 
   const handleSubmit = async () => {
-    if (!phone.trim()) {
-      toast({
-        title: "Phone required",
-        description: "Please enter your phone number so we can contact you.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       // Send notification email to info@sprywireless.net
@@ -68,7 +55,7 @@ export const SpryFiService = () => {
           firstName: coverageData.contact.firstName,
           lastName: coverageData.contact.lastName,
           email: coverageData.contact.email,
-          phone: phone,
+          phone: coverageData.contact.phone,
           addressLine1: coverageData.address.addressLine1,
           addressLine2: coverageData.address.addressLine2 || "",
           city: coverageData.address.city,
@@ -83,7 +70,6 @@ export const SpryFiService = () => {
       if (coverageData.leadId) {
         try {
           await supabase.from("leads_fresh").update({
-            phone: phone,
             contact_preference: contactPreference,
             status: "rrk_submitted",
             updated_at: new Date().toISOString(),
@@ -187,17 +173,6 @@ export const SpryFiService = () => {
           <hr className="my-6" />
 
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your phone number</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="(512) 555-1234"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-              />
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">How should we contact you?</label>
               <div className="grid grid-cols-2 gap-3">
