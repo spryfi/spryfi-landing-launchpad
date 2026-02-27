@@ -30,7 +30,6 @@ export const SpryFiService = () => {
   const [phone, setPhone] = useState("");
   const [contactPreference, setContactPreference] = useState<"call" | "text">("call");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("coverage_result");
@@ -94,7 +93,15 @@ export const SpryFiService = () => {
         }
       }
 
-      setSubmitted(true);
+      // Show thank you toast and redirect to home
+      toast({
+        title: "Thank you!",
+        description: `We'll ${contactPreference === "call" ? "call" : "text"} you within 24 hours to schedule your installation.`,
+      });
+      
+      // Clear session and redirect home
+      sessionStorage.removeItem("coverage_result");
+      navigate("/");
     } catch (err: any) {
       console.error("Submit error:", err);
       toast({
@@ -107,72 +114,7 @@ export const SpryFiService = () => {
     }
   };
 
-  // ─── Thank You State (after submit) ───
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 text-white relative overflow-hidden">
-        <div className="absolute top-[-120px] right-[-120px] w-[400px] h-[400px] rounded-full border border-white/5 pointer-events-none" />
-        <div className="absolute bottom-[-80px] left-[-80px] w-[300px] h-[300px] rounded-full border border-white/5 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-16 max-w-3xl mx-auto">
-          <div className="text-center mb-2">
-            <div className="text-white text-4xl font-bold tracking-tight">SpryFi</div>
-            <div className="text-blue-200 text-sm font-medium mt-1">Internet that just works</div>
-          </div>
-
-          <div className="my-6">
-            <div className="w-20 h-20 mx-auto bg-green-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.4)]">
-              <Check className="w-10 h-10 text-white" />
-            </div>
-          </div>
-
-          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center leading-tight">
-            Thank You!
-          </h1>
-          <p className="text-lg text-blue-100 mb-8 text-center max-w-lg">
-            We've received your information and will contact you within the next 24 hours to schedule your installation.
-          </p>
-
-          <div className="bg-white rounded-2xl shadow-2xl p-8 text-gray-900 max-w-md w-full mb-8">
-            <h2 className="text-xl font-bold mb-4 text-center">Want to get started sooner?</h2>
-            <p className="text-gray-600 text-center mb-6">
-              Give us a call to schedule your installation right away!
-            </p>
-
-            <div className="space-y-4">
-              <a
-                href="tel:512-656-8732"
-                className="flex items-center justify-center gap-3 w-full py-4 bg-[#0047AB] hover:bg-[#0060D4] text-white font-bold text-lg rounded-xl transition-all shadow-lg hover:shadow-xl"
-              >
-                <Phone className="w-5 h-5" />
-                Call (512) 656-8732
-              </a>
-
-              <div className="text-center">
-                <p className="text-sm text-gray-500 mb-2">Or email us at:</p>
-                <a
-                  href="mailto:info@sprywireless.net"
-                  className="text-[#0047AB] font-semibold hover:underline flex items-center justify-center gap-2"
-                >
-                  <Mail className="w-4 h-4" />
-                  info@sprywireless.net
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => navigate("/")}
-            className="text-blue-200 hover:text-white text-sm underline transition"
-          >
-            Back to home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Initial State (collect phone & preference) ───
+  // ─── Collect phone & preference ───
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 text-white relative overflow-hidden">
       <div className="absolute top-[-120px] right-[-120px] w-[400px] h-[400px] rounded-full border border-white/5 pointer-events-none" />
