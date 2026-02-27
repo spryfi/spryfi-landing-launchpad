@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check } from "lucide-react";
-import { DirectCheckoutModal } from "@/components/checkout/DirectCheckoutModal";
+import { Check, Phone, MessageSquare, Mail, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface CoverageData {
   address: {
@@ -15,15 +16,21 @@ interface CoverageData {
     firstName: string;
     lastName: string;
     email: string;
+    phone?: string;
   };
   provider: string;
   serviceable: boolean;
+  leadId?: string;
 }
 
 export const SpryFiService = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [coverageData, setCoverageData] = useState<CoverageData | null>(null);
-  const [showCheckout, setShowCheckout] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [contactPreference, setContactPreference] = useState<"call" | "text">("call");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("coverage_result");
@@ -32,7 +39,11 @@ export const SpryFiService = () => {
       return;
     }
     try {
-      setCoverageData(JSON.parse(raw));
+      const data = JSON.parse(raw);
+      setCoverageData(data);
+      if (data.contact?.phone) {
+        setPhone(data.contact.phone);
+      }
     } catch {
       navigate("/");
     }
@@ -40,24 +51,139 @@ export const SpryFiService = () => {
 
   if (!coverageData) return null;
 
-  const handleGetStarted = () => {
-    setShowCheckout(true);
+  const handleSubmit = async () => {
+    if (!phone.trim()) {
+      toast({
+        title: "Phone required",
+        description: "Please enter your phone number so we can contact you.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Send notification email to info@sprywireless.net
+      await supabase.functions.invoke("notify-rrk-lead", {
+        body: {
+          firstName: coverageData.contact.firstName,
+          lastName: coverageData.contact.lastName,
+          email: coverageData.contact.email,
+          phone: phone,
+          addressLine1: coverageData.address.addressLine1,
+          addressLine2: coverageData.address.addressLine2 || "",
+          city: coverageData.address.city,
+          state: coverageData.address.state,
+          zipCode: coverageData.address.zipCode,
+          contactPreference: contactPreference,
+          leadId: coverageData.leadId || null,
+        },
+      });
+
+      // Update lead if we have an ID
+      if (coverageData.leadId) {
+        try {
+          await supabase.from("leads_fresh").update({
+            phone: phone,
+            contact_preference: contactPreference,
+            status: "rrk_submitted",
+            updated_at: new Date().toISOString(),
+          }).eq("id", coverageData.leadId);
+        } catch (err) {
+          console.error("Lead update failed (non-blocking):", err);
+        }
+      }
+
+      setSubmitted(true);
+    } catch (err: any) {
+      console.error("Submit error:", err);
+      toast({
+        title: "Something went wrong",
+        description: "Please try again or give us a call directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // ─── Thank You State (after submit) ───
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 text-white relative overflow-hidden">
+        <div className="absolute top-[-120px] right-[-120px] w-[400px] h-[400px] rounded-full border border-white/5 pointer-events-none" />
+        <div className="absolute bottom-[-80px] left-[-80px] w-[300px] h-[300px] rounded-full border border-white/5 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-16 max-w-3xl mx-auto">
+          <div className="text-center mb-2">
+            <div className="text-white text-4xl font-bold tracking-tight">SpryFi</div>
+            <div className="text-blue-200 text-sm font-medium mt-1">Internet that just works</div>
+          </div>
+
+          <div className="my-6">
+            <div className="w-20 h-20 mx-auto bg-green-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.4)]">
+              <Check className="w-10 h-10 text-white" />
+            </div>
+          </div>
+
+          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center leading-tight">
+            Thank You!
+          </h1>
+          <p className="text-lg text-blue-100 mb-8 text-center max-w-lg">
+            We've received your information and will contact you within the next 24 hours to schedule your installation.
+          </p>
+
+          <div className="bg-white rounded-2xl shadow-2xl p-8 text-gray-900 max-w-md w-full mb-8">
+            <h2 className="text-xl font-bold mb-4 text-center">Want to get started sooner?</h2>
+            <p className="text-gray-600 text-center mb-6">
+              Give us a call to schedule your installation right away!
+            </p>
+
+            <div className="space-y-4">
+              <a
+                href="tel:512-656-8732"
+                className="flex items-center justify-center gap-3 w-full py-4 bg-[#0047AB] hover:bg-[#0060D4] text-white font-bold text-lg rounded-xl transition-all shadow-lg hover:shadow-xl"
+              >
+                <Phone className="w-5 h-5" />
+                Call (512) 656-8732
+              </a>
+
+              <div className="text-center">
+                <p className="text-sm text-gray-500 mb-2">Or email us at:</p>
+                <a
+                  href="mailto:info@sprywireless.net"
+                  className="text-[#0047AB] font-semibold hover:underline flex items-center justify-center gap-2"
+                >
+                  <Mail className="w-4 h-4" />
+                  info@sprywireless.net
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigate("/")}
+            className="text-blue-200 hover:text-white text-sm underline transition"
+          >
+            Back to home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Initial State (collect phone & preference) ───
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-blue-500 text-white relative overflow-hidden">
-      {/* Decorative bg */}
       <div className="absolute top-[-120px] right-[-120px] w-[400px] h-[400px] rounded-full border border-white/5 pointer-events-none" />
       <div className="absolute bottom-[-80px] left-[-80px] w-[300px] h-[300px] rounded-full border border-white/5 pointer-events-none" />
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-16 max-w-3xl mx-auto">
-        {/* Branding */}
         <div className="text-center mb-2">
           <div className="text-white text-4xl font-bold tracking-tight">SpryFi</div>
           <div className="text-blue-200 text-sm font-medium mt-1">Internet that just works</div>
         </div>
 
-        {/* Success badge */}
         <div className="my-6">
           <div className="w-20 h-20 mx-auto bg-green-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.4)] relative">
             <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -78,7 +204,6 @@ export const SpryFiService = () => {
           You qualify for our direct SpryFi network — faster and less expensive than Starlink or ViaSat, with zero data limits.
         </p>
 
-        {/* Address */}
         {coverageData.address && (
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-8 text-center border border-white/20 max-w-md w-full">
             <p className="text-xs text-blue-200 mb-0.5">Your address</p>
@@ -92,12 +217,12 @@ export const SpryFiService = () => {
           </div>
         )}
 
-        {/* ─── Pricing Card ─── */}
+        {/* ─── Contact Form Card ─── */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 text-gray-900 max-w-md w-full mb-8">
           <div className="text-center mb-6">
             <p className="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-2">SpryFi Home</p>
             <div className="flex items-baseline justify-center gap-1">
-              <span className="text-6xl font-extrabold tracking-tight">$89.99</span>
+              <span className="text-5xl font-extrabold tracking-tight">$89.99</span>
               <span className="text-xl text-gray-400">/mo</span>
             </div>
             <p className="text-sm text-gray-500 mt-2">Unlimited home internet</p>
@@ -105,12 +230,10 @@ export const SpryFiService = () => {
 
           <div className="space-y-3 mb-6">
             {[
-              'Truly unlimited — no data caps, ever',
-              'No contracts, cancel anytime',
-              'Professional on-site installation',
-              'All equipment configured & tested',
-              'One-time $69 installation fee',
-              '14-day money-back guarantee',
+              "Truly unlimited — no data caps, ever",
+              "No contracts, cancel anytime",
+              "Professional on-site installation",
+              "14-day money-back guarantee",
             ].map((feature, i) => (
               <div key={i} className="flex items-start gap-3">
                 <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
@@ -119,66 +242,101 @@ export const SpryFiService = () => {
             ))}
           </div>
 
-          {/* Managed Router Add-on */}
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-sm font-semibold text-blue-800">Managed WiFi Router</p>
-              <span className="text-sm font-bold text-blue-700">+$8/mo</span>
+          <hr className="my-6" />
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Your phone number</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(512) 555-1234"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              />
             </div>
-            <p className="text-xs text-gray-600">
-              We provide and fully manage your WiFi router — unlimited support included. The #1 issue people have is their router; let us handle it.
-            </p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">How should we contact you?</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setContactPreference("call")}
+                  className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 transition ${
+                    contactPreference === "call"
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300"
+                  }`}
+                >
+                  <Phone className="w-4 h-4" />
+                  <span className="font-medium">Call me</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setContactPreference("text")}
+                  className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 transition ${
+                    contactPreference === "text"
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300"
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="font-medium">Text me</span>
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="w-full py-4 bg-[#0047AB] hover:bg-[#0060D4] disabled:bg-gray-400 text-white font-bold text-lg rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Get Scheduled"
+              )}
+            </button>
           </div>
 
-          <button
-            onClick={handleGetStarted}
-            className="w-full py-4 bg-[#0047AB] hover:bg-[#0060D4] text-white font-bold text-lg rounded-xl transition-all shadow-lg hover:shadow-xl"
-          >
-            Get Started
-          </button>
+          <p className="text-xs text-gray-500 text-center mt-4">
+            We'll contact you within 24 hours to schedule your installation.
+          </p>
         </div>
 
-        {/* Trust signals */}
-        <div className="grid grid-cols-4 gap-3 max-w-md w-full mb-8">
-          {[
-            { icon: '🔧', label: 'Pro install' },
-            { icon: '🔒', label: 'No contracts' },
-            { icon: '📶', label: 'Managed WiFi' },
-            { icon: '💰', label: '$69 setup' },
-          ].map((item) => (
-            <div key={item.label} className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center border border-white/20">
-              <div className="text-xl mb-0.5">{item.icon}</div>
-              <div className="text-xs font-medium text-blue-100">{item.label}</div>
-            </div>
-          ))}
+        {/* Contact info */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 max-w-md w-full mb-8 border border-white/20">
+          <p className="text-center text-blue-100 mb-4">
+            Want to schedule right now? Give us a call!
+          </p>
+          <div className="flex flex-col items-center gap-3">
+            <a
+              href="tel:512-656-8732"
+              className="flex items-center gap-2 text-white font-semibold hover:text-blue-200 transition"
+            >
+              <Phone className="w-5 h-5" />
+              (512) 656-8732
+            </a>
+            <a
+              href="mailto:info@sprywireless.net"
+              className="flex items-center gap-2 text-blue-200 hover:text-white transition"
+            >
+              <Mail className="w-4 h-4" />
+              info@sprywireless.net
+            </a>
+          </div>
         </div>
 
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate("/")}
           className="text-blue-200 hover:text-white text-sm underline transition"
         >
           Back to home
         </button>
       </div>
-
-      {showCheckout && (
-        <DirectCheckoutModal
-          isOpen={showCheckout}
-          onClose={() => setShowCheckout(false)}
-          address={{
-            addressLine1: coverageData.address.addressLine1,
-            addressLine2: coverageData.address.addressLine2 || '',
-            city: coverageData.address.city,
-            state: coverageData.address.state,
-            zipCode: coverageData.address.zipCode,
-          }}
-          contact={{
-            firstName: coverageData.contact.firstName,
-            lastName: coverageData.contact.lastName,
-            email: coverageData.contact.email,
-          }}
-        />
-      )}
     </div>
   );
 };

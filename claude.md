@@ -22,9 +22,16 @@ API internally queries SpryFi spatial coverage first, falls back to Verizon FWA 
 ### Three Outcome Pages
 | Route | Component | Provider | What shows |
 |---|---|---|---|
-| `/spryfi-service` | `SpryFiService.tsx` | `"spryfi"` | 1 plan: **$89.99/mo** (SpryFi Home) |
+| `/spryfi-service` | `SpryFiService.tsx` | `"spryfi"` | No Stripe checkout — collects phone + contact pref (call/text), sends RRK Lead email to info@sprywireless.net, shows thank you page with contact info |
 | `/verizon-service` | `VerizonService.tsx` | `"verizon"` | 2 plans: **$89/mo** + **$129/mo** (both "SpryFi Home") |
 | `/not-serviceable` | `NotServiceable.tsx` | `null` | "Not in your area yet" — notify me form |
+
+## SpryFi Direct (RRK) Flow
+For addresses that match the spatial query (SpryFi direct coverage):
+1. User lands on `/spryfi-service` after coverage check
+2. Page shows pricing ($89.99/mo) and collects: phone number + contact preference (call or text)
+3. On submit: edge function `notify-rrk-lead` sends email to **info@sprywireless.net** with subject **"RRK Lead"**
+4. Thank you page displays: "We'll contact you within 24 hours" + phone **(512) 656-8732** + email **info@sprywireless.net**
 
 ## Pricing Structure
 - **SpryFi Direct Coverage**: 1 plan — $89.99/mo ("SpryFi Home")
@@ -37,7 +44,7 @@ API internally queries SpryFi spatial coverage first, falls back to Verizon FWA 
 |---|---|
 | `src/components/Hero.tsx` | Hero section with "Check Availability" — exports `parseMapboxAddress()` |
 | `src/components/PlansSection.tsx` | Simple CTA section ("Starting at $89/mo") — drives to check availability |
-| `src/pages/SpryFiService.tsx` | SpryFi direct result page — single $89.99 plan card + "Get Started" → CheckoutModal |
+| `src/pages/SpryFiService.tsx` | SpryFi direct result page — collects phone + contact preference, sends RRK Lead email, shows thank you |
 | `src/pages/VerizonService.tsx` | Verizon result page — two plan cards ($89/$129) + "Get Started" → CheckoutModal |
 | `src/pages/NotServiceable.tsx` | Not serviceable — "Notify Me" CTA |
 | `src/pages/Index.tsx` | Landing page — assembles Hero, PainPoints, SocialProof, WhySpryFi, Comparison, PlansSection, FounderVideo, HowItWorks, Guarantee, Footer |
@@ -47,6 +54,7 @@ API internally queries SpryFi spatial coverage first, falls back to Verizon FWA 
 | `src/hooks/useAddressSearch.ts` | Mapbox geocoding hook for address autocomplete |
 | `src/components/SimpleAddressInput.tsx` | Address autocomplete input component |
 | `src/utils/userDataUtils.ts` | Helper to save user data to sessionStorage |
+| `supabase/functions/notify-rrk-lead/index.ts` | Edge function that sends RRK Lead email to info@sprywireless.net |
 
 ## Design System
 - Primary blue: `#0047AB`
