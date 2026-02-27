@@ -63,7 +63,6 @@ export const Hero = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
@@ -116,7 +115,7 @@ export const Hero = () => {
   };
 
   const handleContactSubmit = async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()) {
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
       alert('Please fill in all fields');
       return;
     }
@@ -134,7 +133,6 @@ export const Hero = () => {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim(),
-      phone: phone.trim(),
     };
 
     setIsSubmitting(true);
@@ -146,7 +144,6 @@ export const Hero = () => {
           email: formData.email,
           first_name: formData.firstName,
           last_name: formData.lastName,
-          phone: formData.phone,
           address_line1: formData.address_line1,
           address_line2: formData.address_line2,
           city: formData.city,
@@ -175,7 +172,6 @@ export const Hero = () => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        phone: formData.phone,
         address: {
           addressLine1: formData.address_line1,
           addressLine2: formData.address_line2,
@@ -200,7 +196,6 @@ export const Hero = () => {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
-          phone: formData.phone,
         },
         leadId: leadResult?.id || null,
       }));
@@ -211,7 +206,6 @@ export const Hero = () => {
       setFirstName('');
       setLastName('');
       setEmail('');
-      setPhone('');
     } catch (err) {
       console.error('Error:', err);
       alert('Something went wrong checking availability. Please try again.');
@@ -370,13 +364,6 @@ export const Hero = () => {
                   placeholder="Email Address"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg text-gray-800 text-sm placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone Number"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg text-gray-800 text-sm placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
                 />
               </div>

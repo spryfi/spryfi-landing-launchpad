@@ -2,7 +2,6 @@ interface UserData {
   firstName?: string;
   lastName?: string;
   email?: string;
-  phone?: string;
   address?: {
     addressLine1?: string;
     addressLine2?: string;

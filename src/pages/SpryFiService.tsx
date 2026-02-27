@@ -16,19 +16,33 @@ interface CoverageData {
     firstName: string;
     lastName: string;
     email: string;
-    phone: string;
+    phone?: string;
   };
   provider: string;
   serviceable: boolean;
   leadId?: string;
 }
 
+// Phone input mask: formats as (512) 555-1234
+const formatPhoneNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, '').slice(0, 10);
+  if (digits.length === 0) return '';
+  if (digits.length <= 3) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+};
+
 export const SpryFiService = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [coverageData, setCoverageData] = useState<CoverageData | null>(null);
+  const [phone, setPhone] = useState("");
   const [contactPreference, setContactPreference] = useState<"call" | "text">("call");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhone(formatPhoneNumber(e.target.value));
+  };
 
   useEffect(() => {
     const raw = sessionStorage.getItem("coverage_result");
@@ -47,6 +61,17 @@ export const SpryFiService = () => {
   if (!coverageData) return null;
 
   const handleSubmit = async () => {
+    // Validate phone (must have 10 digits)
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
+      toast({
+        title: "Phone required",
+        description: "Please enter a valid 10-digit phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Send notification email to info@sprywireless.net
@@ -55,7 +80,7 @@ export const SpryFiService = () => {
           firstName: coverageData.contact.firstName,
           lastName: coverageData.contact.lastName,
           email: coverageData.contact.email,
-          phone: coverageData.contact.phone,
+          phone: phone,
           addressLine1: coverageData.address.addressLine1,
           addressLine2: coverageData.address.addressLine2 || "",
           city: coverageData.address.city,
@@ -70,6 +95,7 @@ export const SpryFiService = () => {
       if (coverageData.leadId) {
         try {
           await supabase.from("leads_fresh").update({
+            phone: phone,
             contact_preference: contactPreference,
             status: "rrk_submitted",
             updated_at: new Date().toISOString(),
@@ -173,6 +199,17 @@ export const SpryFiService = () => {
           <hr className="my-6" />
 
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Your phone number</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={handlePhoneChange}
+                placeholder="(512) 555-1234"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">How should we contact you?</label>
               <div className="grid grid-cols-2 gap-3">
