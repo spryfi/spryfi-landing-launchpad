@@ -74,7 +74,7 @@ export const SpryFiService = () => {
 
     setIsSubmitting(true);
     try {
-      // Send notification email to info@sprywireless.net
+      // Send notification email to info@sprywireless.com
       await supabase.functions.invoke("notify-rrk-lead", {
         body: {
           firstName: coverageData.contact.firstName,
@@ -275,11 +275,11 @@ export const SpryFiService = () => {
               (512) 656-8732
             </a>
             <a
-              href="mailto:info@sprywireless.net"
+              href="mailto:info@sprywireless.com"
               className="flex items-center gap-2 text-blue-200 hover:text-white transition"
             >
               <Mail className="w-4 h-4" />
-              info@sprywireless.net
+              info@sprywireless.com
             </a>
           </div>
         </div>

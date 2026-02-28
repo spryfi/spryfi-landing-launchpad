@@ -22,7 +22,7 @@ API internally queries SpryFi spatial coverage first, falls back to Verizon FWA 
 ### Three Outcome Pages
 | Route | Component | Provider | What shows |
 |---|---|---|---|
-| `/spryfi-service` | `SpryFiService.tsx` | `"spryfi"` | No Stripe checkout — collects phone + contact pref (call/text), sends RRK Lead email to info@sprywireless.net, shows thank you page with contact info |
+| `/spryfi-service` | `SpryFiService.tsx` | `"spryfi"` | No Stripe checkout — collects phone + contact pref (call/text), sends RRK Lead email to info@sprywireless.com, shows thank you page with contact info |
 | `/verizon-service` | `VerizonService.tsx` | `"verizon"` | 2 plans: **$89/mo** + **$129/mo** (both "SpryFi Home") |
 | `/not-serviceable` | `NotServiceable.tsx` | `null` | "Not in your area yet" — notify me form |
 
@@ -30,8 +30,8 @@ API internally queries SpryFi spatial coverage first, falls back to Verizon FWA 
 For addresses that match the spatial query (SpryFi direct coverage):
 1. User lands on `/spryfi-service` after coverage check
 2. Page shows pricing ($89.99/mo) and collects: phone number + contact preference (call or text)
-3. On submit: edge function `notify-rrk-lead` sends email to **info@sprywireless.net** with subject **"RRK Lead"**
-4. Thank you page displays: "We'll contact you within 24 hours" + phone **(512) 656-8732** + email **info@sprywireless.net**
+3. On submit: edge function `notify-rrk-lead` sends email to **info@sprywireless.com** with subject **"RRK Lead"**
+4. Thank you page displays: "We'll contact you within 24 hours" + phone **(512) 656-8732** + email **info@sprywireless.com**
 
 ## Pricing Structure
 - **SpryFi Direct Coverage**: 1 plan — $89.99/mo ("SpryFi Home")
@@ -54,7 +54,7 @@ For addresses that match the spatial query (SpryFi direct coverage):
 | `src/hooks/useAddressSearch.ts` | Mapbox geocoding hook for address autocomplete |
 | `src/components/SimpleAddressInput.tsx` | Address autocomplete input component |
 | `src/utils/userDataUtils.ts` | Helper to save user data to sessionStorage |
-| `supabase/functions/notify-rrk-lead/index.ts` | Edge function that sends RRK Lead email to info@sprywireless.net |
+| `supabase/functions/notify-rrk-lead/index.ts` | Edge function that sends RRK Lead email to info@sprywireless.com |
 
 ## Design System
 - Primary blue: `#0047AB`

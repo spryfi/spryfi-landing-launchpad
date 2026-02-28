@@ -40,16 +40,16 @@ export const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-6">Quick Links</h4>
             <div className="space-y-3">
-              <a href="#" className="block text-gray-300 hover:text-white transition-colors">
+              <a href="/#hero-image" className="block text-gray-300 hover:text-white transition-colors">
                 Check Coverage
               </a>
-              <a href="#" className="block text-gray-300 hover:text-white transition-colors">
+              <a href="/#plans" className="block text-gray-300 hover:text-white transition-colors">
                 Plans & Pricing
               </a>
-              <a href="#" className="block text-gray-300 hover:text-white transition-colors">
+              <a href="/#how-it-works" className="block text-gray-300 hover:text-white transition-colors">
                 How It Works
               </a>
-              <a href="#" className="block text-gray-300 hover:text-white transition-colors">
+              <a href="mailto:support@sprywireless.com" className="block text-gray-300 hover:text-white transition-colors">
                 Customer Support
               </a>
             </div>
@@ -58,7 +58,7 @@ export const Footer = () => {
         
         <div className="border-t border-gray-800 pt-8 text-center">
           <p className="text-gray-400">
-            © 2024 SpryFi. All rights reserved. No contracts. No nonsense.
+            © 2025 SpryFi. All rights reserved. No contracts. No nonsense.
           </p>
         </div>
       </div>

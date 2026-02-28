@@ -99,7 +99,7 @@ Action Required: Contact this customer within 24 hours to schedule their SpryFi 
       body: JSON.stringify({
         personalizations: [
           {
-            to: [{ email: "info@sprywireless.net" }],
+            to: [{ email: "info@sprywireless.com" }],
             subject,
           },
         ],
@@ -118,7 +118,7 @@ Action Required: Contact this customer within 24 hours to schedule their SpryFi 
     }
 
     const messageId = sendGridResponse.headers.get("x-message-id");
-    console.log("RRK lead email sent to info@sprywireless.net. Message ID:", messageId);
+    console.log("RRK lead email sent to info@sprywireless.com. Message ID:", messageId);
 
     return new Response(
       JSON.stringify({ success: true, messageId }),

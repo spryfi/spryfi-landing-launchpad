@@ -83,7 +83,7 @@ Please follow up as needed.
       body: JSON.stringify({
         personalizations: [
           {
-            to: [{ email: 'newcustomer@spryfi.net' }],
+            to: [{ email: 'info@sprywireless.com' }],
             subject: emailSubject,
           },
         ],
