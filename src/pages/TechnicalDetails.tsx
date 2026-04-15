@@ -35,8 +35,8 @@ export const TechnicalDetails = () => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {[
-                  { feature: 'Download Speed', home: 'Up to 100 Mbps', family: 'Up to 300 Mbps' },
-                  { feature: 'Upload Speed', home: 'Up to 10 Mbps', family: 'Up to 20 Mbps' },
+                  { feature: 'Download Speed', home: 'Up to 250 Mbps', family: 'Up to 350 Mbps' },
+                  { feature: 'Upload Speed', home: 'Up to 25 Mbps', family: 'Up to 35 Mbps' },
                   { feature: 'Data Cap', home: 'Unlimited', family: 'Unlimited' },
                   { feature: 'Connected Devices', home: 'Up to 128', family: 'Up to 128' },
                   { feature: 'Typical Latency', home: '25–50 ms', family: '25–50 ms' },
@@ -112,6 +112,10 @@ export const TechnicalDetails = () => {
               SpryFi operates on a modern fixed wireless access network built for reliable home internet. 
               It's designed to handle streaming, gaming, video calls, and multiple connected devices — 
               without the infrastructure limitations of traditional cable or DSL.
+            </p>
+            <p>
+              On the SpryFi Home plan, speeds reach up to 250 Mbps. On the SpryFi Family plan, 
+              speeds reach up to 350 Mbps — plenty of bandwidth for larger households with heavier usage.
             </p>
             <p>
               Typical latency ranges from 25–50 ms, depending on location and conditions. All plans 
