@@ -21,7 +21,7 @@ const Index = () => {
       <Comparison />
       <PlansSection />
       <DragonModem />
-      
+      <WhyDifferent />
       <HowItWorks />
       <Guarantee />
       <Footer />
