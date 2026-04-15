@@ -35,8 +35,8 @@ export const TechnicalDetails = () => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {[
-                  { feature: 'Download Speed', home: 'Up to 100 Mbps', family: 'Up to 300 Mbps' },
-                  { feature: 'Upload Speed', home: 'Up to 10 Mbps', family: 'Up to 20 Mbps' },
+                  { feature: 'Download Speed', home: 'Up to 250 Mbps', family: 'Up to 350 Mbps' },
+                  { feature: 'Upload Speed', home: 'Up to 25 Mbps', family: 'Up to 35 Mbps' },
                   { feature: 'Data Cap', home: 'Unlimited', family: 'Unlimited' },
                   { feature: 'Connected Devices', home: 'Up to 128', family: 'Up to 128' },
                   { feature: 'Typical Latency', home: '25–50 ms', family: '25–50 ms' },
