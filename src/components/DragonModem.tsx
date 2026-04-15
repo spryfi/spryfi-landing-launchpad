@@ -33,7 +33,7 @@ export const DragonModem = () => {
               src={dragonModem}
               alt="Dragon High Performance Internet Modem"
               loading="lazy"
-              className="relative z-10 w-full max-w-lg drop-shadow-[0_35px_80px_rgba(239,68,68,0.3)] drop-shadow-[0_10px_30px_rgba(0,0,0,0.6)] hover:scale-105 transition-transform duration-700 ease-out"
+              className="relative z-10 w-full max-w-lg rounded-3xl drop-shadow-[0_35px_80px_rgba(239,68,68,0.3)] drop-shadow-[0_10px_30px_rgba(0,0,0,0.6)] hover:scale-105 transition-transform duration-700 ease-out"
             />
           </div>
 
