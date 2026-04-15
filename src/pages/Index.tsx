@@ -5,6 +5,7 @@ import { SocialProof } from '@/components/SocialProof';
 import { WhySpryFi } from '@/components/WhySpryFi';
 import { Comparison } from '@/components/Comparison';
 import { PlansSection } from '@/components/PlansSection';
+import { DragonModem } from '@/components/DragonModem';
 
 import { HowItWorks } from '@/components/HowItWorks';
 import { Guarantee } from '@/components/Guarantee';
