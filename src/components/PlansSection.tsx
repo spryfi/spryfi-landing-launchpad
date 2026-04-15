@@ -160,12 +160,12 @@ export const PlansSection = () => {
               Two Simple Plans
             </span>
             <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
-              Let Us Connect Your Family
+              Internet That
               <br />
-              <span className="text-[#0047AB]">To the Best Internet Available</span>
+              <span className="text-[#0047AB]">Just Works</span>
             </h2>
             <p className="text-lg text-gray-500 max-w-xl mx-auto">
-              No contracts, no hidden fees, no data caps. Just pick your plan.
+              Simple plans, no hidden fees, and reliable service for the way your household actually uses the internet.
             </p>
           </div>
 
@@ -175,14 +175,19 @@ export const PlansSection = () => {
             <div className="bg-white rounded-2xl p-8 shadow-md ring-1 ring-gray-100 hover:shadow-lg transition-shadow">
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-1">SpryFi Home</h3>
-                <p className="text-gray-500 text-sm">Perfect for 2–3 people</p>
+                <p className="text-gray-500 text-sm">Best for smaller households and everyday use</p>
               </div>
               <div className="flex items-baseline gap-1 mb-6">
                 <span className="text-5xl font-black text-gray-900">$89</span>
                 <span className="text-gray-500 text-lg">/mo</span>
               </div>
               <ul className="space-y-3 mb-8">
-                {['Unlimited data', 'Free Dragon modem', 'Up to 128 devices', 'Live & chat support'].map((f) => (
+                {[
+                  'Streaming, browsing, video calls — all smooth',
+                  'Unlimited data, always',
+                  'Free Dragon router included',
+                  'Friendly live & chat support',
+                ].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
                     <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                     {f}
@@ -204,14 +209,20 @@ export const PlansSection = () => {
               </div>
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-white mb-1">SpryFi Family</h3>
-                <p className="text-blue-200 text-sm">For heavy users & large households</p>
+                <p className="text-blue-200 text-sm">Best for bigger households and heavier use</p>
               </div>
               <div className="flex items-baseline gap-1 mb-6">
                 <span className="text-5xl font-black text-white">$109</span>
                 <span className="text-blue-200 text-lg">/mo</span>
               </div>
               <ul className="space-y-3 mb-8">
-                {['Unlimited data', 'Free Dragon modem', 'Up to 128 devices', 'Priority live & chat support', 'Ideal for gaming & streaming'].map((f) => (
+                {[
+                  'More devices online at once, no slowdowns',
+                  'Great for gaming, streaming & remote work',
+                  'Unlimited data, always',
+                  'Free Dragon router included',
+                  'Priority live & chat support',
+                ].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-blue-100">
                     <Check className="w-4 h-4 text-green-300 flex-shrink-0" />
                     {f}
@@ -231,8 +242,8 @@ export const PlansSection = () => {
           <div className="text-center">
             <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 mb-4">
               {[
-                'Unlimited data',
-                'Free WiFi router',
+                'No contracts, ever',
+                'Free router included',
                 '14-day money-back guarantee',
                 'No equipment fees',
               ].map((item) => (
@@ -242,12 +253,18 @@ export const PlansSection = () => {
                 </div>
               ))}
             </div>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 mb-3">
               Month-to-month, cancel anytime.{' '}
               <Link to="/loyalty-savings" className="text-blue-600 hover:text-blue-800 underline transition-colors">
                 Save more with Loyalty Circle
               </Link>
             </p>
+            <Link
+              to="/technical-details"
+              className="text-sm text-gray-400 hover:text-gray-600 underline transition-colors"
+            >
+              View speeds and technical details →
+            </Link>
           </div>
         </div>
       </section>
