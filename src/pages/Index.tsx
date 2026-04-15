@@ -5,7 +5,7 @@ import { SocialProof } from '@/components/SocialProof';
 import { WhySpryFi } from '@/components/WhySpryFi';
 import { Comparison } from '@/components/Comparison';
 import { PlansSection } from '@/components/PlansSection';
-import { FounderVideo } from '@/components/FounderVideo';
+
 import { HowItWorks } from '@/components/HowItWorks';
 import { Guarantee } from '@/components/Guarantee';
 import { Footer } from '@/components/Footer';
@@ -19,7 +19,7 @@ const Index = () => {
       <WhySpryFi />
       <Comparison />
       <PlansSection />
-      <FounderVideo />
+      
       <HowItWorks />
       <Guarantee />
       <Footer />
