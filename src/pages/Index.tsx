@@ -6,7 +6,7 @@ import { WhySpryFi } from '@/components/WhySpryFi';
 import { Comparison } from '@/components/Comparison';
 import { PlansSection } from '@/components/PlansSection';
 import { DragonModem } from '@/components/DragonModem';
-
+import { WhyDifferent } from '@/components/WhyDifferent';
 import { HowItWorks } from '@/components/HowItWorks';
 import { Guarantee } from '@/components/Guarantee';
 import { Footer } from '@/components/Footer';
@@ -21,7 +21,7 @@ const Index = () => {
       <Comparison />
       <PlansSection />
       <DragonModem />
-      
+      <WhyDifferent />
       <HowItWorks />
       <Guarantee />
       <Footer />
