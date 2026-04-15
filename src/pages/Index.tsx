@@ -20,6 +20,7 @@ const Index = () => {
       <WhySpryFi />
       <Comparison />
       <PlansSection />
+      <DragonModem />
       
       <HowItWorks />
       <Guarantee />
