@@ -184,6 +184,7 @@ export const PlansSection = () => {
               <ul className="space-y-3 mb-8">
                 {[
                   'Streaming, browsing, video calls — all smooth',
+                  'Gaming and work from home ready',
                   'Unlimited data, always',
                   'Free Dragon router included',
                   'Friendly live & chat support',
@@ -219,6 +220,7 @@ export const PlansSection = () => {
                 {[
                   'More devices online at once, no slowdowns',
                   'Great for gaming, streaming & remote work',
+                  'Gaming and work from home ready',
                   'Unlimited data, always',
                   'Free Dragon router included',
                   'Priority live & chat support',
