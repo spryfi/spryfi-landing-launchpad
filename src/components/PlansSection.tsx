@@ -153,53 +153,83 @@ export const PlansSection = () => {
   return (
     <>
       <section id="plans" className="py-24 bg-gray-50 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {/* Section header */}
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
-              Simple, honest pricing
+          <div className="text-center mb-14">
+            <span className="inline-block bg-blue-50 text-[#0047AB] text-xs font-bold tracking-widest uppercase px-5 py-2 rounded-full mb-6 border border-blue-100">
+              Two Simple Plans
+            </span>
+            <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+              Let Us Connect Your Family
+              <br />
+              <span className="text-[#0047AB]">To the Best Internet Available</span>
             </h2>
             <p className="text-lg text-gray-500 max-w-xl mx-auto">
-              Plans starting at <span className="font-semibold text-gray-900">$89/mo</span>.
-              No contracts, no hidden fees, no data caps.
+              No contracts, no hidden fees, no data caps. Just pick your plan.
             </p>
           </div>
 
-          {/* Value props */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
-            {[
-              { icon: Wifi, title: 'Unlimited Internet', desc: 'No data caps, ever' },
-              { icon: Shield, title: 'No Contracts', desc: 'Cancel anytime' },
-              { icon: CreditCard, title: 'No Hidden Fees', desc: 'The price you see is it' },
-              { icon: ArrowRight, title: 'Free Router', desc: 'Included with every plan' },
-            ].map((item) => (
-              <div key={item.title} className="bg-white rounded-xl p-6 shadow-sm ring-1 ring-gray-100 text-center">
-                <div className="w-10 h-10 mx-auto mb-3 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <item.icon className="w-5 h-5 text-[#0047AB]" />
-                </div>
-                <h3 className="font-semibold text-gray-900 text-sm mb-1">{item.title}</h3>
-                <p className="text-xs text-gray-500">{item.desc}</p>
+          {/* Plan cards */}
+          <div className="grid md:grid-cols-2 gap-8 mb-14 max-w-3xl mx-auto">
+            {/* SpryFi Home */}
+            <div className="bg-white rounded-2xl p-8 shadow-md ring-1 ring-gray-100 hover:shadow-lg transition-shadow">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">SpryFi Home</h3>
+                <p className="text-gray-500 text-sm">Perfect for 2–3 people</p>
               </div>
-            ))}
-          </div>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-5xl font-black text-gray-900">$89</span>
+                <span className="text-gray-500 text-lg">/mo</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {['Unlimited data', 'Free Dragon modem', 'Up to 128 devices', 'Live & chat support'].map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => setShowAddressModal(true)}
+                className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition-all"
+              >
+                Get Started
+              </button>
+            </div>
 
-          {/* CTA */}
-          <div className="text-center">
-            <button
-              onClick={() => setShowAddressModal(true)}
-              className="inline-flex items-center gap-2 px-10 py-4 bg-[#0047AB] hover:bg-[#0060D4] text-white font-bold text-lg rounded-xl transition-all shadow-lg hover:shadow-xl"
-            >
-              Check Availability
-              <ArrowRight className="w-5 h-5" />
-            </button>
-            <p className="text-sm text-gray-400 mt-4">
-              Enter your address to see exact pricing for your area.
-            </p>
+            {/* SpryFi Family */}
+            <div className="bg-[#0047AB] rounded-2xl p-8 shadow-xl relative overflow-hidden">
+              <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 text-xs font-bold px-3 py-1 rounded-full">
+                MOST POPULAR
+              </div>
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-white mb-1">SpryFi Family</h3>
+                <p className="text-blue-200 text-sm">For heavy users & large households</p>
+              </div>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-5xl font-black text-white">$109</span>
+                <span className="text-blue-200 text-lg">/mo</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {['Unlimited data', 'Free Dragon modem', 'Up to 128 devices', 'Priority live & chat support', 'Ideal for gaming & streaming'].map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-blue-100">
+                    <Check className="w-4 h-4 text-green-300 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => setShowAddressModal(true)}
+                className="w-full py-3 bg-white hover:bg-gray-50 text-[#0047AB] font-bold rounded-xl transition-all"
+              >
+                Get Started
+              </button>
+            </div>
           </div>
 
           {/* Footer note */}
-          <div className="text-center mt-12">
-            <div className="flex flex-wrap justify-center gap-x-8 gap-y-2">
+          <div className="text-center">
+            <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 mb-4">
               {[
                 'Unlimited data',
                 'Free WiFi router',
@@ -212,7 +242,7 @@ export const PlansSection = () => {
                 </div>
               ))}
             </div>
-            <p className="text-sm text-gray-400 mt-4">
+            <p className="text-sm text-gray-400">
               Month-to-month, cancel anytime.{' '}
               <Link to="/loyalty-savings" className="text-blue-600 hover:text-blue-800 underline transition-colors">
                 Save more with Loyalty Circle
