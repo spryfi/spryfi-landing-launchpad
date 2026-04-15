@@ -11,7 +11,7 @@ export const DragonModem = () => {
             INCLUDED FREE WITH YOUR PLAN
           </span>
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Dragon 5G High Performance
+            Dragon High Performance
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">
               Internet Modem
