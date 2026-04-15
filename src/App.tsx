@@ -14,6 +14,7 @@ import Checkout from "./pages/Checkout";
 import { SpryFiService } from "./pages/SpryFiService";
 import { ServicePlans } from "./pages/ServicePlans";
 import { NotServiceable } from "./pages/NotServiceable";
+import { TechnicalDetails } from "./pages/TechnicalDetails";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/not-serviceable" element={<NotServiceable />} />
           <Route path="/loyalty-savings" element={<LoyaltySavings />} />
           <Route path="/loyalty-terms" element={<LoyaltyTerms />} />
+          <Route path="/technical-details" element={<TechnicalDetails />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
