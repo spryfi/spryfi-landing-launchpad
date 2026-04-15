@@ -1,6 +1,6 @@
 import React from 'react';
-import dragonModem from '@/assets/dragon-modem.jpg';
-import { Shield, Wifi, Battery, Zap, Monitor, Lock } from 'lucide-react';
+import dragonModem from '@/assets/dragon-modem.png';
+import { Battery, Zap, Monitor, Lock, Wifi, Signal } from 'lucide-react';
 
 export const DragonModem = () => {
   return (
@@ -30,9 +30,7 @@ export const DragonModem = () => {
               src={dragonModem}
               alt="Dragon 5G High Performance Internet Modem"
               loading="lazy"
-              width={800}
-              height={800}
-              className="relative z-10 w-full max-w-md rounded-2xl"
+              className="relative z-10 w-full max-w-lg drop-shadow-2xl"
             />
           </div>
 
