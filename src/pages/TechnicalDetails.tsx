@@ -114,6 +114,10 @@ export const TechnicalDetails = () => {
               without the infrastructure limitations of traditional cable or DSL.
             </p>
             <p>
+              On the SpryFi Home plan, speeds reach up to 250 Mbps. On the SpryFi Family plan, 
+              speeds reach up to 350 Mbps — plenty of bandwidth for larger households with heavier usage.
+            </p>
+            <p>
               Typical latency ranges from 25–50 ms, depending on location and conditions. All plans 
               include unlimited data with no throttling or data caps.
             </p>
