@@ -453,7 +453,7 @@ export default function Checkout() {
       if (userData.address?.city) form.setValue('city', userData.address.city);
       if (userData.address?.state) form.setValue('state', userData.address.state);
       if (userData.address?.zipCode) form.setValue('zipCode', userData.address.zipCode);
-      if (userData.address?.phone) form.setValue('phone', userData.address.phone);
+      if ((userData.address as any)?.phone) form.setValue('phone', (userData.address as any).phone);
       
       setShowAutoFillMessage(true);
       console.log('✅ Auto-populated checkout form with user data:', userData);
@@ -485,7 +485,7 @@ export default function Checkout() {
     if (userData.address?.city) form.setValue('city', userData.address.city);
     if (userData.address?.state) form.setValue('state', userData.address.state);
     if (userData.address?.zipCode) form.setValue('zipCode', userData.address.zipCode);
-    if (userData.address?.phone) form.setValue('phone', userData.address.phone);
+    if ((userData.address as any)?.phone) form.setValue('phone', (userData.address as any).phone);
     
     setShowAutoFillMessage(true);
     
