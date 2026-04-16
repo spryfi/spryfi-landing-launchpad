@@ -28,7 +28,8 @@ export const HowItWorks = () => {
   ];
 
   const handleGetStarted = () => {
-    setShowCheckoutModal(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.dispatchEvent(new CustomEvent('open-address-modal'));
   };
 
   const handleAddressSelect = (address: string) => {
@@ -71,7 +72,7 @@ export const HowItWorks = () => {
               size="lg" 
               className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 text-xl rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
-              Get Started Now
+              Check Availability
             </Button>
           </div>
         ) : (
