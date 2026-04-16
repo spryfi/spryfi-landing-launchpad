@@ -73,6 +73,13 @@ export const Hero = () => {
     }
   }, [showAddressModal]);
 
+  // Listen for nav "Check Availability" clicks
+  React.useEffect(() => {
+    const handler = () => setShowAddressModal(true);
+    window.addEventListener('open-address-modal', handler);
+    return () => window.removeEventListener('open-address-modal', handler);
+  }, []);
+
   // Hero image rotation
   React.useEffect(() => {
     const heroImages = [
