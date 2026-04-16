@@ -199,7 +199,7 @@ export const PlansSection = () => {
                 onClick={() => setShowAddressModal(true)}
                 className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl transition-all"
               >
-                Get Started
+                Check Availability
               </button>
             </div>
 
@@ -235,7 +235,7 @@ export const PlansSection = () => {
                 onClick={() => setShowAddressModal(true)}
                 className="w-full py-3 bg-white hover:bg-gray-50 text-[#0047AB] font-bold rounded-xl transition-all"
               >
-                Get Started
+                Check Availability
               </button>
             </div>
           </div>
