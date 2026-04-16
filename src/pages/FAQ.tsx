@@ -26,7 +26,7 @@ const faqSections: { title: string; items: FAQItem[] }[] = [
       },
       {
         question: 'What is the Loyalty Circle?',
-        answer: 'Loyalty Circle is an optional savings program for customers who choose to commit for a longer period. It's completely optional — our standard plans are always month-to-month.',
+        answer: "Loyalty Circle is an optional savings program for customers who choose to commit for a longer period. It's completely optional — our standard plans are always month-to-month.",
       },
     ],
   },
@@ -43,7 +43,7 @@ const faqSections: { title: string; items: FAQItem[] }[] = [
       },
       {
         question: 'What is the Dragon router?',
-        answer: 'The Dragon is a WiFi 7 gateway that supports up to 128 devices, delivers faster speeds, lower latency, and better whole-home coverage. It's designed for modern household use.',
+        answer: "The Dragon is a WiFi 7 gateway that supports up to 128 devices, delivers faster speeds, lower latency, and better whole-home coverage. It's designed for modern household use.",
       },
     ],
   },
@@ -73,7 +73,7 @@ const faqSections: { title: string; items: FAQItem[] }[] = [
       },
       {
         question: 'What is the money-back guarantee?',
-        answer: 'New subscribers get a full 14-day money-back guarantee. If SpryFi doesn't work for you, we'll refund your first month.',
+        answer: "New subscribers get a full 14-day money-back guarantee. If SpryFi doesn't work for you, we'll refund your first month.",
       },
     ],
   },
